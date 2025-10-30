@@ -81,37 +81,41 @@
 
 ---
 
-## 📋 FÁZIS 2: Adatmodell és IndexedDB setup
+## 📋 FÁZIS 2: Adatmodell és IndexedDB setup ✅
 **Becsült idő:** 20-25 perc
+**Tényleges idő:** ~25 perc
+**Befejezve:** 2025-10-30
 
-### 2.1 Kontextus betöltés
-- [ ] Projekt állapot ellenőrzése
-- [ ] Dexie.js dokumentáció (Context7 MCP)
+### 2.1 Kontextus betöltés ✅
+- [x] Projekt állapot ellenőrzése
+- [x] Dexie.js dokumentáció (Context7 MCP)
 
-### 2.2 TypeScript típusok és Zod sémák
-- [ ] src/types/*.ts fájlok létrehozása
-- [ ] src/schemas/*.schema.ts Zod validációk
-- [ ] Típus export/import struktúra
+### 2.2 TypeScript típusok és Zod sémák ✅
+- [x] src/types/*.ts fájlok létrehozása (note.ts, todo.ts, settings.ts)
+- [x] src/schemas/*.schema.ts Zod validációk magyar hibaüzenetekkel
+- [x] Típus export/import struktúra (index.ts)
 
-### 2.3 IndexedDB/Dexie setup
-- [ ] src/lib/db/index.ts - Dexie instance
-- [ ] src/lib/db/schema.ts - Tábla definíciók
-- [ ] src/lib/db/migrations.ts - Verziókezelés
+### 2.3 IndexedDB/Dexie setup ✅
+- [x] src/lib/db/index.ts - Dexie instance
+- [x] src/lib/db/schema.ts - Tábla definíciók EntityTable típusokkal
+- [x] src/lib/db/migrations.ts - Verziókezelés és default settings
 
-### 2.4 Storage service
-- [ ] CRUD műveletek notes táblához
-- [ ] CRUD műveletek todos táblához
-- [ ] Settings kezelés
+### 2.4 Storage service ✅
+- [x] CRUD műveletek notes táblához (NotesService)
+- [x] CRUD műveletek todos táblához (TodosService + toggleItem)
+- [x] Settings kezelés (SettingsService)
+- [x] UUID generátor utility (crypto.randomUUID)
 
-### 2.5 LocalStorage wrapper
-- [ ] Beállítások mentése/betöltése
-- [ ] Téma preferencia kezelés
-- [ ] Fallback mechanizmus
+### 2.5 LocalStorage wrapper ✅
+- [x] Beállítások mentése/betöltése
+- [x] Téma preferencia kezelés
+- [x] Fallback mechanizmus (isAvailable check)
 
-### 2.6 Ellenőrzés
-- [ ] Unit tesztek az adatműveletekhez
-- [ ] TypeScript típus ellenőrzés
-- [ ] IndexedDB működés böngészőben
+### 2.6 Ellenőrzés ✅
+- [x] Unit tesztek az adatműveletekhez (storage.service.test.ts)
+- [x] TypeScript típus ellenőrzés - sikeres
+- [x] Build sikeres (409ms, PWA generálva)
+- [ ] IndexedDB működés böngészőben - későbbi manuális teszt
 
 ---
 
