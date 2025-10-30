@@ -36,39 +36,48 @@
 
 ---
 
-## 📋 FÁZIS 1: Projekt inicializálás és alapstruktúra
+## 📋 FÁZIS 1: Projekt inicializálás és alapstruktúra ✅
 **Becsült idő:** 15-20 perc
+**Tényleges idő:** ~20 perc
+**Befejezve:** 2025-10-30
 
-### 1.1 Kontextus betöltés
-- [ ] Claude.md és project-structure.md betöltése
-- [ ] Aktuális könyvtár ellenőrzése
+### 1.1 Kontextus betöltés ✅
+- [x] Claude.md és project-structure.md betöltése
+- [x] Aktuális könyvtár ellenőrzése
+- [x] Design-system.md betöltése
+- [x] Context7 MCP: Svelte 5 runes dokumentáció
+- [x] Context7 MCP: Vite PWA plugin dokumentáció
+- [x] Context7 MCP: TypeScript strict mode dokumentáció
 
-### 1.2 Vite + Svelte projekt létrehozása
-- [ ] `npm create vite@latest . -- --template svelte-ts`
-- [ ] Package.json frissítése a szükséges függőségekkel
-- [ ] Tsconfig.json strict mode beállítása
+### 1.2 Vite + Svelte projekt létrehozása ✅
+- [x] Manuális projekt setup (könyvtár nem üres miatt)
+- [x] Package.json létrehozása minden függőséggel
+- [x] Tsconfig.json strict mode beállítása
 
-### 1.3 Függőségek telepítése
-- [ ] Core: svelte@5, typescript, vite
-- [ ] PWA: vite-plugin-pwa, workbox-window
-- [ ] DB: dexie, zod
-- [ ] Utils: date-fns, uuid
-- [ ] Dev: vitest, playwright, eslint, prettier, husky
+### 1.3 Függőségek telepítése ✅
+- [x] Core: svelte@5, typescript, vite
+- [x] PWA: vite-plugin-pwa, workbox-window
+- [x] DB: dexie, zod
+- [x] Utils: date-fns
+- [x] Dev: vitest, playwright, eslint, prettier, husky
 
-### 1.4 Alapstruktúra kialakítása
-- [ ] Könyvtárstruktúra létrehozása (src/lib/*, tests/*, stb.)
-- [ ] App.css alapstílusok (CSS változók, reset)
-- [ ] Manifest.json és ikonok (ikonokat a felhasználó tölti fel manuálisan)
+### 1.4 Alapstruktúra kialakítása ✅
+- [x] Könyvtárstruktúra létrehozása (src/lib/*, tests/*, stb.)
+- [x] App.css alapstílusok (teljes design system CSS változókkal)
+- [x] Vite config PWA plugin-nal
+- [x] ESLint + Prettier konfiguráció
+- [x] Vitest + Playwright setup
 
-### 1.5 Git inicializálás
-- [ ] Git init és .gitignore
-- [ ] Initial commit
-- [ ] GitHub repo kapcsolás
+### 1.5 Git inicializálás ✅
+- [x] Git init és .gitignore
+- [x] Initial commit
+- [ ] GitHub repo kapcsolás (manuálisan később)
 
-### 1.6 Ellenőrzés
-- [ ] npm run dev - működik-e
-- [ ] npm run build - sikeres-e
-- [ ] Lighthouse audit
+### 1.6 Ellenőrzés ✅
+- [x] npm run type-check - sikeres
+- [x] npm run build - sikeres (422ms, PWA generálva)
+- [ ] npm run dev - manuális teszt szükséges
+- [ ] Lighthouse audit - később
 
 ---
 
