@@ -15,6 +15,7 @@ export interface INote {
   createdAt: Date;
   updatedAt: Date;
   isUrgent: boolean;
+  order: number; // Custom sort order for drag&drop
 }
 
 /**

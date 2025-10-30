@@ -27,6 +27,7 @@ export interface ITodo {
   isUrgent: boolean;
   completedCount: number; // Derived from items
   totalCount: number; // Derived from items
+  order: number; // Custom sort order for drag&drop
 }
 
 /**

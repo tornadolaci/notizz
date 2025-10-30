@@ -305,3 +305,219 @@ export function getDragTransform(deltaX: number, deltaY: number, maxOffset?: num
 export function isTouchDevice(): boolean {
   return 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 }
+
+/**
+ * Drag and drop reordering action
+ * Usage: <div use:draggableItem={{ id, onReorder }}>
+ */
+export interface DraggableItemConfig {
+  id: string;
+  containerSelector: string;
+  onReorder: (reorderedIds: string[]) => void;
+}
+
+export function draggableItem(element: HTMLElement, config: DraggableItemConfig) {
+  let isDragging = false;
+  let draggedElement: HTMLElement | null = null;
+  let placeholder: HTMLElement | null = null;
+  let startY = 0;
+  let currentY = 0;
+
+  const findContainer = (): HTMLElement | null => {
+    return document.querySelector(config.containerSelector);
+  };
+
+  const createPlaceholder = (): HTMLElement => {
+    const ph = document.createElement('div');
+    ph.style.height = `${element.offsetHeight}px`;
+    ph.style.backgroundColor = 'rgba(0, 122, 255, 0.1)';
+    ph.style.border = '2px dashed var(--color-info)';
+    ph.style.borderRadius = '20px';
+    ph.style.marginBottom = '12px';
+    return ph;
+  };
+
+  const getItemsInContainer = (): HTMLElement[] => {
+    const container = findContainer();
+    if (!container) return [];
+    return Array.from(container.querySelectorAll('[data-draggable-id]'));
+  };
+
+  const handleDragStart = (clientY: number) => {
+    isDragging = true;
+    startY = clientY;
+    currentY = clientY;
+
+    // Create placeholder
+    placeholder = createPlaceholder();
+    element.parentElement?.insertBefore(placeholder, element.nextSibling);
+
+    // Style dragged element
+    element.style.position = 'fixed';
+    element.style.zIndex = '1000';
+    element.style.opacity = '0.9';
+    element.style.transform = 'scale(1.05)';
+    element.style.width = `${element.offsetWidth}px`;
+    element.style.left = `${element.getBoundingClientRect().left}px`;
+    element.style.top = `${element.getBoundingClientRect().top}px`;
+    element.style.cursor = 'grabbing';
+    element.style.pointerEvents = 'none';
+
+    draggedElement = element;
+    triggerHapticFeedback();
+  };
+
+  const handleDragMove = (clientY: number) => {
+    if (!isDragging || !draggedElement || !placeholder) return;
+
+    currentY = clientY;
+    const deltaY = currentY - startY;
+
+    // Update position
+    const initialTop = parseFloat(element.style.top);
+    draggedElement.style.top = `${initialTop + deltaY}px`;
+    startY = currentY;
+
+    // Find closest item
+    const items = getItemsInContainer();
+    const draggedRect = draggedElement.getBoundingClientRect();
+    const draggedCenterY = draggedRect.top + draggedRect.height / 2;
+
+    for (const item of items) {
+      if (item === draggedElement || item === placeholder) continue;
+
+      const itemRect = item.getBoundingClientRect();
+      const itemCenterY = itemRect.top + itemRect.height / 2;
+
+      if (draggedCenterY < itemCenterY && placeholder.nextSibling !== item) {
+        item.parentElement?.insertBefore(placeholder, item);
+        triggerHapticFeedback(5);
+        break;
+      } else if (draggedCenterY > itemCenterY && placeholder.previousSibling !== item) {
+        item.parentElement?.insertBefore(placeholder, item.nextSibling);
+        triggerHapticFeedback(5);
+        break;
+      }
+    }
+  };
+
+  const handleDragEnd = () => {
+    if (!isDragging || !draggedElement || !placeholder) return;
+
+    // Reset styles
+    draggedElement.style.position = '';
+    draggedElement.style.zIndex = '';
+    draggedElement.style.opacity = '';
+    draggedElement.style.transform = '';
+    draggedElement.style.width = '';
+    draggedElement.style.left = '';
+    draggedElement.style.top = '';
+    draggedElement.style.cursor = '';
+    draggedElement.style.pointerEvents = '';
+
+    // Replace placeholder with element
+    placeholder.parentElement?.insertBefore(draggedElement, placeholder);
+    placeholder.remove();
+
+    // Get new order
+    const items = getItemsInContainer();
+    const newOrder = items
+      .filter(item => item.dataset.draggableId)
+      .map(item => item.dataset.draggableId!);
+
+    config.onReorder(newOrder);
+
+    isDragging = false;
+    draggedElement = null;
+    placeholder = null;
+  };
+
+  // Long press to activate drag
+  let longPressTimer: number | null = null;
+  let longPressActivated = false;
+
+  const startLongPress = (clientY: number) => {
+    longPressActivated = false;
+    longPressTimer = window.setTimeout(() => {
+      longPressActivated = true;
+      handleDragStart(clientY);
+    }, 300); // 300ms long press
+  };
+
+  const cancelLongPress = () => {
+    if (longPressTimer) {
+      clearTimeout(longPressTimer);
+      longPressTimer = null;
+    }
+  };
+
+  // Touch events
+  const onTouchStart = (e: TouchEvent) => {
+    const touch = e.touches[0];
+    if (!touch) return;
+    startLongPress(touch.clientY);
+  };
+
+  const onTouchMove = (e: TouchEvent) => {
+    const touch = e.touches[0];
+    if (!touch) return;
+
+    if (!longPressActivated) {
+      // Cancel long press if moved before activation
+      const deltaY = Math.abs(touch.clientY - startY);
+      if (deltaY > 10) {
+        cancelLongPress();
+      }
+    } else {
+      e.preventDefault();
+      handleDragMove(touch.clientY);
+    }
+  };
+
+  const onTouchEnd = () => {
+    cancelLongPress();
+    if (longPressActivated) {
+      handleDragEnd();
+    }
+  };
+
+  // Mouse events
+  const onMouseDown = (e: MouseEvent) => {
+    // Only allow drag with long press on touch devices
+    // On desktop, use modifier key (Alt) to enable drag
+    if (e.altKey) {
+      handleDragStart(e.clientY);
+    }
+  };
+
+  const onMouseMove = (e: MouseEvent) => {
+    handleDragMove(e.clientY);
+  };
+
+  const onMouseUp = () => {
+    handleDragEnd();
+  };
+
+  // Add event listeners
+  element.addEventListener('touchstart', onTouchStart, { passive: true });
+  element.addEventListener('touchmove', onTouchMove, { passive: false });
+  element.addEventListener('touchend', onTouchEnd, { passive: true });
+  element.addEventListener('mousedown', onMouseDown);
+  window.addEventListener('mousemove', onMouseMove);
+  window.addEventListener('mouseup', onMouseUp);
+
+  // Add data attribute for identification
+  element.dataset.draggableId = config.id;
+
+  return {
+    destroy() {
+      element.removeEventListener('touchstart', onTouchStart);
+      element.removeEventListener('touchmove', onTouchMove);
+      element.removeEventListener('touchend', onTouchEnd);
+      element.removeEventListener('mousedown', onMouseDown);
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+      delete element.dataset.draggableId;
+    },
+  };
+}

@@ -107,6 +107,33 @@ function createNotesStore() {
      */
     filterByTag(tag: string): INote[] {
       return state.value.filter(note => note.tags.includes(tag));
+    },
+
+    /**
+     * Reorder notes after drag&drop
+     * Updates the order field for all affected notes
+     */
+    async reorder(noteIds: string[]): Promise<void> {
+      try {
+        // Update order in database
+        const updatePromises = noteIds.map((id, index) =>
+          NotesService.update({ id, order: index })
+        );
+        await Promise.all(updatePromises);
+
+        // Optimistic update in state
+        const noteMap = new Map(state.value.map(note => [note.id, note]));
+        state.value = noteIds
+          .map(id => noteMap.get(id))
+          .filter((note): note is INote => note !== undefined)
+          .map((note, index) => ({ ...note, order: index }));
+
+      } catch (error) {
+        state.error = error instanceof Error ? error : new Error('Failed to reorder notes');
+        console.error('Error reordering notes:', error);
+        // Reload on error
+        await this.load();
+      }
     }
   };
 }

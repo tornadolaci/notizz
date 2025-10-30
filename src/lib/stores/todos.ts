@@ -153,6 +153,33 @@ function createTodosStore() {
      */
     filterByTag(tag: string): ITodo[] {
       return state.value.filter(todo => todo.tags.includes(tag));
+    },
+
+    /**
+     * Reorder todos after drag&drop
+     * Updates the order field for all affected todos
+     */
+    async reorder(todoIds: string[]): Promise<void> {
+      try {
+        // Update order in database
+        const updatePromises = todoIds.map((id, index) =>
+          TodosService.update({ id, order: index })
+        );
+        await Promise.all(updatePromises);
+
+        // Optimistic update in state
+        const todoMap = new Map(state.value.map(todo => [todo.id, todo]));
+        state.value = todoIds
+          .map(id => todoMap.get(id))
+          .filter((todo): todo is ITodo => todo !== undefined)
+          .map((todo, index) => ({ ...todo, order: index }));
+
+      } catch (error) {
+        state.error = error instanceof Error ? error : new Error('Failed to reorder todos');
+        console.error('Error reordering todos:', error);
+        // Reload on error
+        await this.load();
+      }
     }
   };
 }

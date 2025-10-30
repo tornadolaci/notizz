@@ -38,12 +38,19 @@ export class NotesService {
       // Validate input
       const validatedInput = NoteCreateSchema.parse(input);
 
+      // Get the highest order value to append at the end
+      const allNotes = await db.notes.toArray();
+      const maxOrder = allNotes.length > 0
+        ? Math.max(...allNotes.map(n => n.order ?? 0))
+        : -1;
+
       const now = new Date();
       const note: INote = {
         id: generateUUID(),
         ...validatedInput,
         createdAt: now,
         updatedAt: now,
+        order: maxOrder + 1,
       };
 
       await db.notes.add(note);
@@ -68,10 +75,22 @@ export class NotesService {
 
   /**
    * Get all notes
+   * Sorts by order field (for drag&drop), then by updatedAt for new items
    */
   static async getAll(): Promise<INote[]> {
     try {
-      return await db.notes.orderBy('updatedAt').reverse().toArray();
+      const notes = await db.notes.toArray();
+      return notes.sort((a, b) => {
+        // If both have order, sort by order
+        if (a.order !== undefined && b.order !== undefined) {
+          return a.order - b.order;
+        }
+        // If only one has order, prioritize it
+        if (a.order !== undefined) return -1;
+        if (b.order !== undefined) return 1;
+        // Otherwise sort by updatedAt (newest first)
+        return b.updatedAt.getTime() - a.updatedAt.getTime();
+      });
     } catch (error) {
       console.error('[NotesService] Failed to get all notes:', error);
       throw error;
@@ -206,6 +225,12 @@ export class TodosService {
       // Validate input
       const validatedInput = TodoCreateSchema.parse(input);
 
+      // Get the highest order value to append at the end
+      const allTodos = await db.todos.toArray();
+      const maxOrder = allTodos.length > 0
+        ? Math.max(...allTodos.map(t => t.order ?? 0))
+        : -1;
+
       const now = new Date();
       const counts = this.calculateCounts(validatedInput.items);
 
@@ -215,6 +240,7 @@ export class TodosService {
         createdAt: now,
         updatedAt: now,
         ...counts,
+        order: maxOrder + 1,
       };
 
       await db.todos.add(todo);
@@ -239,10 +265,22 @@ export class TodosService {
 
   /**
    * Get all todos
+   * Sorts by order field (for drag&drop), then by updatedAt for new items
    */
   static async getAll(): Promise<ITodo[]> {
     try {
-      return await db.todos.orderBy('updatedAt').reverse().toArray();
+      const todos = await db.todos.toArray();
+      return todos.sort((a, b) => {
+        // If both have order, sort by order
+        if (a.order !== undefined && b.order !== undefined) {
+          return a.order - b.order;
+        }
+        // If only one has order, prioritize it
+        if (a.order !== undefined) return -1;
+        if (b.order !== undefined) return 1;
+        // Otherwise sort by updatedAt (newest first)
+        return b.updatedAt.getTime() - a.updatedAt.getTime();
+      });
     } catch (error) {
       console.error('[TodosService] Failed to get all todos:', error);
       throw error;

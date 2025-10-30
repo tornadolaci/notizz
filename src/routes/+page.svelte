@@ -11,6 +11,7 @@
   import { notesStore } from '$lib/stores/notes';
   import { todosStore } from '$lib/stores/todos';
   import { searchStore } from '$lib/stores/search';
+  import { draggableItem } from '$lib/utils/gestures';
   import type { INote, ITodo } from '$lib/types';
 
   // Editor state
@@ -39,17 +40,27 @@
       return allItems; // Search results are already sorted by relevance
     }
 
-    // Otherwise show all items
+    // Otherwise show all items sorted by order
     const allItems: Array<{type: 'note' | 'todo', data: INote | ITodo}> = [
       ...notesStore.notes.value.map(note => ({type: 'note' as const, data: note})),
       ...todosStore.todos.value.map(todo => ({type: 'todo' as const, data: todo}))
     ];
 
-    // Sort by updatedAt (newest first), with urgent items first
+    // Sort by order (for drag&drop), with urgent items first, then by order/updatedAt
     return allItems.sort((a, b) => {
       if (a.data.isUrgent !== b.data.isUrgent) {
         return a.data.isUrgent ? -1 : 1;
       }
+
+      // Sort by order if available
+      const aOrder = a.data.order ?? 999999;
+      const bOrder = b.data.order ?? 999999;
+
+      if (aOrder !== bOrder) {
+        return aOrder - bOrder;
+      }
+
+      // Fallback to updatedAt if orders are equal
       return b.data.updatedAt.getTime() - a.data.updatedAt.getTime();
     });
   });
@@ -99,6 +110,23 @@
   async function handleTodoToggle(todoId: string, itemId: string) {
     await todosStore.toggleItem(todoId, itemId);
   }
+
+  // Handle drag&drop reorder
+  async function handleReorder(reorderedIds: string[]) {
+    // Separate note and todo IDs
+    const noteIds = reorderedIds.filter(id =>
+      notesStore.notes.value.some(note => note.id === id)
+    );
+    const todoIds = reorderedIds.filter(id =>
+      todosStore.todos.value.some(todo => todo.id === id)
+    );
+
+    // Update order for both types
+    await Promise.all([
+      noteIds.length > 0 ? notesStore.reorder(noteIds) : Promise.resolve(),
+      todoIds.length > 0 ? todosStore.reorder(todoIds) : Promise.resolve()
+    ]);
+  }
 </script>
 
 <Header />
@@ -107,24 +135,33 @@
 
 <main class="container">
   {#if items.length > 0}
-    <div class="note-grid">
+    <div class="note-grid" data-draggable-container>
       {#each items as item, index (item.data.id)}
-        {#if item.type === 'note'}
-          <NoteCard
-            note={item.data as INote}
-            index={index}
-            onEdit={() => openNoteEditor(item.data as INote)}
-            onDelete={() => handleNoteDelete(item.data.id!)}
-          />
-        {:else}
-          <TodoCard
-            todo={item.data as ITodo}
-            index={index}
-            onEdit={() => openTodoEditor(item.data as ITodo)}
-            onDelete={() => handleTodoDelete(item.data.id!)}
-            onToggleItem={handleTodoToggle}
-          />
-        {/if}
+        <div
+          use:draggableItem={{
+            id: item.data.id!,
+            containerSelector: '[data-draggable-container]',
+            onReorder: handleReorder
+          }}
+          class="draggable-wrapper"
+        >
+          {#if item.type === 'note'}
+            <NoteCard
+              note={item.data as INote}
+              index={index}
+              onEdit={() => openNoteEditor(item.data as INote)}
+              onDelete={() => handleNoteDelete(item.data.id!)}
+            />
+          {:else}
+            <TodoCard
+              todo={item.data as ITodo}
+              index={index}
+              onEdit={() => openTodoEditor(item.data as ITodo)}
+              onDelete={() => handleTodoDelete(item.data.id!)}
+              onToggleItem={handleTodoToggle}
+            />
+          {/if}
+        </div>
       {/each}
     </div>
   {:else if searchStore.search.isActive}
@@ -190,6 +227,17 @@
     gap: var(--gap-cards);
     padding: var(--space-4);
     grid-template-columns: 1fr;
+  }
+
+  .draggable-wrapper {
+    cursor: grab;
+    -webkit-user-select: none;
+    user-select: none;
+    touch-action: pan-y;
+  }
+
+  .draggable-wrapper:active {
+    cursor: grabbing;
   }
 
   @media (min-width: 640px) {
