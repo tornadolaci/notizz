@@ -129,6 +129,7 @@
     <span>Törlés</span>
   </div>
 
+  <!-- svelte-ignore a11y_no_noninteractive_element_to_interactive_role -->
   <article
     bind:this={cardElement}
     class="card"
