@@ -3,6 +3,7 @@
   import TodoProgress from './TodoProgress.svelte';
   import { formatDistanceToNow } from 'date-fns';
   import { hu } from 'date-fns/locale';
+  import { createDragHandler, getDragTransform, type DragState, type SwipeDirection } from '$lib/utils/gestures';
 
   interface Props {
     todo: ITodo;
@@ -13,6 +14,13 @@
   }
 
   let { todo, index = 0, onEdit, onDelete, onToggleItem }: Props = $props();
+
+  let cardElement: HTMLElement;
+  let dragOffset = $state({ x: 0, y: 0 });
+  let isDragging = $state(false);
+  let swipeAction = $state<'edit' | 'delete' | null>(null);
+
+  const SWIPE_THRESHOLD = 100;
 
   const timeAgo = $derived(() => {
     return formatDistanceToNow(todo.updatedAt, {
@@ -29,7 +37,60 @@
     return completedCount() === todo.totalCount && todo.totalCount > 0;
   });
 
+  $effect(() => {
+    if (!cardElement) return;
+
+    const cleanup = createDragHandler(
+      cardElement,
+      {
+        onDragStart: () => {
+          isDragging = true;
+        },
+        onDrag: (state: DragState) => {
+          // Only horizontal swipe
+          dragOffset.x = state.deltaX;
+          dragOffset.y = 0;
+
+          // Determine swipe action based on direction
+          if (state.deltaX < -SWIPE_THRESHOLD) {
+            swipeAction = 'edit'; // Swipe left = edit
+          } else if (state.deltaX > SWIPE_THRESHOLD) {
+            swipeAction = 'delete'; // Swipe right = delete
+          } else {
+            swipeAction = null;
+          }
+        },
+        onDragEnd: (_state: DragState, swipe: SwipeDirection) => {
+          isDragging = false;
+
+          // Trigger actions based on swipe
+          if (swipe.direction === 'left' && onEdit) {
+            onEdit();
+          } else if (swipe.direction === 'right' && onDelete) {
+            onDelete();
+          }
+
+          // Reset state
+          dragOffset.x = 0;
+          dragOffset.y = 0;
+          swipeAction = null;
+        }
+      },
+      {
+        threshold: SWIPE_THRESHOLD,
+        maxDuration: 500,
+        minVelocity: 0.3,
+        hapticFeedback: true
+      }
+    );
+
+    return cleanup;
+  });
+
   function handleClick() {
+    // Prevent click if dragging
+    if (isDragging || Math.abs(dragOffset.x) > 5) return;
+
     if (onEdit) {
       onEdit();
     }
@@ -50,18 +111,39 @@
   }
 </script>
 
-<article
-  class="card"
-  class:card--urgent={todo.isUrgent}
-  class:card--completed={isAllCompleted()}
-  style:--card-color={todo.color}
-  style:--index={index}
-  onclick={handleClick}
-  onkeydown={handleKeydown}
-  role="button"
-  tabindex="0"
-  aria-label="TODO lista: {todo.title}"
->
+<div class="card-wrapper">
+  <!-- Swipe action backgrounds -->
+  <div class="swipe-action swipe-action--edit" class:swipe-action--active={swipeAction === 'edit'}>
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <span>Szerkesztés</span>
+  </div>
+
+  <div class="swipe-action swipe-action--delete" class:swipe-action--active={swipeAction === 'delete'}>
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+      <polyline points="3 6 5 6 21 6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <span>Törlés</span>
+  </div>
+
+  <article
+    bind:this={cardElement}
+    class="card"
+    class:card--urgent={todo.isUrgent}
+    class:card--completed={isAllCompleted()}
+    class:card--dragging={isDragging}
+    style:--card-color={todo.color}
+    style:--index={index}
+    style:transform={getDragTransform(dragOffset.x, dragOffset.y, 200)}
+    onclick={handleClick}
+    onkeydown={handleKeydown}
+    role="button"
+    tabindex="0"
+    aria-label="TODO lista: {todo.title}"
+  >
   {#if todo.isUrgent}
     <div class="card__badge" aria-label="Sürgős">!</div>
   {/if}
@@ -117,9 +199,55 @@
       {timeAgo()}
     </time>
   </div>
-</article>
+  </article>
+</div>
 
 <style>
+  .card-wrapper {
+    position: relative;
+    isolation: isolate;
+  }
+
+  .swipe-action {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    padding: 0 var(--space-6);
+    border-radius: 20px;
+    font-size: var(--text-sm);
+    font-weight: var(--font-semibold);
+    opacity: 0;
+    transition: opacity 200ms ease;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .swipe-action--edit {
+    left: 0;
+    right: 50%;
+    background: var(--color-info);
+    color: white;
+  }
+
+  .swipe-action--delete {
+    left: 50%;
+    right: 0;
+    background: var(--color-error);
+    color: white;
+  }
+
+  .swipe-action--active {
+    opacity: 1;
+  }
+
+  .swipe-action svg {
+    flex-shrink: 0;
+  }
+
   .card {
     /* Layout */
     position: relative;
@@ -134,7 +262,7 @@
     cursor: pointer;
 
     /* Animation */
-    transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform 0ms, box-shadow 300ms cubic-bezier(0.4, 0, 0.2, 1);
     animation: slideUp 400ms ease both;
     animation-delay: calc(var(--index) * 50ms);
 
@@ -143,6 +271,13 @@
       0 1px 2px rgba(0, 0, 0, 0.04),
       0 4px 8px rgba(0, 0, 0, 0.06),
       0 8px 16px rgba(0, 0, 0, 0.08);
+
+    /* Layering */
+    z-index: 1;
+  }
+
+  .card--dragging {
+    transition: none;
   }
 
   .card:hover {
