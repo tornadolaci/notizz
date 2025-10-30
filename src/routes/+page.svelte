@@ -1,13 +1,16 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import Header from '$lib/components/layout/Header.svelte';
+  import SearchBar from '$lib/components/layout/SearchBar.svelte';
   import FloatingActionButton from '$lib/components/common/FloatingActionButton.svelte';
   import NoteCard from '$lib/components/notes/NoteCard.svelte';
   import TodoCard from '$lib/components/todos/TodoCard.svelte';
   import NoteEditor from '$lib/components/notes/NoteEditor.svelte';
   import TodoEditor from '$lib/components/todos/TodoEditor.svelte';
+  import EmptyState from '$lib/components/shared/EmptyState.svelte';
   import { notesStore } from '$lib/stores/notes';
   import { todosStore } from '$lib/stores/todos';
+  import { searchStore } from '$lib/stores/search';
   import type { INote, ITodo } from '$lib/types';
 
   // Editor state
@@ -25,8 +28,18 @@
     ]);
   });
 
-  // Combined and sorted items
+  // Combined and sorted items with search filtering
   const items = $derived.by(() => {
+    // If search is active, use search results
+    if (searchStore.search.isActive) {
+      const allItems: Array<{type: 'note' | 'todo', data: INote | ITodo}> = [
+        ...searchStore.filteredNotes.map(result => ({type: 'note' as const, data: result.item})),
+        ...searchStore.filteredTodos.map(result => ({type: 'todo' as const, data: result.item}))
+      ];
+      return allItems; // Search results are already sorted by relevance
+    }
+
+    // Otherwise show all items
     const allItems: Array<{type: 'note' | 'todo', data: INote | ITodo}> = [
       ...notesStore.notes.value.map(note => ({type: 'note' as const, data: note})),
       ...todosStore.todos.value.map(todo => ({type: 'todo' as const, data: todo}))
@@ -90,27 +103,49 @@
 
 <Header />
 
+<SearchBar />
+
 <main class="container">
-  <div class="note-grid">
-    {#each items as item, index (item.data.id)}
-      {#if item.type === 'note'}
-        <NoteCard
-          note={item.data as INote}
-          index={index}
-          onEdit={() => openNoteEditor(item.data as INote)}
-          onDelete={() => handleNoteDelete(item.data.id!)}
-        />
-      {:else}
-        <TodoCard
-          todo={item.data as ITodo}
-          index={index}
-          onEdit={() => openTodoEditor(item.data as ITodo)}
-          onDelete={() => handleTodoDelete(item.data.id!)}
-          onToggleItem={handleTodoToggle}
-        />
-      {/if}
-    {/each}
-  </div>
+  {#if items.length > 0}
+    <div class="note-grid">
+      {#each items as item, index (item.data.id)}
+        {#if item.type === 'note'}
+          <NoteCard
+            note={item.data as INote}
+            index={index}
+            onEdit={() => openNoteEditor(item.data as INote)}
+            onDelete={() => handleNoteDelete(item.data.id!)}
+          />
+        {:else}
+          <TodoCard
+            todo={item.data as ITodo}
+            index={index}
+            onEdit={() => openTodoEditor(item.data as ITodo)}
+            onDelete={() => handleTodoDelete(item.data.id!)}
+            onToggleItem={handleTodoToggle}
+          />
+        {/if}
+      {/each}
+    </div>
+  {:else if searchStore.search.isActive}
+    <!-- No search results -->
+    <EmptyState
+      icon="search"
+      title="Nincs találat"
+      message="Nem találtunk a keresésnek megfelelő elemet. Próbálj meg más kulcsszavakat használni."
+      actionLabel="Keresés törlése"
+      onaction={() => searchStore.clear()}
+    />
+  {:else if notesStore.notes.value.length === 0 && todosStore.todos.value.length === 0}
+    <!-- No items at all -->
+    <EmptyState
+      icon="general"
+      title="Üdvözlünk a Notizz-ben!"
+      message="Még nincsenek jegyzeteid vagy teendőid. Kattints a jobb alsó sarokban található gombra az első elem létrehozásához."
+      actionLabel="Új elem létrehozása"
+      onaction={handleFabClick}
+    />
+  {/if}
 </main>
 
 <FloatingActionButton onclick={handleFabClick} />
