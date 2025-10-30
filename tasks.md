@@ -234,10 +234,10 @@
 
 ---
 
-## 📋 FÁZIS 6: Drag&drop és swipe funkciók (részlegesen befejezve)
+## 📋 FÁZIS 6: Drag&drop és swipe funkciók ✅ BEFEJEZVE
 **Becsült idő:** 25-30 perc
-**Tényleges idő (swipe):** ~20 perc
-**Befejezve (swipe rész):** 2025-10-30
+**Tényleges idő:** ~45 perc (swipe: 20 perc + drag&drop: 25 perc)
+**Befejezve:** 2025-10-30
 
 ### 6.1 Kontextus betöltés ✅
 - [x] Touch események kezelése (Context7 MCP - use-gesture)
@@ -247,6 +247,7 @@
 - [x] src/lib/utils/gestures.ts létrehozva
 - [x] Swipe detektálás (balra/jobbra/fel/le)
 - [x] Drag threshold beállítás (100px, 0.3 px/ms velocity)
+- [x] draggableItem action hozzáadva (long-press + drag)
 
 ### 6.3 Mobilos swipe ✅
 - [x] Balra húzás → Szerkesztés trigger
@@ -256,23 +257,26 @@
 - [x] Vizuális visszajelzés (action icons és háttér)
 - [x] Desktop támogatás egérrel
 
-### 6.4 Drag&drop rendezés (későbbi implementáció)
-- [ ] Draggable attribútumok
-- [ ] Drop zone kezelés
-- [ ] Vizuális visszajelzés
-- [ ] Touch támogatás
-- [ ] *Megjegyzés: Külön commit-ban lesz implementálva*
+### 6.4 Drag&drop rendezés ✅
+- [x] draggableItem Svelte action
+- [x] Long-press aktiválás (300ms) mobilon
+- [x] Alt+Drag aktiválás desktopon
+- [x] Vizuális placeholder és feedback
+- [x] Touch és mouse támogatás
+- [x] Mixed content (note + todo) rendezés
 
-### 6.5 Pozíció mentése (későbbi implementáció)
-- [ ] Egyedi sorrend tárolása
-- [ ] Sorrend visszaállítása
-- [ ] Szinkronizáció a store-ral
-- [ ] *Megjegyzés: Külön commit-ban lesz implementálva*
+### 6.5 Pozíció mentése ✅
+- [x] INote és ITodo `order` mező hozzáadva
+- [x] DB schema v2 migráció (auto-upgrade)
+- [x] notesStore.reorder() és todosStore.reorder()
+- [x] Sorrend perzisztencia IndexedDB-ben
+- [x] Optimistic UI updates
 
 ### 6.6 Ellenőrzés ✅
 - [x] TypeScript type-check - sikeres
-- [x] Production build - sikeres (278KB total)
+- [x] Production build - sikeres (283KB total, +5KB)
 - [x] Egér és touch kompatibilitás
+- [x] DB migráció tesztelve
 - [ ] Mobil eszköz tesztelés - későbbi manuális teszt
 - [ ] Performance monitoring - későbbi manuális teszt
 
