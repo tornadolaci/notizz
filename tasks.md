@@ -234,39 +234,47 @@
 
 ---
 
-## 📋 FÁZIS 6: Drag&drop és swipe funkciók
+## 📋 FÁZIS 6: Drag&drop és swipe funkciók (részlegesen befejezve)
 **Becsült idő:** 25-30 perc
+**Tényleges idő (swipe):** ~20 perc
+**Befejezve (swipe rész):** 2025-10-30
 
-### 6.1 Kontextus betöltés
-- [ ] Touch események kezelése
-- [ ] Drag&drop API dokumentáció
+### 6.1 Kontextus betöltés ✅
+- [x] Touch események kezelése (Context7 MCP - use-gesture)
+- [x] Drag&drop API dokumentáció (Context7 MCP - SvelteDnD)
 
-### 6.2 Gesture utilities
-- [ ] src/lib/utils/gestures.ts
-- [ ] Swipe detektálás
-- [ ] Drag threshold beállítás
+### 6.2 Gesture utilities ✅
+- [x] src/lib/utils/gestures.ts létrehozva
+- [x] Swipe detektálás (balra/jobbra/fel/le)
+- [x] Drag threshold beállítás (100px, 0.3 px/ms velocity)
 
-### 6.3 Mobilos swipe
-- [ ] Balra húzás - szerkesztés
-- [ ] Jobbra húzás - törlés
-- [ ] Animációk hozzáadása
-- [ ] Haptic feedback (Vibration API)
+### 6.3 Mobilos swipe ✅
+- [x] Balra húzás → Szerkesztés trigger
+- [x] Jobbra húzás → Törlés trigger
+- [x] Animációk hozzáadása (smooth drag transform)
+- [x] Haptic feedback (Vibration API)
+- [x] Vizuális visszajelzés (action icons és háttér)
+- [x] Desktop támogatás egérrel
 
-### 6.4 Drag&drop rendezés
+### 6.4 Drag&drop rendezés (későbbi implementáció)
 - [ ] Draggable attribútumok
 - [ ] Drop zone kezelés
 - [ ] Vizuális visszajelzés
 - [ ] Touch támogatás
+- [ ] *Megjegyzés: Külön commit-ban lesz implementálva*
 
-### 6.5 Pozíció mentése
+### 6.5 Pozíció mentése (későbbi implementáció)
 - [ ] Egyedi sorrend tárolása
 - [ ] Sorrend visszaállítása
 - [ ] Szinkronizáció a store-ral
+- [ ] *Megjegyzés: Külön commit-ban lesz implementálva*
 
-### 6.6 Ellenőrzés
-- [ ] Mobil eszköz tesztelés
-- [ ] Egér és touch kompatibilitás
-- [ ] Performance monitoring
+### 6.6 Ellenőrzés ✅
+- [x] TypeScript type-check - sikeres
+- [x] Production build - sikeres (278KB total)
+- [x] Egér és touch kompatibilitás
+- [ ] Mobil eszköz tesztelés - későbbi manuális teszt
+- [ ] Performance monitoring - későbbi manuális teszt
 
 ---
 
