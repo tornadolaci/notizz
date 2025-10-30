@@ -7,7 +7,7 @@ export default defineConfig({
   plugins: [
     svelte(),
     VitePWA({
-      registerType: 'autoUpdate',
+      registerType: 'prompt',
       includeAssets: ['favicon.ico', 'robots.txt', 'icons/*.png'],
       manifest: {
         name: 'Notizz - Jegyzetek és TODO-k',
@@ -22,18 +22,34 @@ export default defineConfig({
         scope: '/',
         icons: [
           {
-            src: 'icons/icon-192x192.png',
+            src: 'icons/192x192.png',
             sizes: '192x192',
             type: 'image/png',
             purpose: 'any maskable'
           },
           {
-            src: 'icons/icon-512x512.png',
+            src: 'icons/512x512.png',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'any maskable'
+          },
+          {
+            src: 'icons/apple-touch-icon.png',
+            sizes: '180x180',
+            type: 'image/png'
           }
-        ]
+        ],
+        categories: ['productivity', 'utilities'],
+        share_target: {
+          action: '/share-target',
+          method: 'POST',
+          enctype: 'multipart/form-data',
+          params: {
+            title: 'title',
+            text: 'text',
+            url: 'url'
+          }
+        }
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
@@ -45,7 +61,21 @@ export default defineConfig({
               cacheName: 'google-fonts-cache',
               expiration: {
                 maxEntries: 10,
-                maxAgeSeconds: 60 * 60 * 24 * 365
+                maxAgeSeconds: 60 * 60 * 24 * 365 // 1 year
+              },
+              cacheableResponse: {
+                statuses: [0, 200]
+              }
+            }
+          },
+          {
+            urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'gstatic-fonts-cache',
+              expiration: {
+                maxEntries: 10,
+                maxAgeSeconds: 60 * 60 * 24 * 365 // 1 year
               },
               cacheableResponse: {
                 statuses: [0, 200]
@@ -54,10 +84,12 @@ export default defineConfig({
           }
         ],
         cleanupOutdatedCaches: true,
-        sourcemap: false
+        sourcemap: true,
+        navigateFallback: null // SPA already handles routing
       },
       devOptions: {
-        enabled: false
+        enabled: true, // Enable service worker in dev for testing
+        type: 'module'
       }
     })
   ],

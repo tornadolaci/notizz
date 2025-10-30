@@ -1,6 +1,8 @@
 <script lang="ts">
   import '../app.css';
   import { onMount } from 'svelte';
+  import UpdatePrompt from '$lib/components/common/UpdatePrompt.svelte';
+  import OfflineIndicator from '$lib/components/common/OfflineIndicator.svelte';
 
   let { children } = $props();
 
@@ -23,6 +25,10 @@
 <div class="app-container">
   {@render children()}
 </div>
+
+<!-- PWA components -->
+<UpdatePrompt />
+<OfflineIndicator />
 
 <style>
   .app-container {
