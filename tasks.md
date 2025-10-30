@@ -156,38 +156,42 @@
 
 ---
 
-## 📋 FÁZIS 4: Jegyzet/TODO szerkesztő
+## 📋 FÁZIS 4: Jegyzet/TODO szerkesztő ✅
 **Becsült idő:** 30-35 perc
+**Tényleges idő:** ~30 perc
+**Befejezve:** 2025-10-30
 
-### 4.1 Kontextus betöltés
-- [ ] Modális komponens tervezés
-- [ ] Form kezelés best practices
+### 4.1 Kontextus betöltés ✅
+- [x] Modális komponens tervezés
+- [x] Form kezelés best practices (Context7 MCP - Svelte 5 runes)
 
-### 4.2 Szerkesztő modál
-- [ ] Modal.svelte - Általános modál wrapper
-- [ ] NoteEditor.svelte - Jegyzet szerkesztő
-- [ ] TodoEditor.svelte - TODO szerkesztő
+### 4.2 Szerkesztő modál ✅
+- [x] Modal.svelte - Általános modál wrapper (focus trap, ESC key, backdrop click)
+- [x] NoteEditor.svelte - Jegyzet szerkesztő (CRUD, validáció)
+- [x] TodoEditor.svelte - TODO szerkesztő (items kezelés, CRUD)
 
-### 4.3 Közös komponensek
-- [ ] ColorPicker.svelte - Szín választó
-- [ ] TagInput.svelte - Címke kezelő
-- [ ] DateDisplay.svelte - Dátum megjelenítő
+### 4.3 Közös komponensek ✅
+- [x] ColorPicker.svelte - Szín választó (8 pasztell szín, ARIA support)
+- [x] TagInput.svelte - Címke kezelő (add/remove, keyboard support)
+- [x] DateDisplay.svelte - Dátum megjelenítő (date-fns, magyar nyelv)
 
-### 4.4 TODO specifikus
-- [ ] TodoItem.svelte - Egyedi TODO elem
-- [ ] Checkbox animációk
-- [ ] Elem törlés funkció
+### 4.4 TODO specifikus ✅
+- [x] TodoItem.svelte - Egyedi TODO elem (checkbox, delete)
+- [x] Checkbox animációk (checkmark pop animáció)
+- [x] Elem törlés funkció
 
-### 4.5 CRUD műveletek
-- [ ] Létrehozás logika
-- [ ] Szerkesztés logika
-- [ ] Törlés megerősítéssel
-- [ ] Optimistic updates
+### 4.5 CRUD műveletek ✅
+- [x] Létrehozás logika (új jegyzet/todo FAB gombbal)
+- [x] Szerkesztés logika (card click → editor modal)
+- [x] Törlés megerősítéssel (confirm dialog)
+- [x] Optimistic updates (store-ok frissítése)
 
-### 4.6 Ellenőrzés
-- [ ] Form validáció működése
-- [ ] Adatmentés ellenőrzése
-- [ ] UI frissülés tesztelése
+### 4.6 Ellenőrzés ✅
+- [x] Form validáció működése (required fields)
+- [x] Adatmentés ellenőrzése
+- [x] UI frissülés tesztelése
+- [x] TypeScript type-check - sikeres
+- [x] Production build - sikeres (1.94s, ~254KB total)
 
 ---
 
