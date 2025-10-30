@@ -1,3 +1,4 @@
+import { writable, derived, get } from 'svelte/store';
 import type { INote } from '$lib/types';
 import { NotesService } from '$lib/services';
 
@@ -8,134 +9,151 @@ interface NotesState {
 }
 
 /**
- * Reactive notes store using Svelte 5 runes
+ * Internal writable store
  */
-function createNotesStore() {
-  let state = $state<NotesState>({
-    value: [],
-    loading: false,
-    error: null
-  });
+const notesStateWritable = writable<NotesState>({
+  value: [],
+  loading: false,
+  error: null
+});
 
-  return {
-    get notes() {
-      return state;
-    },
+/**
+ * Derived stores
+ */
+export const notesValue = derived(notesStateWritable, ($state) => $state.value);
+export const notesLoading = derived(notesStateWritable, ($state) => $state.loading);
+export const notesError = derived(notesStateWritable, ($state) => $state.error);
+export const urgentNotes = derived(notesStateWritable, ($state) =>
+  $state.value.filter(note => note.isUrgent)
+);
 
-    /**
-     * Load all notes from database
-     */
-    async load(): Promise<void> {
-      try {
-        state.loading = true;
-        state.error = null;
-        state.value = await NotesService.getAll();
-      } catch (error) {
-        state.error = error instanceof Error ? error : new Error('Failed to load notes');
-        console.error('Error loading notes:', error);
-      } finally {
-        state.loading = false;
-      }
-    },
+/**
+ * Notes store with actions
+ */
+export const notesStore = {
+  // Subscribe to the main state
+  subscribe: notesStateWritable.subscribe,
 
-    /**
-     * Add a new note
-     */
-    async add(note: INote): Promise<void> {
-      try {
-        await NotesService.create(note);
-        // Optimistic update
-        state.value = [...state.value, note];
-      } catch (error) {
-        state.error = error instanceof Error ? error : new Error('Failed to add note');
-        console.error('Error adding note:', error);
-        // Reload on error
-        await this.load();
-      }
-    },
-
-    /**
-     * Update an existing note
-     */
-    async update(id: string, updates: Partial<Omit<INote, 'id' | 'createdAt'>>): Promise<void> {
-      try {
-        await NotesService.update({ id, ...updates });
-        // Optimistic update
-        state.value = state.value.map(note =>
-          note.id === id ? { ...note, ...updates, updatedAt: new Date() } : note
-        );
-      } catch (error) {
-        state.error = error instanceof Error ? error : new Error('Failed to update note');
-        console.error('Error updating note:', error);
-        // Reload on error
-        await this.load();
-      }
-    },
-
-    /**
-     * Delete a note
-     */
-    async remove(id: string): Promise<void> {
-      try {
-        await NotesService.delete(id);
-        // Optimistic update
-        state.value = state.value.filter(note => note.id !== id);
-      } catch (error) {
-        state.error = error instanceof Error ? error : new Error('Failed to delete note');
-        console.error('Error deleting note:', error);
-        // Reload on error
-        await this.load();
-      }
-    },
-
-    /**
-     * Get a single note by ID
-     */
-    getById(id: string): INote | undefined {
-      return state.value.find(note => note.id === id);
-    },
-
-    /**
-     * Get all urgent notes
-     */
-    get urgent(): INote[] {
-      return state.value.filter(note => note.isUrgent);
-    },
-
-    /**
-     * Filter notes by tag
-     */
-    filterByTag(tag: string): INote[] {
-      return state.value.filter(note => note.tags.includes(tag));
-    },
-
-    /**
-     * Reorder notes after drag&drop
-     * Updates the order field for all affected notes
-     */
-    async reorder(noteIds: string[]): Promise<void> {
-      try {
-        // Update order in database
-        const updatePromises = noteIds.map((id, index) =>
-          NotesService.update({ id, order: index })
-        );
-        await Promise.all(updatePromises);
-
-        // Optimistic update in state
-        const noteMap = new Map(state.value.map(note => [note.id, note]));
-        state.value = noteIds
-          .map(id => noteMap.get(id))
-          .filter((note): note is INote => note !== undefined)
-          .map((note, index) => ({ ...note, order: index }));
-
-      } catch (error) {
-        state.error = error instanceof Error ? error : new Error('Failed to reorder notes');
-        console.error('Error reordering notes:', error);
-        // Reload on error
-        await this.load();
-      }
+  /**
+   * Load all notes from database
+   */
+  async load(): Promise<void> {
+    try {
+      notesStateWritable.update(s => ({ ...s, loading: true, error: null }));
+      const value = await NotesService.getAll();
+      notesStateWritable.set({ value, loading: false, error: null });
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error('Failed to load notes');
+      notesStateWritable.update(s => ({ ...s, loading: false, error: err }));
+      console.error('Error loading notes:', error);
     }
-  };
-}
+  },
 
-export const notesStore = createNotesStore();
+  /**
+   * Add a new note
+   */
+  async add(note: INote): Promise<void> {
+    try {
+      await NotesService.create(note);
+      // Optimistic update
+      notesStateWritable.update(s => ({
+        ...s,
+        value: [...s.value, note]
+      }));
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error('Failed to add note');
+      notesStateWritable.update(s => ({ ...s, error: err }));
+      console.error('Error adding note:', error);
+      // Reload on error
+      await this.load();
+    }
+  },
+
+  /**
+   * Update an existing note
+   */
+  async update(id: string, updates: Partial<Omit<INote, 'id' | 'createdAt'>>): Promise<void> {
+    try {
+      await NotesService.update({ id, ...updates });
+      // Optimistic update
+      notesStateWritable.update(s => ({
+        ...s,
+        value: s.value.map(note =>
+          note.id === id ? { ...note, ...updates, updatedAt: new Date() } : note
+        )
+      }));
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error('Failed to update note');
+      notesStateWritable.update(s => ({ ...s, error: err }));
+      console.error('Error updating note:', error);
+      // Reload on error
+      await this.load();
+    }
+  },
+
+  /**
+   * Delete a note
+   */
+  async remove(id: string): Promise<void> {
+    try {
+      await NotesService.delete(id);
+      // Optimistic update
+      notesStateWritable.update(s => ({
+        ...s,
+        value: s.value.filter(note => note.id !== id)
+      }));
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error('Failed to delete note');
+      notesStateWritable.update(s => ({ ...s, error: err }));
+      console.error('Error deleting note:', error);
+      // Reload on error
+      await this.load();
+    }
+  },
+
+  /**
+   * Get a single note by ID
+   */
+  getById(id: string): INote | undefined {
+    const state = get(notesStateWritable);
+    return state.value.find(note => note.id === id);
+  },
+
+  /**
+   * Filter notes by tag
+   */
+  filterByTag(tag: string): INote[] {
+    const state = get(notesStateWritable);
+    return state.value.filter(note => note.tags.includes(tag));
+  },
+
+  /**
+   * Reorder notes after drag&drop
+   * Updates the order field for all affected notes
+   */
+  async reorder(noteIds: string[]): Promise<void> {
+    try {
+      // Update order in database
+      const updatePromises = noteIds.map((id, index) =>
+        NotesService.update({ id, order: index })
+      );
+      await Promise.all(updatePromises);
+
+      // Optimistic update in state
+      const state = get(notesStateWritable);
+      const noteMap = new Map(state.value.map(note => [note.id, note]));
+      const reorderedNotes = noteIds
+        .map(id => noteMap.get(id))
+        .filter((note): note is INote => note !== undefined)
+        .map((note, index) => ({ ...note, order: index }));
+
+      notesStateWritable.update(s => ({ ...s, value: reorderedNotes }));
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error('Failed to reorder notes');
+      notesStateWritable.update(s => ({ ...s, error: err }));
+      console.error('Error reordering notes:', error);
+      // Reload on error
+      await this.load();
+    }
+  }
+};

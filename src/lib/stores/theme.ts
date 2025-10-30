@@ -3,14 +3,15 @@
  * Manages theme switching (light/dark/auto) with system preference detection
  */
 
+import { writable, get } from 'svelte/store';
 import type { Theme } from '../types';
 import { settingsStore } from './settings';
 
 /**
- * Theme store state
+ * Internal writable stores
  */
-let currentTheme = $state<'light' | 'dark'>('light');
-let systemPreference = $state<'light' | 'dark'>('light');
+const currentThemeWritable = writable<'light' | 'dark'>('light');
+const systemPreferenceWritable = writable<'light' | 'dark'>('light');
 
 /**
  * Detect system theme preference
@@ -28,15 +29,15 @@ function applyTheme(theme: 'light' | 'dark'): void {
   if (typeof document === 'undefined') return;
 
   document.documentElement.setAttribute('data-theme', theme);
-  currentTheme = theme;
+  currentThemeWritable.set(theme);
 }
 
 /**
  * Resolve theme based on settings
  */
-function resolveTheme(themeSetting: Theme): 'light' | 'dark' {
+function resolveTheme(themeSetting: Theme, systemPref: 'light' | 'dark'): 'light' | 'dark' {
   if (themeSetting === 'auto') {
-    return systemPreference;
+    return systemPref;
   }
   return themeSetting;
 }
@@ -48,22 +49,28 @@ function initTheme(): void {
   if (typeof window === 'undefined') return;
 
   // Detect system preference
-  systemPreference = detectSystemTheme();
+  const systemPref = detectSystemTheme();
+  systemPreferenceWritable.set(systemPref);
 
   // Listen for system theme changes
   const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
   mediaQuery.addEventListener('change', (e) => {
-    systemPreference = e.matches ? 'dark' : 'light';
+    const newSystemPref = e.matches ? 'dark' : 'light';
+    systemPreferenceWritable.set(newSystemPref);
 
     // If theme is auto, apply the new system preference
-    if (settingsStore.current.theme === 'auto') {
-      applyTheme(systemPreference);
-    }
+    settingsStore.subscribe((settings) => {
+      if (settings.theme === 'auto') {
+        applyTheme(newSystemPref);
+      }
+    })();
   });
 
   // Apply initial theme
-  const theme = resolveTheme(settingsStore.current.theme);
-  applyTheme(theme);
+  settingsStore.subscribe((settings) => {
+    const theme = resolveTheme(settings.theme, systemPref);
+    applyTheme(theme);
+  })();
 }
 
 /**
@@ -71,7 +78,8 @@ function initTheme(): void {
  */
 async function setTheme(theme: Theme): Promise<void> {
   await settingsStore.update({ theme });
-  const resolvedTheme = resolveTheme(theme);
+  const systemPref = get(systemPreferenceWritable);
+  const resolvedTheme = resolveTheme(theme, systemPref);
   applyTheme(resolvedTheme);
 }
 
@@ -79,32 +87,18 @@ async function setTheme(theme: Theme): Promise<void> {
  * Toggle theme (light <-> dark)
  */
 async function toggleTheme(): Promise<void> {
-  const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+  const current = get(currentThemeWritable);
+  const newTheme = current === 'light' ? 'dark' : 'light';
   await setTheme(newTheme);
 }
-
-/**
- * Derived: Get effective theme
- */
-const effectiveTheme = $derived(resolveTheme(settingsStore.current.theme));
 
 /**
  * Export theme store
  */
 export const themeStore = {
-  // State
-  get current() {
-    return currentTheme;
-  },
-  get system() {
-    return systemPreference;
-  },
-  get effective() {
-    return effectiveTheme;
-  },
-  get setting() {
-    return settingsStore.current.theme;
-  },
+  // Readable stores
+  current: { subscribe: currentThemeWritable.subscribe },
+  system: { subscribe: systemPreferenceWritable.subscribe },
 
   // Actions
   init: initTheme,

@@ -1,3 +1,4 @@
+import { writable, derived, get } from 'svelte/store';
 import type { ITodo } from '$lib/types';
 import { TodosService } from '$lib/services';
 
@@ -8,95 +9,125 @@ interface TodosState {
 }
 
 /**
- * Reactive todos store using Svelte 5 runes
+ * Internal writable store
  */
-function createTodosStore() {
-  let state = $state<TodosState>({
-    value: [],
-    loading: false,
-    error: null
-  });
+const todosStateWritable = writable<TodosState>({
+  value: [],
+  loading: false,
+  error: null
+});
 
-  return {
-    get todos() {
-      return state;
-    },
+/**
+ * Derived stores
+ */
+export const todosValue = derived(todosStateWritable, ($state) => $state.value);
+export const todosLoading = derived(todosStateWritable, ($state) => $state.loading);
+export const todosError = derived(todosStateWritable, ($state) => $state.error);
+export const urgentTodos = derived(todosStateWritable, ($state) =>
+  $state.value.filter(todo => todo.isUrgent)
+);
+export const incompleteTodos = derived(todosStateWritable, ($state) =>
+  $state.value.filter(todo => todo.completedCount < todo.totalCount)
+);
+export const completedTodos = derived(todosStateWritable, ($state) =>
+  $state.value.filter(todo => todo.completedCount === todo.totalCount && todo.totalCount > 0)
+);
 
-    /**
-     * Load all todos from database
-     */
-    async load(): Promise<void> {
-      try {
-        state.loading = true;
-        state.error = null;
-        state.value = await TodosService.getAll();
-      } catch (error) {
-        state.error = error instanceof Error ? error : new Error('Failed to load todos');
-        console.error('Error loading todos:', error);
-      } finally {
-        state.loading = false;
-      }
-    },
+/**
+ * Todos store with actions
+ */
+export const todosStore = {
+  // Subscribe to the main state
+  subscribe: todosStateWritable.subscribe,
 
-    /**
-     * Add a new todo
-     */
-    async add(todo: ITodo): Promise<void> {
-      try {
-        await TodosService.create(todo);
-        // Optimistic update
-        state.value = [...state.value, todo];
-      } catch (error) {
-        state.error = error instanceof Error ? error : new Error('Failed to add todo');
-        console.error('Error adding todo:', error);
-        // Reload on error
-        await this.load();
-      }
-    },
+  /**
+   * Load all todos from database
+   */
+  async load(): Promise<void> {
+    try {
+      todosStateWritable.update(s => ({ ...s, loading: true, error: null }));
+      const value = await TodosService.getAll();
+      todosStateWritable.set({ value, loading: false, error: null });
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error('Failed to load todos');
+      todosStateWritable.update(s => ({ ...s, loading: false, error: err }));
+      console.error('Error loading todos:', error);
+    }
+  },
 
-    /**
-     * Update an existing todo
-     */
-    async update(id: string, updates: Partial<Omit<ITodo, 'id' | 'createdAt'>>): Promise<void> {
-      try {
-        await TodosService.update({ id, ...updates });
-        // Optimistic update
-        state.value = state.value.map(todo =>
+  /**
+   * Add a new todo
+   */
+  async add(todo: ITodo): Promise<void> {
+    try {
+      await TodosService.create(todo);
+      // Optimistic update
+      todosStateWritable.update(s => ({
+        ...s,
+        value: [...s.value, todo]
+      }));
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error('Failed to add todo');
+      todosStateWritable.update(s => ({ ...s, error: err }));
+      console.error('Error adding todo:', error);
+      // Reload on error
+      await this.load();
+    }
+  },
+
+  /**
+   * Update an existing todo
+   */
+  async update(id: string, updates: Partial<Omit<ITodo, 'id' | 'createdAt'>>): Promise<void> {
+    try {
+      await TodosService.update({ id, ...updates });
+      // Optimistic update
+      todosStateWritable.update(s => ({
+        ...s,
+        value: s.value.map(todo =>
           todo.id === id ? { ...todo, ...updates, updatedAt: new Date() } : todo
-        );
-      } catch (error) {
-        state.error = error instanceof Error ? error : new Error('Failed to update todo');
-        console.error('Error updating todo:', error);
-        // Reload on error
-        await this.load();
-      }
-    },
+        )
+      }));
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error('Failed to update todo');
+      todosStateWritable.update(s => ({ ...s, error: err }));
+      console.error('Error updating todo:', error);
+      // Reload on error
+      await this.load();
+    }
+  },
 
-    /**
-     * Delete a todo
-     */
-    async remove(id: string): Promise<void> {
-      try {
-        await TodosService.delete(id);
-        // Optimistic update
-        state.value = state.value.filter(todo => todo.id !== id);
-      } catch (error) {
-        state.error = error instanceof Error ? error : new Error('Failed to delete todo');
-        console.error('Error deleting todo:', error);
-        // Reload on error
-        await this.load();
-      }
-    },
+  /**
+   * Delete a todo
+   */
+  async remove(id: string): Promise<void> {
+    try {
+      await TodosService.delete(id);
+      // Optimistic update
+      todosStateWritable.update(s => ({
+        ...s,
+        value: s.value.filter(todo => todo.id !== id)
+      }));
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error('Failed to delete todo');
+      todosStateWritable.update(s => ({ ...s, error: err }));
+      console.error('Error deleting todo:', error);
+      // Reload on error
+      await this.load();
+    }
+  },
 
-    /**
-     * Toggle a todo item's completed status
-     */
-    async toggleItem(todoId: string, itemId: string): Promise<void> {
-      try {
-        await TodosService.toggleItem(todoId, itemId);
+  /**
+   * Toggle a todo item's completed status
+   */
+  async toggleItem(todoId: string, itemId: string): Promise<void> {
+    try {
+      await TodosService.toggleItem(todoId, itemId);
 
-        // Optimistic update
-        state.value = state.value.map(todo => {
+      // Optimistic update
+      todosStateWritable.update(s => ({
+        ...s,
+        value: s.value.map(todo => {
           if (todo.id === todoId) {
             const updatedItems = todo.items.map(item =>
               item.id === itemId ? { ...item, completed: !item.completed } : item
@@ -111,77 +142,60 @@ function createTodosStore() {
             };
           }
           return todo;
-        });
-      } catch (error) {
-        state.error = error instanceof Error ? error : new Error('Failed to toggle todo item');
-        console.error('Error toggling todo item:', error);
-        // Reload on error
-        await this.load();
-      }
-    },
-
-    /**
-     * Get a single todo by ID
-     */
-    getById(id: string): ITodo | undefined {
-      return state.value.find(todo => todo.id === id);
-    },
-
-    /**
-     * Get all urgent todos
-     */
-    get urgent(): ITodo[] {
-      return state.value.filter(todo => todo.isUrgent);
-    },
-
-    /**
-     * Get all incomplete todos
-     */
-    get incomplete(): ITodo[] {
-      return state.value.filter(todo => todo.completedCount < todo.totalCount);
-    },
-
-    /**
-     * Get all completed todos
-     */
-    get completed(): ITodo[] {
-      return state.value.filter(todo => todo.completedCount === todo.totalCount && todo.totalCount > 0);
-    },
-
-    /**
-     * Filter todos by tag
-     */
-    filterByTag(tag: string): ITodo[] {
-      return state.value.filter(todo => todo.tags.includes(tag));
-    },
-
-    /**
-     * Reorder todos after drag&drop
-     * Updates the order field for all affected todos
-     */
-    async reorder(todoIds: string[]): Promise<void> {
-      try {
-        // Update order in database
-        const updatePromises = todoIds.map((id, index) =>
-          TodosService.update({ id, order: index })
-        );
-        await Promise.all(updatePromises);
-
-        // Optimistic update in state
-        const todoMap = new Map(state.value.map(todo => [todo.id, todo]));
-        state.value = todoIds
-          .map(id => todoMap.get(id))
-          .filter((todo): todo is ITodo => todo !== undefined)
-          .map((todo, index) => ({ ...todo, order: index }));
-
-      } catch (error) {
-        state.error = error instanceof Error ? error : new Error('Failed to reorder todos');
-        console.error('Error reordering todos:', error);
-        // Reload on error
-        await this.load();
-      }
+        })
+      }));
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error('Failed to toggle todo item');
+      todosStateWritable.update(s => ({ ...s, error: err }));
+      console.error('Error toggling todo item:', error);
+      // Reload on error
+      await this.load();
     }
-  };
-}
+  },
 
-export const todosStore = createTodosStore();
+  /**
+   * Get a single todo by ID
+   */
+  getById(id: string): ITodo | undefined {
+    const state = get(todosStateWritable);
+    return state.value.find(todo => todo.id === id);
+  },
+
+  /**
+   * Filter todos by tag
+   */
+  filterByTag(tag: string): ITodo[] {
+    const state = get(todosStateWritable);
+    return state.value.filter(todo => todo.tags.includes(tag));
+  },
+
+  /**
+   * Reorder todos after drag&drop
+   * Updates the order field for all affected todos
+   */
+  async reorder(todoIds: string[]): Promise<void> {
+    try {
+      // Update order in database
+      const updatePromises = todoIds.map((id, index) =>
+        TodosService.update({ id, order: index })
+      );
+      await Promise.all(updatePromises);
+
+      // Optimistic update in state
+      const state = get(todosStateWritable);
+      const todoMap = new Map(state.value.map(todo => [todo.id, todo]));
+      const reorderedTodos = todoIds
+        .map(id => todoMap.get(id))
+        .filter((todo): todo is ITodo => todo !== undefined)
+        .map((todo, index) => ({ ...todo, order: index }));
+
+      todosStateWritable.update(s => ({ ...s, value: reorderedTodos }));
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error('Failed to reorder todos');
+      todosStateWritable.update(s => ({ ...s, error: err }));
+      console.error('Error reordering todos:', error);
+      // Reload on error
+      await this.load();
+    }
+  }
+};

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { searchStore, type SearchFilter } from '$lib/stores/search';
+  import { searchStore, totalResults, type SearchFilter } from '$lib/stores/search';
   import { notesStore } from '$lib/stores/notes';
   import { todosStore } from '$lib/stores/todos';
   import { debounce } from '$lib/utils/search';
@@ -15,7 +15,7 @@
 
   // Debounced search function
   const performSearch = debounce((query: string) => {
-    searchStore.setQuery(query, notesStore.notes.value, todosStore.todos.value);
+    searchStore.setQuery(query, $notesStore.value, $todosStore.value);
   }, 300);
 
   // Handle input change
@@ -104,38 +104,38 @@
     <button
       type="button"
       class="filter-button"
-      class:active={searchStore.search.filter === 'all'}
+      class:active={$searchStore.filter === 'all'}
       onclick={() => handleFilterChange('all')}
       aria-label="Összes"
-      aria-pressed={searchStore.search.filter === 'all'}
+      aria-pressed={$searchStore.filter === 'all'}
     >
       Összes
     </button>
     <button
       type="button"
       class="filter-button"
-      class:active={searchStore.search.filter === 'notes'}
+      class:active={$searchStore.filter === 'notes'}
       onclick={() => handleFilterChange('notes')}
       aria-label="Csak jegyzetek"
-      aria-pressed={searchStore.search.filter === 'notes'}
+      aria-pressed={$searchStore.filter === 'notes'}
     >
       Jegyzetek
     </button>
     <button
       type="button"
       class="filter-button"
-      class:active={searchStore.search.filter === 'todos'}
+      class:active={$searchStore.filter === 'todos'}
       onclick={() => handleFilterChange('todos')}
       aria-label="Csak TODO-k"
-      aria-pressed={searchStore.search.filter === 'todos'}
+      aria-pressed={$searchStore.filter === 'todos'}
     >
       TODO-k
     </button>
   </div>
 
-  {#if searchStore.search.isActive}
+  {#if $searchStore.isActive}
     <div class="search-results-count">
-      {searchStore.totalResults} találat
+      {$totalResults} találat
     </div>
   {/if}
 </div>

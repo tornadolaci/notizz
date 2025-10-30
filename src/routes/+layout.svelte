@@ -13,10 +13,11 @@
     await settingsStore.init();
     themeStore.init();
 
-    // Apply font size
-    const fontSize = settingsStore.current.fontSize;
-    const fontSizeValue = fontSize === 'small' ? '14px' : fontSize === 'large' ? '18px' : '16px';
-    document.documentElement.style.setProperty('--text-base', fontSizeValue);
+    // Subscribe to settings changes and apply font size
+    settingsStore.subscribe((settings) => {
+      const fontSizeValue = settings.fontSize === 'small' ? '14px' : settings.fontSize === 'large' ? '18px' : '16px';
+      document.documentElement.style.setProperty('--text-base', fontSizeValue);
+    });
   });
 </script>
 

@@ -21,9 +21,7 @@
 
   // Initialize settings on mount
   onMount(async () => {
-    if (!settingsStore.current.id) {
-      await settingsStore.init();
-    }
+    await settingsStore.init();
   });
 
   // Theme options
@@ -64,7 +62,7 @@
   }
 
   async function handleAnimationsToggle() {
-    await settingsStore.update({ enableAnimations: !settingsStore.current.enableAnimations });
+    await settingsStore.update({ enableAnimations: !$settingsStore.enableAnimations });
   }
 
   async function handleColorChange(color: string) {
@@ -165,7 +163,7 @@
           {#each themeOptions as option}
             <button
               class="theme-option"
-              class:active={settingsStore.current.theme === option.value}
+              class:active={$settingsStore.theme === option.value}
               onclick={() => handleThemeChange(option.value)}
             >
               {option.label}
@@ -180,7 +178,7 @@
           {#each fontSizeOptions as option}
             <button
               class="font-size-option"
-              class:active={settingsStore.current.fontSize === option.value}
+              class:active={$settingsStore.fontSize === option.value}
               onclick={() => handleFontSizeChange(option.value)}
             >
               <span class="font-size-label">{option.label}</span>
@@ -196,13 +194,13 @@
           {#each colorOptions as color}
             <button
               class="color-option"
-              class:selected={settingsStore.current.defaultColor === color.value}
+              class:selected={$settingsStore.defaultColor === color.value}
               style="background-color: {color.value}"
               onclick={() => handleColorChange(color.value)}
               aria-label={color.label}
               title={color.label}
             >
-              {#if settingsStore.current.defaultColor === color.value}
+              {#if $settingsStore.defaultColor === color.value}
                 <span class="checkmark">✓</span>
               {/if}
             </button>
@@ -216,7 +214,7 @@
           <label class="toggle">
             <input
               type="checkbox"
-              checked={settingsStore.current.enableAnimations}
+              checked={$settingsStore.enableAnimations}
               onchange={handleAnimationsToggle}
             />
             <span class="toggle-slider"></span>
