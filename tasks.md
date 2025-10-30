@@ -330,45 +330,51 @@
 
 ---
 
-## 📋 FÁZIS 8: Beállítások és export/import
+## 📋 FÁZIS 8: Beállítások és export/import ✅ BEFEJEZVE
 **Becsült idő:** 25-30 perc
+**Tényleges idő:** ~30 perc
+**Befejezve:** 2025-10-30
 
-### 8.1 Kontextus betöltés
-- [ ] Settings route struktúra
-- [ ] File API használat
+### 8.1 Kontextus betöltés ✅
+- [x] Settings route struktúra
+- [x] File API használat
 
-### 8.2 Beállítások oldal
-- [ ] src/routes/settings/+page.svelte
-- [ ] SettingsPanel.svelte komponens
-- [ ] Navigáció a főoldalról
+### 8.2 Beállítások oldal ✅
+- [x] src/routes/settings/+page.svelte
+- [x] Settings oldal teljes UI-val
+- [x] Navigáció a főoldalról (Header gomb)
 
-### 8.3 Téma kezelés
-- [ ] Világos/sötét/auto módok
-- [ ] theme.ts store
-- [ ] CSS változók dinamikus váltása
-- [ ] System preference figyelés
+### 8.3 Téma kezelés ✅
+- [x] Világos/sötét/auto módok
+- [x] theme.ts store (Svelte 5 runes)
+- [x] CSS változók dinamikus váltása
+- [x] System preference figyelés (mediaQuery)
 
-### 8.4 Betűméret állítás
-- [ ] 3 méret opció (kicsi/közepes/nagy)
-- [ ] Élő előnézet
-- [ ] Accessibility szempontok
+### 8.4 Betűméret állítás ✅
+- [x] 3 méret opció (kicsi/közepes/nagy: 14px/16px/18px)
+- [x] Élő előnézet (CSS változó azonnali frissítés)
+- [x] Accessibility szempontok
 
-### 8.5 Export funkció
-- [ ] JSON export implementáció
-- [ ] Fájl letöltés trigger
-- [ ] Dátum bélyeg a fájlnévben
-- [ ] Export progress jelzés
+### 8.5 Export funkció ✅
+- [x] JSON export implementáció (export.ts utility)
+- [x] Fájl letöltés trigger (downloadJSON funkció)
+- [x] Dátum bélyeg a fájlnévben
+- [x] Export progress jelzés (loading state)
 
-### 8.6 Import funkció  
-- [ ] File input komponens
-- [ ] JSON validáció Zod-dal
-- [ ] Ütközések kezelése
-- [ ] Import eredmény visszajelzés
+### 8.6 Import funkció ✅
+- [x] File input komponens (hidden input + click trigger)
+- [x] JSON validáció Zod-dal (exportDataSchema)
+- [x] Ütközések kezelése (merge/replace/skip stratégiák)
+- [x] Import eredmény visszajelzés (success/error messages)
 
-### 8.7 Ellenőrzés
-- [ ] Export/import round-trip teszt
-- [ ] Téma váltás működése
-- [ ] Settings perzisztencia
+### 8.7 Ellenőrzés ✅
+- [x] TypeScript type-check - sikeres
+- [x] Production build - sikeres (2.02s, 464KB precache)
+- [x] Téma váltás működése (store-alapú)
+- [x] Settings perzisztencia (IndexedDB)
+- [x] NoteSchema és TodoSchema frissítve order mezővel
+- [ ] Export/import round-trip teszt - későbbi manuális teszt
+- [ ] Browser teszt - későbbi manuális teszt
 
 ---
 
