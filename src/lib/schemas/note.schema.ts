@@ -41,6 +41,7 @@ export const NoteSchema = z.object({
   createdAt: z.date(),
   updatedAt: z.date(),
   isUrgent: z.boolean(),
+  order: z.number(),
 });
 
 /**

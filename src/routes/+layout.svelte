@@ -3,23 +3,21 @@
   import { onMount } from 'svelte';
   import UpdatePrompt from '$lib/components/common/UpdatePrompt.svelte';
   import OfflineIndicator from '$lib/components/common/OfflineIndicator.svelte';
+  import { settingsStore } from '$lib/stores/settings';
+  import { themeStore } from '$lib/stores/theme';
 
   let { children } = $props();
 
-  // Theme initialization
-  onMount(() => {
-    const savedTheme = localStorage.getItem('theme') || 'auto';
-    applyTheme(savedTheme as 'light' | 'dark' | 'auto');
-  });
+  // Initialize settings and theme
+  onMount(async () => {
+    await settingsStore.init();
+    themeStore.init();
 
-  function applyTheme(theme: 'light' | 'dark' | 'auto') {
-    if (theme === 'auto') {
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      document.documentElement.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
-    } else {
-      document.documentElement.setAttribute('data-theme', theme);
-    }
-  }
+    // Apply font size
+    const fontSize = settingsStore.current.fontSize;
+    const fontSizeValue = fontSize === 'small' ? '14px' : fontSize === 'large' ? '18px' : '16px';
+    document.documentElement.style.setProperty('--text-base', fontSizeValue);
+  });
 </script>
 
 <div class="app-container">

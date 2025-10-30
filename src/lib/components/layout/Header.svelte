@@ -33,10 +33,18 @@
       <h1 class="header__title">Notizz</h1>
       <p class="header__subtitle">{formattedDate()}</p>
     </div>
-    <div class="header__time">
-      <time class="time" datetime={currentTime.toISOString()}>
-        {formattedTime()}
-      </time>
+    <div class="header__actions">
+      <div class="header__time">
+        <time class="time" datetime={currentTime.toISOString()}>
+          {formattedTime()}
+        </time>
+      </div>
+      <a href="/settings" class="settings-button" aria-label="Beállítások">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="3" />
+          <path d="M12 1v6m0 6v6m9-9h-6m-6 0H3m15.364 6.364l-4.243-4.243m-6.243 0L3.636 18.364M18.364 5.636l-4.243 4.243m-6.243 0L3.636 5.636" />
+        </svg>
+      </a>
     </div>
   </div>
 </header>
@@ -85,6 +93,12 @@
     margin: 0;
   }
 
+  .header__actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+  }
+
   .header__time {
     display: flex;
     align-items: center;
@@ -95,6 +109,29 @@
     font-weight: var(--font-semibold);
     color: var(--text-secondary);
     font-variant-numeric: tabular-nums;
+  }
+
+  .settings-button {
+    background: none;
+    border: none;
+    color: var(--text-tertiary);
+    cursor: pointer;
+    padding: var(--space-2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    transition: all 200ms ease;
+    text-decoration: none;
+  }
+
+  .settings-button:hover {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+  }
+
+  .settings-button:active {
+    transform: scale(0.95);
   }
 
   @media (max-width: 640px) {

@@ -53,6 +53,7 @@ export const TodoSchema = z.object({
   isUrgent: z.boolean(),
   completedCount: z.number().int().min(0),
   totalCount: z.number().int().min(0),
+  order: z.number(),
 });
 
 /**
