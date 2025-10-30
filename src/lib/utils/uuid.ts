@@ -20,3 +20,8 @@ export function generateUUID(): string {
     return v.toString(16);
   });
 }
+
+/**
+ * Alias for generateUUID for convenience
+ */
+export const generateId = generateUUID;

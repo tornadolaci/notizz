@@ -7,9 +7,12 @@
   interface Props {
     todo: ITodo;
     index?: number;
+    onEdit?: () => void;
+    onDelete?: () => void;
+    onToggleItem?: (todoId: string, itemId: string) => void;
   }
 
-  let { todo, index = 0 }: Props = $props();
+  let { todo, index = 0, onEdit, onDelete, onToggleItem }: Props = $props();
 
   const timeAgo = $derived(() => {
     return formatDistanceToNow(todo.updatedAt, {
@@ -27,8 +30,16 @@
   });
 
   function handleClick() {
-    // TODO: Open editor modal
-    console.log('Todo clicked:', todo.id);
+    if (onEdit) {
+      onEdit();
+    }
+  }
+
+  function handleDelete(e: MouseEvent) {
+    e.stopPropagation();
+    if (onDelete) {
+      onDelete();
+    }
   }
 
   function handleKeydown(event: KeyboardEvent) {
@@ -53,6 +64,20 @@
 >
   {#if todo.isUrgent}
     <div class="card__badge" aria-label="Sürgős">!</div>
+  {/if}
+
+  {#if onDelete}
+    <button
+      class="card__delete"
+      onclick={handleDelete}
+      aria-label="Teendő törlése"
+      title="Törlés"
+      type="button"
+    >
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor">
+        <path d="M12 4L4 12M4 4l8 8" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+    </button>
   {/if}
 
   <div class="card__header">
@@ -162,6 +187,48 @@
     font-weight: var(--font-bold);
     font-size: var(--text-sm);
     animation: pulse 2s ease-in-out infinite;
+    z-index: 1;
+  }
+
+  .card__delete {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.9);
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-tertiary);
+    transition: all 200ms ease;
+    opacity: 0;
+    z-index: 2;
+  }
+
+  .card:hover .card__delete {
+    opacity: 1;
+  }
+
+  .card__delete:hover {
+    background: var(--color-error);
+    color: white;
+    transform: scale(1.1);
+  }
+
+  .card__delete:active {
+    transform: scale(0.95);
+  }
+
+  /* Touch devices - always show delete button */
+  @media (hover: none) {
+    .card__delete {
+      opacity: 1;
+      background: rgba(255, 255, 255, 0.8);
+    }
   }
 
   @keyframes pulse {
