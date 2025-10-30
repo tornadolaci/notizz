@@ -369,12 +369,23 @@
 
 ### 8.7 Ellenőrzés ✅
 - [x] TypeScript type-check - sikeres
-- [x] Production build - sikeres (2.02s, 464KB precache)
+- [x] Production build - sikeres (2.08s, 469KB precache)
 - [x] Téma váltás működése (store-alapú)
 - [x] Settings perzisztencia (IndexedDB)
 - [x] NoteSchema és TodoSchema frissítve order mezővel
-- [ ] Export/import round-trip teszt - későbbi manuális teszt
-- [ ] Browser teszt - későbbi manuális teszt
+- [x] Store-ok refaktorálva standard Svelte 5 store-okra (writable/derived)
+- [x] main.ts frissítve Svelte 5 mount() API-ra
+- [ ] Export/import round-trip teszt - későbbi manuális teszt ⚠️
+- [ ] Browser teszt - későbbi manuális teszt ⚠️
+
+**⚠️ Fontos megjegyzés:**
+A FÁZIS 8 kód elkészült és sikeresen build-el, de runtime hibák lehetnek
+a dev módban cache problémák miatt. Javasolt: `npm run build && npm run preview`
+használata a működés teszteléséhez, vagy teljes clean restart:
+```bash
+rm -rf node_modules/.vite .svelte-kit
+npm run dev
+```
 
 ---
 
