@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount, untrack } from 'svelte';
+  import { get } from 'svelte/store';
   import Header from '$lib/components/layout/Header.svelte';
   import SearchBar from '$lib/components/layout/SearchBar.svelte';
   import FloatingActionButton from '$lib/components/common/FloatingActionButton.svelte';
@@ -10,7 +11,7 @@
   import EmptyState from '$lib/components/shared/EmptyState.svelte';
   import { notesStore } from '$lib/stores/notes';
   import { todosStore } from '$lib/stores/todos';
-  import { searchStore } from '$lib/stores/search';
+  import { searchStore, filteredNotes, filteredTodos } from '$lib/stores/search';
   import { draggableItem } from '$lib/utils/gestures';
   import type { INote, ITodo } from '$lib/types';
 
@@ -32,18 +33,18 @@
   // Combined and sorted items with search filtering
   const items = $derived.by(() => {
     // If search is active, use search results
-    if (searchStore.search.isActive) {
+    if (get(searchStore).isActive) {
       const allItems: Array<{type: 'note' | 'todo', data: INote | ITodo}> = [
-        ...searchStore.filteredNotes.map(result => ({type: 'note' as const, data: result.item})),
-        ...searchStore.filteredTodos.map(result => ({type: 'todo' as const, data: result.item}))
+        ...get(filteredNotes).map(result => ({type: 'note' as const, data: result.item})),
+        ...get(filteredTodos).map(result => ({type: 'todo' as const, data: result.item}))
       ];
       return allItems; // Search results are already sorted by relevance
     }
 
     // Otherwise show all items sorted by order
     const allItems: Array<{type: 'note' | 'todo', data: INote | ITodo}> = [
-      ...notesStore.notes.value.map(note => ({type: 'note' as const, data: note})),
-      ...todosStore.todos.value.map(todo => ({type: 'todo' as const, data: todo}))
+      ...get(notesStore).value.map(note => ({type: 'note' as const, data: note})),
+      ...get(todosStore).value.map(todo => ({type: 'todo' as const, data: todo}))
     ];
 
     // Sort by order (for drag&drop), with urgent items first, then by order/updatedAt
@@ -115,10 +116,10 @@
   async function handleReorder(reorderedIds: string[]) {
     // Separate note and todo IDs
     const noteIds = reorderedIds.filter(id =>
-      notesStore.notes.value.some(note => note.id === id)
+      get(notesStore).value.some(note => note.id === id)
     );
     const todoIds = reorderedIds.filter(id =>
-      todosStore.todos.value.some(todo => todo.id === id)
+      get(todosStore).value.some(todo => todo.id === id)
     );
 
     // Update order for both types
@@ -164,7 +165,7 @@
         </div>
       {/each}
     </div>
-  {:else if searchStore.search.isActive}
+  {:else if $searchStore.isActive}
     <!-- No search results -->
     <EmptyState
       icon="search"
@@ -173,7 +174,7 @@
       actionLabel="Keresés törlése"
       onaction={() => searchStore.clear()}
     />
-  {:else if notesStore.notes.value.length === 0 && todosStore.todos.value.length === 0}
+  {:else if $notesStore.value.length === 0 && $todosStore.value.length === 0}
     <!-- No items at all -->
     <EmptyState
       icon="general"

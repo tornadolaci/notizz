@@ -21,7 +21,7 @@
   });
 </script>
 
-<div class="app-container">
+<div class="app-container page-enter">
   {@render children()}
 </div>
 
