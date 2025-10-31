@@ -94,6 +94,8 @@
 		background: transparent;
 		max-width: 100vw;
 		max-height: 100vh;
+		width: 100%;
+		overflow-x: hidden;
 	}
 
 	.modal::backdrop {
@@ -108,6 +110,10 @@
 		padding: var(--padding-modal);
 		max-height: 85vh;
 		overflow-y: auto;
+		width: 100%;
+		max-width: calc(100vw - 32px);
+		box-sizing: border-box;
+		margin: 0 auto;
 		animation: modalSlideIn 400ms cubic-bezier(0.68, -0.55, 0.265, 1.55);
 		box-shadow:
 			0 10px 40px rgba(0, 0, 0, 0.2),
@@ -183,12 +189,17 @@
 	/* Responsive */
 	@media (max-width: 640px) {
 		.modal-content {
-			max-width: 90vw !important;
-			padding: var(--space-5);
+			max-width: calc(100vw - 24px) !important;
+			padding: var(--space-4);
+			border-radius: 16px;
 		}
 
 		.modal-title {
 			font-size: var(--text-lg);
+		}
+
+		.modal-header {
+			margin-bottom: var(--space-4);
 		}
 	}
 </style>

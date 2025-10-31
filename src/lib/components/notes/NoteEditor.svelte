@@ -184,12 +184,17 @@
 		display: flex;
 		flex-direction: column;
 		gap: var(--gap-form-fields);
+		width: 100%;
+		max-width: 100%;
+		box-sizing: border-box;
 	}
 
 	.form-group {
 		display: flex;
 		flex-direction: column;
 		gap: var(--space-2);
+		width: 100%;
+		box-sizing: border-box;
 	}
 
 	.form-label {
@@ -213,6 +218,8 @@
 		background: var(--bg-primary);
 		color: var(--text-primary);
 		transition: all 200ms ease;
+		box-sizing: border-box;
+		max-width: 100%;
 	}
 
 	.input:focus,
@@ -262,6 +269,8 @@
 		margin-top: var(--space-4);
 		padding-top: var(--space-4);
 		border-top: 1px solid var(--border-light);
+		width: 100%;
+		box-sizing: border-box;
 	}
 
 	.button {
@@ -274,6 +283,7 @@
 		cursor: pointer;
 		position: relative;
 		overflow: hidden;
+		box-sizing: border-box;
 	}
 
 	.button:disabled {
