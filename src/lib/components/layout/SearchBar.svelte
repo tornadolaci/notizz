@@ -8,7 +8,7 @@
     placeholder?: string;
   }
 
-  let { placeholder = 'Keresés jegyzetekben és TODO-kban...' }: Props = $props();
+  let { placeholder = 'Keresés...' }: Props = $props();
 
   let inputValue = $state('');
   let inputElement: HTMLInputElement | null = null;
@@ -151,12 +151,19 @@
     position: sticky;
     top: 0;
     z-index: 100;
+    max-width: 1000px;
+    margin: 0 auto;
+    width: 100%;
+    box-sizing: border-box;
+    overflow-x: hidden;
   }
 
   .search-input-wrapper {
     position: relative;
     display: flex;
     align-items: center;
+    width: 100%;
+    box-sizing: border-box;
   }
 
   .search-icon {
@@ -177,6 +184,7 @@
     background: var(--bg-primary);
     color: var(--text-primary);
     transition: all 200ms ease;
+    box-sizing: border-box;
   }
 
   .search-input:focus {
@@ -225,6 +233,8 @@
     display: flex;
     gap: var(--space-2);
     flex-wrap: wrap;
+    width: 100%;
+    box-sizing: border-box;
   }
 
   .filter-button {
@@ -265,6 +275,31 @@
   }
 
   /* Responsive design */
+  @media (max-width: 375px) {
+    .search-bar {
+      padding: 10px 12px;
+      gap: 8px;
+    }
+
+    .search-input {
+      font-size: 14px;
+      padding: 10px 40px 10px 40px;
+    }
+
+    .search-icon {
+      left: 12px;
+    }
+
+    .clear-button {
+      right: 8px;
+    }
+
+    .filter-button {
+      padding: 6px 12px;
+      font-size: 13px;
+    }
+  }
+
   @media (min-width: 640px) {
     .search-bar {
       padding: var(--space-5) var(--space-6);

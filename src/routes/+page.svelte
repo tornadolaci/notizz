@@ -237,17 +237,37 @@
 
 <style>
   .container {
-    max-width: 1000px;
+    max-width: 100%;
+    width: 100%;
     margin: 0 auto;
-    padding: 0 env(safe-area-inset-right) 0 env(safe-area-inset-left);
+    padding: 0;
     flex: 1;
+    overflow-x: hidden;
+    box-sizing: border-box;
+  }
+
+  @media (min-width: 1024px) {
+    .container {
+      max-width: 1000px;
+    }
   }
 
   .note-grid {
     display: grid;
     gap: var(--gap-cards);
-    padding: var(--space-4);
+    padding: var(--space-3);
     grid-template-columns: 1fr;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow-x: hidden;
+  }
+
+  @media (max-width: 375px) {
+    .note-grid {
+      padding: 6px;
+      gap: 6px;
+    }
   }
 
   .draggable-wrapper {
@@ -255,6 +275,8 @@
     -webkit-user-select: none;
     user-select: none;
     touch-action: pan-y;
+    min-width: 0;
+    box-sizing: border-box;
   }
 
   .draggable-wrapper:active {
@@ -269,7 +291,7 @@
 
   @media (min-width: 1024px) {
     .note-grid {
-      grid-template-columns: repeat(3, minmax(280px, 1fr));
+      grid-template-columns: repeat(3, 1fr);
       max-width: 1000px;
       margin: 0 auto;
     }
@@ -287,6 +309,8 @@
     justify-content: center;
     z-index: 1000;
     animation: fadeIn 200ms ease;
+    padding: var(--space-4);
+    box-sizing: border-box;
   }
 
   @keyframes fadeIn {
@@ -298,8 +322,9 @@
     background: var(--bg-primary);
     border-radius: 24px;
     padding: var(--padding-modal);
-    max-width: 400px;
-    width: 90vw;
+    width: 100%;
+    max-width: min(400px, calc(100vw - 32px));
+    box-sizing: border-box;
     animation: slideUp 300ms cubic-bezier(0.68, -0.55, 0.265, 1.55);
     box-shadow:
       0 10px 40px rgba(0, 0, 0, 0.2),
@@ -345,6 +370,34 @@
     color: var(--text-primary);
     font-size: var(--text-base);
     font-weight: var(--font-medium);
+    min-width: 0;
+    box-sizing: border-box;
+  }
+
+  @media (max-width: 375px) {
+    .type-button {
+      padding: var(--space-4);
+      font-size: var(--text-sm);
+    }
+
+    .type-button svg {
+      width: 32px;
+      height: 32px;
+    }
+
+    .type-picker {
+      padding: var(--space-5);
+      border-radius: 16px;
+    }
+
+    .type-picker-title {
+      font-size: var(--text-base);
+      margin-bottom: var(--space-4);
+    }
+
+    .type-buttons {
+      gap: var(--space-3);
+    }
   }
 
   .type-button:hover {

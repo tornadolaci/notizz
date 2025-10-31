@@ -53,12 +53,14 @@
   .header {
     background: var(--bg-primary);
     border-bottom: 1px solid var(--border-light);
-    padding: var(--space-4) var(--space-4);
+    padding: var(--space-4);
     position: sticky;
     top: 0;
     z-index: 100;
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
+    width: 100%;
+    overflow-x: hidden;
   }
 
   .header__content {
@@ -68,6 +70,8 @@
     justify-content: space-between;
     align-items: center;
     gap: var(--space-4);
+    width: 100%;
+    box-sizing: border-box;
   }
 
   .header__brand {
@@ -135,12 +139,59 @@
   }
 
   @media (max-width: 640px) {
+    .header {
+      padding: var(--space-3);
+    }
+
+    .header__title {
+      font-size: var(--text-lg);
+    }
+
     .header__subtitle {
       font-size: var(--text-xs);
+      max-width: 150px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     .time {
       font-size: var(--text-base);
+    }
+
+    .header__actions {
+      gap: var(--space-2);
+    }
+  }
+
+  @media (max-width: 375px) {
+    .header {
+      padding: 8px 12px;
+    }
+
+    .header__content {
+      gap: 8px;
+    }
+
+    .header__title {
+      font-size: var(--text-base);
+    }
+
+    .header__subtitle {
+      font-size: 11px;
+      max-width: 140px;
+    }
+
+    .time {
+      font-size: 14px;
+    }
+
+    .header__actions {
+      gap: 6px;
+    }
+
+    .settings-button {
+      padding: 4px;
     }
   }
 </style>

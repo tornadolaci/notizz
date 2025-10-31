@@ -370,11 +370,13 @@
   .font-size-options {
     display: flex;
     gap: var(--space-2);
+    flex-wrap: wrap;
   }
 
   .theme-option,
   .font-size-option {
-    flex: 1;
+    flex: 1 1 auto;
+    min-width: 100px;
     padding: var(--space-3) var(--space-4);
     border: 2px solid var(--border-light);
     border-radius: 12px;
@@ -384,6 +386,7 @@
     font-weight: var(--font-medium);
     cursor: pointer;
     transition: all 200ms ease;
+    text-align: center;
   }
 
   .theme-option:hover,
@@ -597,6 +600,28 @@
   }
 
   /* Responsive */
+  @media (max-width: 375px) {
+    .settings-container {
+      padding: var(--space-3);
+    }
+
+    .settings-section {
+      padding: var(--space-4);
+    }
+
+    .theme-option,
+    .font-size-option {
+      padding: var(--space-2) var(--space-3);
+      font-size: var(--text-sm);
+      min-width: 90px;
+    }
+
+    .color-option {
+      width: 40px;
+      height: 40px;
+    }
+  }
+
   @media (min-width: 640px) {
     .action-buttons {
       flex-direction: row;

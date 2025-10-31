@@ -207,6 +207,9 @@
   .card-wrapper {
     position: relative;
     isolation: isolate;
+    overflow: hidden;
+    box-sizing: border-box;
+    min-width: 0;
   }
 
   .swipe-action {
@@ -256,6 +259,11 @@
     flex-direction: column;
     gap: var(--space-3);
     padding: var(--padding-card);
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    overflow: hidden;
 
     /* Appearance */
     background: var(--card-color);
@@ -275,6 +283,13 @@
 
     /* Layering */
     z-index: 1;
+  }
+
+  @media (max-width: 375px) {
+    .card {
+      padding: 12px;
+      gap: 8px;
+    }
   }
 
   .card--dragging {
@@ -390,10 +405,16 @@
     color: var(--text-primary);
     margin: 0;
     line-height: var(--leading-tight);
+    max-width: 100%;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    hyphens: auto;
   }
 
   .card__content {
     flex: 1;
+    min-width: 0;
   }
 
   .todo-list {
@@ -456,6 +477,8 @@
     color: var(--text-secondary);
     line-height: var(--leading-normal);
     flex: 1;
+    min-width: 0;
+    max-width: 100%;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -517,6 +540,7 @@
   /* Dark mode adjustments */
   :global([data-theme="dark"]) .card {
     opacity: 0.95;
+    background: #1C1C1E !important;
   }
 
   :global([data-theme="dark"]) .tag {
