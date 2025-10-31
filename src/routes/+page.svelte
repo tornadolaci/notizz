@@ -30,6 +30,24 @@
     ]);
   });
 
+  // Subscribe to stores for reactivity using $effect
+  let notesState = $state({ value: [], loading: false, error: null });
+  let todosState = $state({ value: [], loading: false, error: null });
+
+  $effect(() => {
+    const unsubNotes = notesStore.subscribe((state) => {
+      notesState = state;
+    });
+    const unsubTodos = todosStore.subscribe((state) => {
+      todosState = state;
+    });
+
+    return () => {
+      unsubNotes();
+      unsubTodos();
+    };
+  });
+
   // Combined and sorted items with search filtering
   const items = $derived.by(() => {
     // If search is active, use search results
@@ -43,8 +61,8 @@
 
     // Otherwise show all items sorted by order
     const allItems: Array<{type: 'note' | 'todo', data: INote | ITodo}> = [
-      ...get(notesStore).value.map(note => ({type: 'note' as const, data: note})),
-      ...get(todosStore).value.map(todo => ({type: 'todo' as const, data: todo}))
+      ...notesState.value.map(note => ({type: 'note' as const, data: note})),
+      ...todosState.value.map(todo => ({type: 'todo' as const, data: todo}))
     ];
 
     // Sort by order (for drag&drop), with urgent items first, then by order/updatedAt

@@ -36,7 +36,7 @@ export interface ITodo {
  */
 export type TodoCreateInput = Omit<
   ITodo,
-  'id' | 'createdAt' | 'updatedAt' | 'completedCount' | 'totalCount'
+  'id' | 'createdAt' | 'updatedAt' | 'completedCount' | 'totalCount' | 'order'
 >;
 
 /**

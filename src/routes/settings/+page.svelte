@@ -5,7 +5,7 @@
    */
 
   import { onMount } from 'svelte';
-  import { goto } from '$app/navigation';
+  import { router } from 'tinro';
   import { settingsStore } from '$lib/stores/settings';
   import { themeStore } from '$lib/stores/theme';
   import { exportData, downloadJSON, readFileAsText, validateImportData, importData, type ImportStrategy } from '$lib/utils/export';
@@ -137,7 +137,7 @@
   }
 
   function goBack() {
-    goto('/');
+    router.goto('/');
   }
 </script>
 

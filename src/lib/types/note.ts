@@ -22,7 +22,7 @@ export interface INote {
  * Note creation input - used when creating a new note
  * Omits auto-generated fields
  */
-export type NoteCreateInput = Omit<INote, 'id' | 'createdAt' | 'updatedAt'>;
+export type NoteCreateInput = Omit<INote, 'id' | 'createdAt' | 'updatedAt' | 'order'>;
 
 /**
  * Note update input - used when updating an existing note

@@ -5,7 +5,7 @@
 	 */
 	import { todosStore } from '$lib/stores/todos';
 	import type { ITodo, ITodoItem } from '$lib/types/todo';
-	import { DEFAULT_COLOR, type PastelColorKey } from '$lib/constants/colors';
+	import { DEFAULT_COLOR, PASTEL_COLORS, type PastelColorKey } from '$lib/constants/colors';
 	import Modal from '$lib/components/common/Modal.svelte';
 	import ColorPicker from '$lib/components/notes/ColorPicker.svelte';
 	import TagInput from '$lib/components/shared/TagInput.svelte';
@@ -99,6 +99,8 @@
 		isSaving = true;
 
 		try {
+			// Convert color key to HEX value
+			const colorHex = PASTEL_COLORS[selectedColor];
 			const completedCount = items.filter((item) => item.completed).length;
 			const totalCount = items.length;
 
@@ -107,7 +109,7 @@
 				await todosStore.update(todo.id, {
 					title: title.trim(),
 					items,
-					color: selectedColor,
+					color: colorHex,
 					tags,
 					isUrgent,
 					completedCount,
@@ -120,7 +122,7 @@
 					id: generateId(),
 					title: title.trim(),
 					items,
-					color: selectedColor,
+					color: colorHex,
 					tags,
 					createdAt: new Date(),
 					updatedAt: new Date(),

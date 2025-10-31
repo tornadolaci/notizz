@@ -5,7 +5,7 @@
 	 */
 	import { notesStore } from '$lib/stores/notes';
 	import type { INote } from '$lib/types/note';
-	import { DEFAULT_COLOR, type PastelColorKey } from '$lib/constants/colors';
+	import { DEFAULT_COLOR, PASTEL_COLORS, type PastelColorKey } from '$lib/constants/colors';
 	import Modal from '$lib/components/common/Modal.svelte';
 	import ColorPicker from './ColorPicker.svelte';
 	import TagInput from '$lib/components/shared/TagInput.svelte';
@@ -58,12 +58,15 @@
 		isSaving = true;
 
 		try {
+			// Convert color key to HEX value
+			const colorHex = PASTEL_COLORS[selectedColor];
+
 			if (note?.id) {
 				// Update existing note
 				await notesStore.update(note.id, {
 					title: title.trim(),
 					content: content.trim(),
-					color: selectedColor,
+					color: colorHex,
 					tags,
 					isUrgent,
 					updatedAt: new Date()
@@ -74,7 +77,7 @@
 					id: generateId(),
 					title: title.trim(),
 					content: content.trim(),
-					color: selectedColor,
+					color: colorHex,
 					tags,
 					createdAt: new Date(),
 					updatedAt: new Date(),

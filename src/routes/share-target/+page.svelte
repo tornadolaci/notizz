@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { goto } from '$app/navigation';
+  import { router } from 'tinro';
   import { notesStore } from '$lib/stores/notes';
 
   let shareData: {
@@ -41,11 +41,11 @@
 
       // Redirect to home page after processing
       setTimeout(() => {
-        goto('/');
+        router.goto('/');
       }, 1500);
     } catch (error) {
       console.error('Error processing shared content:', error);
-      goto('/');
+      router.goto('/');
     }
   });
 </script>
