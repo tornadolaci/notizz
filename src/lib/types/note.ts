@@ -11,7 +11,6 @@ export interface INote {
   title: string;
   content: string;
   color: string; // One of the 8 pastel colors
-  tags: string[];
   createdAt: Date;
   updatedAt: Date;
   isUrgent: boolean;
@@ -36,7 +35,6 @@ export type NoteUpdateInput = Partial<Omit<INote, 'id' | 'createdAt'>> & {
  * Note filter options for querying notes
  */
 export interface INoteFilter {
-  tags?: string[];
   isUrgent?: boolean;
   color?: string;
   searchTerm?: string;

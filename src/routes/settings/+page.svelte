@@ -7,9 +7,7 @@
   import { onMount } from 'svelte';
   import { router } from 'tinro';
   import { settingsStore } from '$lib/stores/settings';
-  import { themeStore } from '$lib/stores/theme';
   import { exportData, downloadJSON, readFileAsText, validateImportData, importData, type ImportStrategy } from '$lib/utils/export';
-  import type { Theme, FontSize } from '$lib/types';
   import { PASTEL_COLORS } from '$lib/schemas/settings.schema';
 
   // Reactive state
@@ -24,20 +22,6 @@
     await settingsStore.init();
   });
 
-  // Theme options
-  const themeOptions: { value: Theme; label: string }[] = [
-    { value: 'light', label: 'Világos' },
-    { value: 'dark', label: 'Sötét' },
-    { value: 'auto', label: 'Automatikus' },
-  ];
-
-  // Font size options
-  const fontSizeOptions: { value: FontSize; label: string; description: string }[] = [
-    { value: 'small', label: 'Kicsi', description: '14px' },
-    { value: 'medium', label: 'Közepes', description: '16px' },
-    { value: 'large', label: 'Nagy', description: '18px' },
-  ];
-
   // Color options
   const colorOptions = [
     { value: '#E6E6FA', label: 'Levendula' },
@@ -51,20 +35,6 @@
   ];
 
   // Handlers
-  async function handleThemeChange(theme: Theme) {
-    await themeStore.set(theme);
-  }
-
-  async function handleFontSizeChange(fontSize: FontSize) {
-    await settingsStore.update({ fontSize });
-    // Apply font size immediately
-    document.documentElement.style.setProperty('--text-base', fontSize === 'small' ? '14px' : fontSize === 'large' ? '18px' : '16px');
-  }
-
-  async function handleAnimationsToggle() {
-    await settingsStore.update({ enableAnimations: !$settingsStore.enableAnimations });
-  }
-
   async function handleColorChange(color: string) {
     await settingsStore.update({ defaultColor: color });
   }
@@ -130,7 +100,6 @@
   async function handleReset() {
     if (confirm('Biztosan visszaállítod az alapértelmezett beállításokat?')) {
       await settingsStore.reset();
-      await themeStore.init();
       importMessage = 'Beállítások visszaállítva!';
       setTimeout(() => (importMessage = null), 3000);
     }
@@ -153,40 +122,9 @@
   </header>
 
   <div class="settings-container">
-    <!-- Theme Settings -->
+    <!-- Appearance Settings -->
     <section class="settings-section">
       <h2 class="section-title">Megjelenés</h2>
-
-      <div class="setting-group">
-        <label class="setting-label">Téma</label>
-        <div class="theme-options">
-          {#each themeOptions as option}
-            <button
-              class="theme-option"
-              class:active={$settingsStore.theme === option.value}
-              onclick={() => handleThemeChange(option.value)}
-            >
-              {option.label}
-            </button>
-          {/each}
-        </div>
-      </div>
-
-      <div class="setting-group">
-        <label class="setting-label">Betűméret</label>
-        <div class="font-size-options">
-          {#each fontSizeOptions as option}
-            <button
-              class="font-size-option"
-              class:active={$settingsStore.fontSize === option.value}
-              onclick={() => handleFontSizeChange(option.value)}
-            >
-              <span class="font-size-label">{option.label}</span>
-              <span class="font-size-description">{option.description}</span>
-            </button>
-          {/each}
-        </div>
-      </div>
 
       <div class="setting-group">
         <label class="setting-label">Alapértelmezett szín</label>
@@ -208,19 +146,6 @@
         </div>
       </div>
 
-      <div class="setting-group">
-        <label class="setting-item">
-          <span class="setting-label">Animációk</span>
-          <label class="toggle">
-            <input
-              type="checkbox"
-              checked={$settingsStore.enableAnimations}
-              onchange={handleAnimationsToggle}
-            />
-            <span class="toggle-slider"></span>
-          </label>
-        </label>
-      </div>
     </section>
 
     <!-- Data Management -->
@@ -290,6 +215,7 @@
     min-height: 100vh;
     background: var(--bg-secondary);
     padding-bottom: var(--space-10);
+    padding-top: 80px;
   }
 
   .settings-header {
@@ -297,11 +223,21 @@
     align-items: center;
     gap: var(--space-4);
     padding: var(--space-5) var(--space-4);
-    background: var(--bg-primary);
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
     border-bottom: 1px solid var(--border-light);
-    position: sticky;
+    position: fixed;
     top: 0;
-    z-index: 10;
+    left: 0;
+    right: 0;
+    z-index: 100;
+  }
+
+  /* Dark mode glass effect for settings header */
+  :global([data-theme="dark"]) .settings-header {
+    background: rgba(28, 28, 30, 0.7);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   }
 
   .back-button {
@@ -343,6 +279,10 @@
       0 4px 8px rgba(0, 0, 0, 0.06);
   }
 
+  :global([data-theme="dark"]) .settings-section {
+    background: #293F3F;
+  }
+
   .section-title {
     font-size: var(--text-lg);
     font-weight: var(--font-semibold);
@@ -364,54 +304,6 @@
     font-weight: var(--font-medium);
     color: var(--text-primary);
     margin-bottom: var(--space-3);
-  }
-
-  .theme-options,
-  .font-size-options {
-    display: flex;
-    gap: var(--space-2);
-    flex-wrap: wrap;
-  }
-
-  .theme-option,
-  .font-size-option {
-    flex: 1 1 auto;
-    min-width: 100px;
-    padding: var(--space-3) var(--space-4);
-    border: 2px solid var(--border-light);
-    border-radius: 12px;
-    background: var(--bg-primary);
-    color: var(--text-primary);
-    font-size: var(--text-base);
-    font-weight: var(--font-medium);
-    cursor: pointer;
-    transition: all 200ms ease;
-    text-align: center;
-  }
-
-  .theme-option:hover,
-  .font-size-option:hover {
-    border-color: var(--color-info);
-    transform: translateY(-1px);
-  }
-
-  .theme-option.active,
-  .font-size-option.active {
-    border-color: var(--color-info);
-    background: var(--color-info);
-    color: white;
-  }
-
-  .font-size-option {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: var(--space-1);
-  }
-
-  .font-size-description {
-    font-size: var(--text-xs);
-    opacity: 0.7;
   }
 
   .color-picker {
@@ -449,58 +341,6 @@
     text-shadow:
       0 0 3px white,
       0 0 6px white;
-  }
-
-  .setting-item {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-
-  /* Toggle Switch */
-  .toggle {
-    position: relative;
-    display: inline-block;
-    width: 52px;
-    height: 28px;
-  }
-
-  .toggle input {
-    opacity: 0;
-    width: 0;
-    height: 0;
-  }
-
-  .toggle-slider {
-    position: absolute;
-    cursor: pointer;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: var(--bg-tertiary);
-    transition: 0.3s;
-    border-radius: 34px;
-  }
-
-  .toggle-slider:before {
-    position: absolute;
-    content: '';
-    height: 22px;
-    width: 22px;
-    left: 3px;
-    bottom: 3px;
-    background-color: white;
-    transition: 0.3s;
-    border-radius: 50%;
-  }
-
-  .toggle input:checked + .toggle-slider {
-    background-color: var(--color-success);
-  }
-
-  .toggle input:checked + .toggle-slider:before {
-    transform: translateX(24px);
   }
 
   /* Action Buttons */
@@ -609,16 +449,21 @@
       padding: var(--space-4);
     }
 
-    .theme-option,
-    .font-size-option {
-      padding: var(--space-2) var(--space-3);
-      font-size: var(--text-sm);
-      min-width: 90px;
-    }
-
     .color-option {
       width: 40px;
       height: 40px;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .settings-page {
+      padding-top: 75px;
+    }
+  }
+
+  @media (max-width: 375px) {
+    .settings-page {
+      padding-top: 70px;
     }
   }
 

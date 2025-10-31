@@ -162,14 +162,6 @@ export const todosStore = {
   },
 
   /**
-   * Filter todos by tag
-   */
-  filterByTag(tag: string): ITodo[] {
-    const state = get(todosStateWritable);
-    return state.value.filter(todo => todo.tags.includes(tag));
-  },
-
-  /**
    * Reorder todos after drag&drop
    * Updates the order field for all affected todos
    */

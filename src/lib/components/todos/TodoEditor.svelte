@@ -8,7 +8,6 @@
 	import { DEFAULT_COLOR, PASTEL_COLORS, type PastelColorKey } from '$lib/constants/colors';
 	import Modal from '$lib/components/common/Modal.svelte';
 	import ColorPicker from '$lib/components/notes/ColorPicker.svelte';
-	import TagInput from '$lib/components/shared/TagInput.svelte';
 	import TodoItem from './TodoItem.svelte';
 	import { generateId } from '$lib/utils/uuid';
 
@@ -24,7 +23,6 @@
 	let title = $state('');
 	let items = $state<ITodoItem[]>([]);
 	let selectedColor = $state<PastelColorKey>(DEFAULT_COLOR);
-	let tags = $state<string[]>([]);
 	let isUrgent = $state(false);
 	let isSaving = $state(false);
 
@@ -38,14 +36,12 @@
 				title = todo.title;
 				items = [...todo.items];
 				selectedColor = todo.color as PastelColorKey;
-				tags = [...todo.tags];
 				isUrgent = todo.isUrgent;
 			} else {
 				// Reset form for new todo
 				title = '';
 				items = [];
 				selectedColor = DEFAULT_COLOR;
-				tags = [];
 				isUrgent = false;
 			}
 			newItemText = '';
@@ -110,7 +106,6 @@
 					title: title.trim(),
 					items,
 					color: colorHex,
-					tags,
 					isUrgent,
 					completedCount,
 					totalCount,
@@ -123,7 +118,6 @@
 					title: title.trim(),
 					items,
 					color: colorHex,
-					tags,
 					createdAt: new Date(),
 					updatedAt: new Date(),
 					isUrgent,
@@ -144,10 +138,6 @@
 
 	function handleColorSelect(color: PastelColorKey) {
 		selectedColor = color;
-	}
-
-	function handleTagsChange(newTags: string[]) {
-		tags = newTags;
 	}
 
 	function handleCancel() {
@@ -219,11 +209,6 @@
 		<div class="form-group">
 			<label class="form-label">Szín</label>
 			<ColorPicker {selectedColor} onSelect={handleColorSelect} />
-		</div>
-
-		<div class="form-group">
-			<label class="form-label">Címkék</label>
-			<TagInput {tags} onTagsChange={handleTagsChange} />
 		</div>
 
 		<div class="form-group">

@@ -37,7 +37,6 @@ export const NoteSchema = z.object({
     .refine((val) => PASTEL_COLORS.includes(val as any), {
       message: 'Érvénytelen szín',
     }),
-  tags: z.array(z.string().min(1).max(50)).max(10, 'Maximum 10 címke engedélyezett'),
   createdAt: z.date(),
   updatedAt: z.date(),
   isUrgent: z.boolean(),
@@ -61,7 +60,6 @@ export const NoteCreateSchema = z.object({
     .refine((val) => PASTEL_COLORS.includes(val as any), {
       message: 'Érvénytelen szín',
     }),
-  tags: z.array(z.string().min(1).max(50)).max(10, 'Maximum 10 címke engedélyezett'),
   isUrgent: z.boolean(),
 });
 
@@ -85,10 +83,6 @@ export const NoteUpdateSchema = z.object({
     .refine((val) => PASTEL_COLORS.includes(val as any), {
       message: 'Érvénytelen szín',
     })
-    .optional(),
-  tags: z
-    .array(z.string().min(1).max(50))
-    .max(10, 'Maximum 10 címke engedélyezett')
     .optional(),
   isUrgent: z.boolean().optional(),
   updatedAt: z.date().optional(),

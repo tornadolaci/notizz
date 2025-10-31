@@ -51,7 +51,7 @@ export type SettingsUpdateInput = Partial<Omit<ISettings, 'id'>> & {
 export const DEFAULT_SETTINGS: ISettings = {
   id: 'user-settings',
   theme: 'auto',
-  fontSize: 'medium',
+  fontSize: 'large',
   language: 'hu',
   enableAnimations: true,
   enableSound: false,

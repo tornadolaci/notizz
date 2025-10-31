@@ -8,7 +8,6 @@
 	import { DEFAULT_COLOR, PASTEL_COLORS, type PastelColorKey } from '$lib/constants/colors';
 	import Modal from '$lib/components/common/Modal.svelte';
 	import ColorPicker from './ColorPicker.svelte';
-	import TagInput from '$lib/components/shared/TagInput.svelte';
 	import { generateId } from '$lib/utils/uuid';
 
 	interface Props {
@@ -23,7 +22,6 @@
 	let title = $state('');
 	let content = $state('');
 	let selectedColor = $state<PastelColorKey>(DEFAULT_COLOR);
-	let tags = $state<string[]>([]);
 	let isUrgent = $state(false);
 	let isSaving = $state(false);
 
@@ -34,14 +32,12 @@
 				title = note.title;
 				content = note.content;
 				selectedColor = note.color as PastelColorKey;
-				tags = [...note.tags];
 				isUrgent = note.isUrgent;
 			} else {
 				// Reset form for new note
 				title = '';
 				content = '';
 				selectedColor = DEFAULT_COLOR;
-				tags = [];
 				isUrgent = false;
 			}
 		}
@@ -67,7 +63,6 @@
 					title: title.trim(),
 					content: content.trim(),
 					color: colorHex,
-					tags,
 					isUrgent,
 					updatedAt: new Date()
 				});
@@ -78,7 +73,6 @@
 					title: title.trim(),
 					content: content.trim(),
 					color: colorHex,
-					tags,
 					createdAt: new Date(),
 					updatedAt: new Date(),
 					isUrgent
@@ -97,10 +91,6 @@
 
 	function handleColorSelect(color: PastelColorKey) {
 		selectedColor = color;
-	}
-
-	function handleTagsChange(newTags: string[]) {
-		tags = newTags;
 	}
 
 	function handleCancel() {
@@ -145,11 +135,6 @@
 		<div class="form-group">
 			<label class="form-label">Szín</label>
 			<ColorPicker {selectedColor} onSelect={handleColorSelect} />
-		</div>
-
-		<div class="form-group">
-			<label class="form-label">Címkék</label>
-			<TagInput {tags} onTagsChange={handleTagsChange} />
 		</div>
 
 		<div class="form-group">

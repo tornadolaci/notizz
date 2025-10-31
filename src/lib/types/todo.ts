@@ -21,7 +21,6 @@ export interface ITodo {
   title: string;
   items: ITodoItem[];
   color: string; // One of the 8 pastel colors
-  tags: string[];
   createdAt: Date;
   updatedAt: Date;
   isUrgent: boolean;
@@ -58,7 +57,6 @@ export type TodoItemCreateInput = Omit<ITodoItem, 'id' | 'createdAt'>;
  * Todo filter options for querying todos
  */
 export interface ITodoFilter {
-  tags?: string[];
   isUrgent?: boolean;
   color?: string;
   searchTerm?: string;

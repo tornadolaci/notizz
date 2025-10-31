@@ -2,7 +2,6 @@
   import { onMount, untrack } from 'svelte';
   import { get } from 'svelte/store';
   import Header from '$lib/components/layout/Header.svelte';
-  import SearchBar from '$lib/components/layout/SearchBar.svelte';
   import FloatingActionButton from '$lib/components/common/FloatingActionButton.svelte';
   import NoteCard from '$lib/components/notes/NoteCard.svelte';
   import TodoCard from '$lib/components/todos/TodoCard.svelte';
@@ -11,7 +10,6 @@
   import EmptyState from '$lib/components/shared/EmptyState.svelte';
   import { notesStore } from '$lib/stores/notes';
   import { todosStore } from '$lib/stores/todos';
-  import { searchStore, filteredNotes, filteredTodos } from '$lib/stores/search';
   import { draggableItem } from '$lib/utils/gestures';
   import type { INote, ITodo } from '$lib/types';
 
@@ -21,6 +19,7 @@
   let isTypePickerOpen = $state(false);
   let editingNote = $state<INote | null>(null);
   let editingTodo = $state<ITodo | null>(null);
+  let typePickerScrollPosition = 0;
 
   // Load data on mount
   onMount(async () => {
@@ -28,6 +27,38 @@
       notesStore.load(),
       todosStore.load()
     ]);
+
+    // Cleanup on unmount
+    return () => {
+      // Ensure body styles are cleaned up
+      document.body.style.removeProperty('overflow');
+      document.body.style.removeProperty('position');
+      document.body.style.removeProperty('top');
+      document.body.style.removeProperty('width');
+    };
+  });
+
+  // Handle scroll lock for type picker modal
+  $effect(() => {
+    if (isTypePickerOpen) {
+      // Save current scroll position
+      typePickerScrollPosition = window.scrollY || document.documentElement.scrollTop;
+
+      // Lock body scroll
+      document.body.style.overflow = 'hidden';
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${typePickerScrollPosition}px`;
+      document.body.style.width = '100%';
+    } else {
+      // Unlock body scroll and restore position
+      document.body.style.removeProperty('overflow');
+      document.body.style.removeProperty('position');
+      document.body.style.removeProperty('top');
+      document.body.style.removeProperty('width');
+
+      // Restore scroll position
+      window.scrollTo(0, typePickerScrollPosition);
+    }
   });
 
   // Subscribe to stores for reactivity using $effect
@@ -48,18 +79,8 @@
     };
   });
 
-  // Combined and sorted items with search filtering
+  // Combined and sorted items
   const items = $derived.by(() => {
-    // If search is active, use search results
-    if (get(searchStore).isActive) {
-      const allItems: Array<{type: 'note' | 'todo', data: INote | ITodo}> = [
-        ...get(filteredNotes).map(result => ({type: 'note' as const, data: result.item})),
-        ...get(filteredTodos).map(result => ({type: 'todo' as const, data: result.item}))
-      ];
-      return allItems; // Search results are already sorted by relevance
-    }
-
-    // Otherwise show all items sorted by order
     const allItems: Array<{type: 'note' | 'todo', data: INote | ITodo}> = [
       ...notesState.value.map(note => ({type: 'note' as const, data: note})),
       ...todosState.value.map(todo => ({type: 'todo' as const, data: todo}))
@@ -150,8 +171,6 @@
 
 <Header />
 
-<SearchBar />
-
 <main class="container">
   {#if items.length > 0}
     <div class="note-grid" data-draggable-container>
@@ -183,15 +202,6 @@
         </div>
       {/each}
     </div>
-  {:else if $searchStore.isActive}
-    <!-- No search results -->
-    <EmptyState
-      icon="search"
-      title="Nincs találat"
-      message="Nem találtunk a keresésnek megfelelő elemet. Próbálj meg más kulcsszavakat használni."
-      actionLabel="Keresés törlése"
-      onaction={() => searchStore.clear()}
-    />
   {:else if $notesStore.value.length === 0 && $todosStore.value.length === 0}
     <!-- No items at all -->
     <EmptyState
@@ -241,6 +251,7 @@
     width: 100%;
     margin: 0 auto;
     padding: 0;
+    padding-top: 90px;
     flex: 1;
     overflow-x: hidden;
     box-sizing: border-box;
@@ -263,7 +274,17 @@
     overflow-x: hidden;
   }
 
+  @media (max-width: 640px) {
+    .container {
+      padding-top: 80px;
+    }
+  }
+
   @media (max-width: 375px) {
+    .container {
+      padding-top: 70px;
+    }
+
     .note-grid {
       padding: 6px;
       gap: 6px;

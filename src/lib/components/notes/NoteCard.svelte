@@ -69,8 +69,7 @@
       {
         threshold: SWIPE_THRESHOLD,
         maxDuration: 500,
-        minVelocity: 0.3,
-        hapticFeedback: true
+        minVelocity: 0.3
       }
     );
 
@@ -159,14 +158,6 @@
   <div class="card__content">
     <p class="card__text">{note.content}</p>
   </div>
-
-  {#if note.tags.length > 0}
-    <div class="card__tags">
-      {#each note.tags as tag}
-        <span class="tag">{tag}</span>
-      {/each}
-    </div>
-  {/if}
 
   <div class="card__footer">
     <time class="card__time" datetime={note.updatedAt.toISOString()}>
@@ -403,21 +394,6 @@
     hyphens: auto;
   }
 
-  .card__tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-2);
-  }
-
-  .tag {
-    font-size: var(--text-xs);
-    color: var(--text-tertiary);
-    background: rgba(0, 0, 0, 0.05);
-    padding: 4px 8px;
-    border-radius: 6px;
-    font-weight: var(--font-medium);
-  }
-
   .card__footer {
     display: flex;
     align-items: center;
@@ -443,10 +419,6 @@
   /* Dark mode adjustments */
   :global([data-theme="dark"]) .card {
     opacity: 0.95;
-    background: #1C1C1E !important;
-  }
-
-  :global([data-theme="dark"]) .tag {
-    background: rgba(255, 255, 255, 0.1);
+    background: #293F3F !important;
   }
 </style>

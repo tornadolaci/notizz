@@ -13,11 +13,8 @@
     await settingsStore.init();
     themeStore.init();
 
-    // Subscribe to settings changes and apply font size
-    settingsStore.subscribe((settings) => {
-      const fontSizeValue = settings.fontSize === 'small' ? '14px' : settings.fontSize === 'large' ? '18px' : '16px';
-      document.documentElement.style.setProperty('--text-base', fontSizeValue);
-    });
+    // Set fixed font size to 18px
+    document.documentElement.style.setProperty('--text-base', '18px');
   });
 </script>
 
@@ -36,5 +33,6 @@
     display: flex;
     flex-direction: column;
     background: var(--bg-secondary);
+    overflow-x: hidden;
   }
 </style>

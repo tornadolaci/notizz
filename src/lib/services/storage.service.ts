@@ -115,14 +115,6 @@ export class NotesService {
         return allNotes.filter((note) => note.color === filter.color);
       }
 
-      // Filter by tags (any matching tag)
-      if (filter.tags && filter.tags.length > 0) {
-        const allNotes = await collection.toArray();
-        return allNotes.filter((note) =>
-          note.tags.some((tag) => filter.tags!.includes(tag))
-        );
-      }
-
       // Filter by search term
       if (filter.searchTerm) {
         const allNotes = await collection.toArray();
@@ -303,14 +295,6 @@ export class TodosService {
       if (filter.color) {
         const allTodos = await collection.toArray();
         return allTodos.filter((todo) => todo.color === filter.color);
-      }
-
-      // Filter by tags (any matching tag)
-      if (filter.tags && filter.tags.length > 0) {
-        const allTodos = await collection.toArray();
-        return allTodos.filter((todo) =>
-          todo.tags.some((tag) => filter.tags!.includes(tag))
-        );
       }
 
       // Filter by completion status

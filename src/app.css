@@ -86,8 +86,8 @@
    Dark Theme
    -------------------------------------------------------------------------- */
 [data-theme="dark"] {
-  --bg-primary: #1C1C1E;
-  --bg-secondary: #2C2C2E;
+  --bg-primary: #293F3F;
+  --bg-secondary: #1B1A1A;
   --bg-tertiary: #3A3A3C;
   --text-primary: #FFFFFF;
   --text-secondary: #EBEBF5;

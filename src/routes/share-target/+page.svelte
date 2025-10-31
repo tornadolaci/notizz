@@ -34,7 +34,6 @@
           title: shareData.title || 'Megosztott tartalom',
           content: noteContent,
           color: 'lavender',
-          tags: ['megosztott'],
           isUrgent: false
         });
       }

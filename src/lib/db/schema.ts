@@ -22,13 +22,13 @@ export class NotizzDB extends Dexie {
     this.version(1).stores({
       // Notes table
       // Primary key: id (string UUID)
-      // Indexes: updatedAt (for sorting), isUrgent (for filtering), tags (multi-entry index)
-      notes: 'id, updatedAt, isUrgent, *tags',
+      // Indexes: updatedAt (for sorting), isUrgent (for filtering)
+      notes: 'id, updatedAt, isUrgent',
 
       // Todos table
       // Primary key: id (string UUID)
-      // Indexes: updatedAt (for sorting), isUrgent (for filtering), tags (multi-entry index)
-      todos: 'id, updatedAt, isUrgent, *tags',
+      // Indexes: updatedAt (for sorting), isUrgent (for filtering)
+      todos: 'id, updatedAt, isUrgent',
 
       // Settings table
       // Primary key: id (fixed: 'user-settings')
@@ -38,8 +38,8 @@ export class NotizzDB extends Dexie {
 
     // Version 2: Add order field for drag&drop sorting
     this.version(2).stores({
-      notes: 'id, updatedAt, isUrgent, *tags, order',
-      todos: 'id, updatedAt, isUrgent, *tags, order',
+      notes: 'id, updatedAt, isUrgent, order',
+      todos: 'id, updatedAt, isUrgent, order',
       settings: 'id',
     }).upgrade(async (tx) => {
       // Migrate existing data: add order field based on current updatedAt

@@ -16,6 +16,7 @@
 
 	let dialogElement: HTMLDialogElement;
 	let previousFocus: HTMLElement | null = null;
+	let scrollPosition = 0;
 
 	// Handle escape key
 	function handleKeydown(e: KeyboardEvent) {
@@ -31,9 +32,18 @@
 		}
 	}
 
-	// Focus management
+	// Focus management and scroll lock
 	$effect(() => {
 		if (isOpen) {
+			// Save current scroll position
+			scrollPosition = window.scrollY || document.documentElement.scrollTop;
+
+			// Lock body scroll
+			document.body.style.overflow = 'hidden';
+			document.body.style.position = 'fixed';
+			document.body.style.top = `-${scrollPosition}px`;
+			document.body.style.width = '100%';
+
 			previousFocus = document.activeElement as HTMLElement;
 			dialogElement?.showModal();
 
@@ -43,7 +53,17 @@
 			);
 			firstFocusable?.focus();
 		} else {
+			// Unlock body scroll and restore position
+			document.body.style.removeProperty('overflow');
+			document.body.style.removeProperty('position');
+			document.body.style.removeProperty('top');
+			document.body.style.removeProperty('width');
+
 			dialogElement?.close();
+
+			// Restore scroll position
+			window.scrollTo(0, scrollPosition);
+
 			previousFocus?.focus();
 		}
 	});
@@ -183,7 +203,7 @@
 
 	/* Dark mode support */
 	:global([data-theme="dark"]) .modal-content {
-		background: var(--dark-bg-secondary);
+		background: #293F3F;
 	}
 
 	/* Responsive */

@@ -1,6 +1,6 @@
 /**
  * Gesture utilities for touch and drag interactions
- * Handles swipe detection, drag thresholds, and haptic feedback
+ * Handles swipe detection and drag thresholds
  */
 
 export interface SwipeDirection {
@@ -27,31 +27,13 @@ export interface SwipeConfig {
   maxDuration: number;
   /** Minimum velocity (px/ms) to trigger a swipe */
   minVelocity: number;
-  /** Enable haptic feedback on swipe */
-  hapticFeedback: boolean;
 }
 
 const DEFAULT_SWIPE_CONFIG: SwipeConfig = {
   threshold: 50,
   maxDuration: 300,
   minVelocity: 0.3,
-  hapticFeedback: true,
 };
-
-/**
- * Trigger haptic feedback using the Vibration API
- * @param pattern - Vibration pattern (number or array of numbers)
- */
-export function triggerHapticFeedback(pattern: number | number[] = 10): void {
-  if (!('vibrate' in navigator)) return;
-
-  try {
-    navigator.vibrate(pattern);
-  } catch (error) {
-    // Silently fail if vibration is not supported
-    console.debug('Haptic feedback not available:', error);
-  }
-}
 
 /**
  * Detect swipe direction and velocity from touch/pointer events
@@ -88,19 +70,9 @@ export function detectSwipe(
   if (distanceX > distanceY && distanceX > cfg.threshold) {
     // Horizontal swipe
     direction = deltaX > 0 ? 'right' : 'left';
-
-    // Trigger haptic feedback
-    if (cfg.hapticFeedback) {
-      triggerHapticFeedback();
-    }
   } else if (distanceY > distanceX && distanceY > cfg.threshold) {
     // Vertical swipe
     direction = deltaY > 0 ? 'down' : 'up';
-
-    // Trigger haptic feedback
-    if (cfg.hapticFeedback) {
-      triggerHapticFeedback();
-    }
   }
 
   return { direction, distance, velocity };
@@ -364,7 +336,6 @@ export function draggableItem(element: HTMLElement, config: DraggableItemConfig)
     element.style.pointerEvents = 'none';
 
     draggedElement = element;
-    triggerHapticFeedback();
   };
 
   const handleDragMove = (clientY: number) => {
@@ -391,11 +362,9 @@ export function draggableItem(element: HTMLElement, config: DraggableItemConfig)
 
       if (draggedCenterY < itemCenterY && placeholder.nextSibling !== item) {
         item.parentElement?.insertBefore(placeholder, item);
-        triggerHapticFeedback(5);
         break;
       } else if (draggedCenterY > itemCenterY && placeholder.previousSibling !== item) {
         item.parentElement?.insertBefore(placeholder, item.nextSibling);
-        triggerHapticFeedback(5);
         break;
       }
     }

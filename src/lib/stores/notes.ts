@@ -120,14 +120,6 @@ export const notesStore = {
   },
 
   /**
-   * Filter notes by tag
-   */
-  filterByTag(tag: string): INote[] {
-    const state = get(notesStateWritable);
-    return state.value.filter(note => note.tags.includes(tag));
-  },
-
-  /**
    * Reorder notes after drag&drop
    * Updates the order field for all affected notes
    */
