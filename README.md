@@ -82,6 +82,18 @@ Az alkalmazás iOS Human Interface Guidelines elveit követi:
 - Mobile-first megközelítés
 - Teljes accessibility támogatás
 
+### Reszponzivitás
+Az alkalmazás teljesen reszponzív és minden képernyőméreten tökéletesen működik:
+
+| Viewport szélesség | Layout | Megjegyzés |
+|---|---|---|
+| **< 375px** | 1 oszlop | Optimalizált iPhone 13 mini-hez |
+| **375px - 640px** | 1 oszlop | Optimalizált padding és spacing |
+| **640px - 1024px** | 2 oszlop | Tablet layout |
+| **≥ 1024px** | 3 oszlop | Desktop layout, max 1000px széles |
+
+**Tesztelve:** iPhone 13 mini (375px), iPad (768px), Desktop (1280px+)
+
 ## 🎯 Használat
 
 ### Jegyzetek létrehozása

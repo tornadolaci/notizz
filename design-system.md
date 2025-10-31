@@ -168,22 +168,39 @@
 .note-grid {
   display: grid;
   gap: var(--gap-cards);
-  padding: var(--space-4);
-  
+  padding: var(--space-3);
+
   /* Mobile: 1 oszlop */
   grid-template-columns: 1fr;
-  
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-x: hidden;
+
+  /* 375px optimalizálás iPhone 13 mini számára */
+  @media (max-width: 375px) {
+    padding: 6px;
+    gap: 6px;
+  }
+
   /* Tablet: 2 oszlop */
   @media (min-width: 640px) {
     grid-template-columns: repeat(2, 1fr);
   }
-  
-  /* Desktop: max 3 oszlop, központosítva */
+
+  /* Desktop: 3 oszlop, központosítva, rugalmas méretezés */
   @media (min-width: 1024px) {
-    grid-template-columns: repeat(3, minmax(280px, 1fr));
+    grid-template-columns: repeat(3, 1fr);
     max-width: 1000px;
     margin: 0 auto;
   }
+}
+
+/* Grid gyerek elemek - NEM szabad explicit szélességet megadni! */
+.draggable-wrapper,
+.card-wrapper {
+  min-width: 0;  /* Grid flexibilitáshoz */
+  box-sizing: border-box;
 }
 ```
 
@@ -644,21 +661,25 @@
   --bg-primary: var(--dark-bg-primary);
   --bg-secondary: var(--dark-bg-secondary);
   --bg-tertiary: var(--dark-bg-tertiary);
-  
+
   /* Szöveg színek */
   --text-primary: var(--dark-text-primary);
   --text-secondary: var(--dark-text-secondary);
   --text-tertiary: var(--dark-text-tertiary);
-  
+
   /* Határok */
   --border-light: var(--dark-border);
   --border-medium: var(--dark-border);
-  
+
+  /* Kártya háttérszín sötét módban */
+  --card-bg-dark: #1C1C1E;
+
   /* Panel színek halványítva */
   .card {
     opacity: 0.95;
+    background: var(--card-bg-dark) !important;
   }
-  
+
   /* Glass effect sötétben */
   .card--glass {
     background: rgba(30, 30, 30, 0.8);
