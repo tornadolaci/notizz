@@ -8,6 +8,7 @@
 - **Vite 5.0+** - Build tool és dev server
 - **Dexie.js 4.0+** - IndexedDB wrapper
 - **Zod 3.22+** - Séma validáció
+- **Tinro 0.6+** - Lightweight routing library (hash-based)
 
 ### Styling & UI
 - **Vanilla CSS** - CSS változókkal
@@ -104,12 +105,14 @@ notizz/
 │   ├── routes/
 │   │   ├── +page.svelte
 │   │   ├── +layout.svelte
-│   │   └── settings/
+│   │   ├── settings/
+│   │   │   └── +page.svelte
+│   │   └── share-target/
 │   │       └── +page.svelte
-│   ├── app.html
+│   ├── App.svelte
+│   ├── main.ts
 │   ├── app.css
-│   ├── app.d.ts
-│   └── sw.ts
+│   └── app.d.ts
 ├── tests/
 │   ├── unit/
 │   │   ├── stores/
@@ -148,6 +151,41 @@ export const PASTEL_COLORS = {
   sage: '#B2D3C2',        // Zsálya
   coral: '#FFB5A7'        // Korall
 };
+```
+
+## 🛣 Routing
+
+A projekt **Tinro** routing library-t használ hash-based routing-gal, ami biztosítja a PWA kompatibilitást és az offline működést.
+
+### Útvonalak:
+- `/` - Főoldal (jegyzetek és TODO-k listája)
+- `/settings` - Beállítások oldal
+- `/share-target` - Megosztási cél (Web Share Target API)
+
+### Implementáció:
+```typescript
+// App.svelte
+import { router } from 'tinro';
+import { Route } from 'tinro';
+
+router.mode.hash(); // Hash-based routing (#/settings)
+
+<Route path="/">
+  <HomePage />
+</Route>
+<Route path="/settings">
+  <SettingsPage />
+</Route>
+```
+
+### Navigáció:
+```typescript
+// Link használata
+<a href="#/settings">Beállítások</a>
+
+// Programozott navigáció
+import { router } from 'tinro';
+router.goto('/settings');
 ```
 
 ## 🗄 Adatbázis struktúra

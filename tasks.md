@@ -566,6 +566,52 @@ Total gzipped: ~88.5 KB
 
 ---
 
+## 🐛 BUGFIX: Routing hozzáadása (Tinro) ✅
+**Dátum:** 2025-10-31
+**Tényleges idő:** ~15 perc
+
+### Probléma leírása
+- A beállítások ikonra kattintva 404-es hibakód
+- Az URL frissült `/settings`-re, de az oldal tartalma nem változott
+- A projekt nem használ SvelteKit-et, de SvelteKit konvenciókat követett (`$app/navigation`)
+- Az App.svelte statikusan importálta csak a főoldalt
+
+### Megoldás ✅
+- [x] Tinro routing library telepítése (0.6.12)
+- [x] App.svelte átírása Route komponensekkel
+- [x] Hash-based routing engedélyezése (`router.mode.hash()`)
+- [x] Header.svelte link frissítése: `href="/settings"` → `href="#/settings"`
+- [x] Settings oldal: `goto()` → `router.goto()`
+- [x] Share-target oldal: `goto()` → `router.goto()`
+- [x] Type definíciók javítva: order mező kihagyása CreateInput-ból
+
+### Érintett fájlok
+- package.json, package-lock.json - tinro dependency
+- src/App.svelte - routing implementáció
+- src/lib/components/layout/Header.svelte - link update
+- src/routes/settings/+page.svelte - navigation fix
+- src/routes/share-target/+page.svelte - navigation fix
+- src/lib/types/note.ts, todo.ts - type improvements
+- project-structure.md - routing dokumentáció hozzáadva
+
+### Tesztelés ✅
+- [x] Beállítások oldal megnyílik: `http://localhost:5173/#/settings`
+- [x] "Vissza" gomb működik: visszavisz a főoldalra
+- [x] Hash-based routing kompatibilis a PWA-val
+- [x] Dev szerver fut és működik
+
+### Commit
+```
+fix: Routing hozzáadása tinro library-vel
+
+- Telepítve a tinro routing library
+- App.svelte átírva Route komponensekkel és hash routing-gal
+- Header.svelte link frissítve #/settings-re
+- Settings és share-target oldalak goto() cseréje router.goto()-ra
+```
+
+---
+
 ## ✅ Projekt befejezése
 
 ### Deployment előkészítés
