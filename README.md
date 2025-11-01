@@ -9,11 +9,9 @@ Modern jegyzet és TODO lista kezelő Progressive Web App (PWA) iOS-inspired des
 - 📱 **PWA** - Telepíthető mobilra és desktopra
 - 🔒 **Offline-first** - Teljes működés internet nélkül
 - 🎨 **iOS-inspired design** - Glassmorphism és smooth animációk
-- 🌗 **Dark mode** - Automatikus vagy manuális témavál
-tás
-- 🔍 **Fuzzy search** - Gyors keresés jegyzetekben és todo-kban
+- ✨ **Sticky glassmorphism header** - Fixed pozíciójú átlátszó fejléc blur effekttel
+- 🌗 **Dark mode** - Automatikus vagy manuális témaváltás
 - 🎯 **Sürgősség jelölés** - Fontos elemek kiemelése
-- 🏷️ **Címkézés** - Jegyzetek és todo-k kategorizálása
 - 📊 **Haladáskövetés** - TODO listák automatikus progress bar-ral
 - 🎨 **8 pasztell szín** - Vizuális kategorizálás
 - 💾 **Export/Import** - Adatok mentése és visszatöltése JSON formátumban
@@ -175,9 +173,10 @@ notizz/
 ## 📊 Performance metrikák
 
 ### Bundle size (gzipped)
-- **Total**: ~88.5 KB
-- CSS: 7.17 KB
-- JS: ~81 KB (chunked: svelte, dexie, date-fns, app)
+- **Total**: ~488 KB (precache: 17 entries)
+- CSS: 7.69 KB
+- JS: ~127 KB (chunked: svelte, dexie, date-fns, app)
+- Service Worker: Auto-generated with Workbox
 
 ### Lighthouse Score célok
 - ⚡ Performance: 95+
