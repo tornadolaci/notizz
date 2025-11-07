@@ -298,10 +298,17 @@
     touch-action: pan-y;
     min-width: 0;
     box-sizing: border-box;
+    transition: transform 200ms cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: transform;
   }
 
   .draggable-wrapper:active {
     cursor: grabbing;
+  }
+
+  /* Smooth animations for reordering */
+  .draggable-wrapper:not([style*="position: fixed"]) {
+    transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   @media (min-width: 640px) {

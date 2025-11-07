@@ -294,6 +294,8 @@ export function draggableItem(element: HTMLElement, config: DraggableItemConfig)
   let placeholder: HTMLElement | null = null;
   let startY = 0;
   let currentY = 0;
+  let lastReorderTime = 0;
+  const REORDER_THROTTLE_MS = 150; // Minimum time between reorders
 
   const findContainer = (): HTMLElement | null => {
     return document.querySelector(config.containerSelector);
@@ -302,10 +304,16 @@ export function draggableItem(element: HTMLElement, config: DraggableItemConfig)
   const createPlaceholder = (): HTMLElement => {
     const ph = document.createElement('div');
     ph.style.height = `${element.offsetHeight}px`;
-    ph.style.backgroundColor = 'rgba(0, 122, 255, 0.1)';
-    ph.style.border = '2px dashed var(--color-info)';
+    ph.style.backgroundColor = 'rgba(0, 122, 255, 0.08)';
+    ph.style.border = '2px dashed rgba(0, 122, 255, 0.3)';
     ph.style.borderRadius = '20px';
     ph.style.marginBottom = '12px';
+    ph.style.transition = 'all 300ms cubic-bezier(0.25, 0.46, 0.45, 0.94)'; // Smoother easing
+    ph.style.opacity = '0';
+    // Fade in placeholder
+    requestAnimationFrame(() => {
+      ph.style.opacity = '1';
+    });
     return ph;
   };
 
@@ -317,6 +325,7 @@ export function draggableItem(element: HTMLElement, config: DraggableItemConfig)
 
   const handleDragStart = (clientY: number) => {
     isDragging = true;
+    const rect = element.getBoundingClientRect();
     startY = clientY;
     currentY = clientY;
 
@@ -324,14 +333,16 @@ export function draggableItem(element: HTMLElement, config: DraggableItemConfig)
     placeholder = createPlaceholder();
     element.parentElement?.insertBefore(placeholder, element.nextSibling);
 
-    // Style dragged element
+    // Style dragged element with smooth transitions
     element.style.position = 'fixed';
     element.style.zIndex = '1000';
-    element.style.opacity = '0.9';
-    element.style.transform = 'scale(1.05)';
-    element.style.width = `${element.offsetWidth}px`;
-    element.style.left = `${element.getBoundingClientRect().left}px`;
-    element.style.top = `${element.getBoundingClientRect().top}px`;
+    element.style.opacity = '0.95';
+    element.style.transform = 'scale(1.03)';
+    element.style.transition = 'transform 200ms cubic-bezier(0.4, 0, 0.2, 1), opacity 200ms ease, box-shadow 200ms ease';
+    element.style.boxShadow = '0 12px 40px rgba(0, 0, 0, 0.2), 0 4px 12px rgba(0, 0, 0, 0.15)';
+    element.style.width = `${rect.width}px`;
+    element.style.left = `${rect.left}px`;
+    element.style.top = `${rect.top}px`;
     element.style.cursor = 'grabbing';
     element.style.pointerEvents = 'none';
 
@@ -344,12 +355,21 @@ export function draggableItem(element: HTMLElement, config: DraggableItemConfig)
     currentY = clientY;
     const deltaY = currentY - startY;
 
-    // Update position
-    const initialTop = parseFloat(element.style.top);
+    // Disable transition during drag for smooth following
+    draggedElement.style.transition = 'none';
+
+    // Update position smoothly
+    const initialTop = parseFloat(draggedElement.style.top);
     draggedElement.style.top = `${initialTop + deltaY}px`;
     startY = currentY;
 
-    // Find closest item
+    // Throttle reordering to reduce vibration
+    const now = Date.now();
+    if (now - lastReorderTime < REORDER_THROTTLE_MS) {
+      return;
+    }
+
+    // Find closest item with dead zone for smoother reordering
     const items = getItemsInContainer();
     const draggedRect = draggedElement.getBoundingClientRect();
     const draggedCenterY = draggedRect.top + draggedRect.height / 2;
@@ -360,11 +380,16 @@ export function draggableItem(element: HTMLElement, config: DraggableItemConfig)
       const itemRect = item.getBoundingClientRect();
       const itemCenterY = itemRect.top + itemRect.height / 2;
 
-      if (draggedCenterY < itemCenterY && placeholder.nextSibling !== item) {
+      // Use 30% overlap threshold instead of centerpoint
+      const overlapThreshold = itemRect.height * 0.3;
+
+      if (draggedCenterY < itemCenterY - overlapThreshold && placeholder.nextSibling !== item) {
         item.parentElement?.insertBefore(placeholder, item);
+        lastReorderTime = now;
         break;
-      } else if (draggedCenterY > itemCenterY && placeholder.previousSibling !== item) {
+      } else if (draggedCenterY > itemCenterY + overlapThreshold && placeholder.previousSibling !== item) {
         item.parentElement?.insertBefore(placeholder, item.nextSibling);
+        lastReorderTime = now;
         break;
       }
     }
@@ -373,32 +398,58 @@ export function draggableItem(element: HTMLElement, config: DraggableItemConfig)
   const handleDragEnd = () => {
     if (!isDragging || !draggedElement || !placeholder) return;
 
-    // Reset styles
-    draggedElement.style.position = '';
-    draggedElement.style.zIndex = '';
-    draggedElement.style.opacity = '';
-    draggedElement.style.transform = '';
-    draggedElement.style.width = '';
-    draggedElement.style.left = '';
-    draggedElement.style.top = '';
-    draggedElement.style.cursor = '';
-    draggedElement.style.pointerEvents = '';
+    // Save references before they're cleared
+    const draggedRef = draggedElement;
+    const placeholderRef = placeholder;
 
-    // Replace placeholder with element
-    placeholder.parentElement?.insertBefore(draggedElement, placeholder);
-    placeholder.remove();
+    // Re-enable transition for smooth drop animation
+    draggedRef.style.transition = 'all 250ms cubic-bezier(0.4, 0, 0.2, 1)';
 
-    // Get new order
-    const items = getItemsInContainer();
-    const newOrder = items
-      .filter(item => item.dataset.draggableId)
-      .map(item => item.dataset.draggableId!);
+    // Animate back to placeholder position
+    const placeholderRect = placeholderRef.getBoundingClientRect();
+    draggedRef.style.top = `${placeholderRect.top}px`;
+    draggedRef.style.left = `${placeholderRect.left}px`;
+    draggedRef.style.transform = 'scale(1)';
+    draggedRef.style.opacity = '1';
+    draggedRef.style.boxShadow = '';
 
-    config.onReorder(newOrder);
-
+    // Immediately mark as not dragging to prevent duplicate calls
     isDragging = false;
-    draggedElement = null;
-    placeholder = null;
+
+    // Wait for animation to complete before cleanup
+    setTimeout(() => {
+      // Reset styles
+      draggedRef.style.position = '';
+      draggedRef.style.zIndex = '';
+      draggedRef.style.opacity = '';
+      draggedRef.style.transform = '';
+      draggedRef.style.transition = '';
+      draggedRef.style.boxShadow = '';
+      draggedRef.style.width = '';
+      draggedRef.style.left = '';
+      draggedRef.style.top = '';
+      draggedRef.style.cursor = '';
+      draggedRef.style.pointerEvents = '';
+
+      // Replace placeholder with element
+      if (placeholderRef && placeholderRef.parentElement) {
+        placeholderRef.parentElement.insertBefore(draggedRef, placeholderRef);
+        placeholderRef.remove();
+      }
+
+      // Get new order
+      const items = getItemsInContainer();
+      const newOrder = items
+        .filter(item => item.dataset.draggableId)
+        .map(item => item.dataset.draggableId!);
+
+      // Clear references
+      draggedElement = null;
+      placeholder = null;
+
+      // Call reorder callback
+      config.onReorder(newOrder);
+    }, 250);
   };
 
   // Long press to activate drag

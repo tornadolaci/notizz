@@ -131,15 +131,25 @@ export const notesStore = {
       );
       await Promise.all(updatePromises);
 
-      // Optimistic update in state
-      const state = get(notesStateWritable);
-      const noteMap = new Map(state.value.map(note => [note.id, note]));
-      const reorderedNotes = noteIds
-        .map(id => noteMap.get(id))
-        .filter((note): note is INote => note !== undefined)
-        .map((note, index) => ({ ...note, order: index }));
-
-      notesStateWritable.update(s => ({ ...s, value: reorderedNotes }));
+      // Optimistic update in state - update order for matching notes
+      notesStateWritable.update(s => ({
+        ...s,
+        value: s.value.map(note => {
+          if (!note.id) return note;
+          const newIndex = noteIds.indexOf(note.id);
+          if (newIndex !== -1) {
+            return { ...note, order: newIndex };
+          }
+          return note;
+        }).sort((a, b) => {
+          // Sort by order field
+          const aOrder = a.order ?? 999999;
+          const bOrder = b.order ?? 999999;
+          if (aOrder !== bOrder) return aOrder - bOrder;
+          // Fallback to updatedAt
+          return b.updatedAt.getTime() - a.updatedAt.getTime();
+        })
+      }));
     } catch (error) {
       const err = error instanceof Error ? error : new Error('Failed to reorder notes');
       notesStateWritable.update(s => ({ ...s, error: err }));
