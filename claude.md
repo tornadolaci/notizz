@@ -250,6 +250,20 @@ src/lib/components/
   - Removed `text-overflow: ellipsis`, `overflow: hidden`, `white-space: nowrap`
   - Font size: `--text-base` (desktop), `--text-sm` (mobile)
   - Flexbox layout naturally handles spacing between brand and actions
+- **Dark mode**:
+  - Header background: `rgba(28, 28, 30, 0.7)` (matches settings page)
+  - Date text color: `#FFFFFF` (white for better visibility)
+  - CSS selector: `:global([data-theme="dark"])` - uses global scope since `data-theme` is on `<html>` element
+  - Border: `1px solid rgba(255, 255, 255, 0.1)`
+
+**Settings Page Header**:
+- **Title gradient**: Same as main header "Notizz!" title
+  - Gradient: `linear-gradient(135deg, #667eea 0%, #764ba2 100%)`
+  - Uses `-webkit-background-clip: text` and `-webkit-text-fill-color: transparent`
+  - Ensures visual consistency across all pages
+- **Dark mode**: Same glassmorphism effect as main header
+  - Background: `rgba(28, 28, 30, 0.7)`
+  - Border: `1px solid rgba(255, 255, 255, 0.1)`
 
 **Mobile Scroll Behavior**:
 - Smooth scrolling disabled on mobile (<768px) to prevent iOS jump/bounce
