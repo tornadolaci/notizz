@@ -250,3 +250,93 @@ src/lib/components/
 - Smooth scrolling disabled on mobile (<768px) to prevent iOS jump/bounce
 - `scroll-behavior: auto` on mobile, `smooth` on desktop (768px+)
 - `overscroll-behavior-y: none` prevents rubber band scroll artifacts
+
+### Card Sorting & Manual Reordering - Fixed Implementation
+
+**Critical Fix (2025-01-07)**: A kártyák pozíció cseréje mostanáig hibásan működött. Az alábbi problémák kerültek javításra:
+
+#### Probléma Gyökerei
+
+1. **updatedAt ütközés az order mezővel**:
+   - Amikor az `order` mező frissült, az `updatedAt` is automatikusan frissült
+   - A rendezés `updatedAt` szerint történt, nem `order` szerint
+   - Eredmény: Csak az időbélyeg változott, a kártya nem mozdult
+
+2. **Urgent flag prioritás**:
+   - A rendezés "urgent items first" logikával működött
+   - Az `order` csere hatástalan volt urgent kártyáknál
+   - Eredmény: Urgent kártyák mindig felül maradtak
+
+3. **Hiányzó order értékek**:
+   - Régi kártyák nem rendelkeztek `order` mezővel (`undefined`)
+   - Az `undefined` értékek miatt hibás rendezés történt
+   - Eredmény: Kártyák egyáltalán nem mozogtak
+
+#### Megoldás Implementációja
+
+**1. Store réteg** - [src/lib/stores/notes.ts](src/lib/stores/notes.ts), [src/lib/stores/todos.ts](src/lib/stores/todos.ts):
+```typescript
+// Order-only frissítésnél NEM változik az updatedAt
+const isOnlyOrderChange = Object.keys(updates).length === 1 && 'order' in updates;
+notesStateWritable.update(s => ({
+  value: s.value.map(note =>
+    note.id === id
+      ? { ...note, ...updates, ...(isOnlyOrderChange ? {} : { updatedAt: new Date() }) }
+      : note
+  )
+}));
+```
+
+**2. Service réteg** - [src/lib/services/storage.service.ts](src/lib/services/storage.service.ts):
+```typescript
+// getAll() most order szerint rendez (NEM updatedAt!)
+static async getAll(): Promise<INote[]> {
+  const notes = await db.notes.toArray();
+  return notes.sort((a, b) => a.order - b.order); // Ascending order
+}
+
+// update() nem frissíti az updatedAt-et order változásnál
+const isOnlyOrderChange = Object.keys(updates).length === 1 && 'order' in updates;
+await db.notes.update(id, {
+  ...updates,
+  ...(isOnlyOrderChange ? {} : { updatedAt: new Date() }),
+});
+```
+
+**3. Komponens réteg** - [src/routes/+page.svelte](src/routes/+page.svelte):
+```typescript
+// Urgent flag ELTÁVOLÍTVA a rendezésből - order mező teljes kontrollt ad
+const items = $derived.by(() => {
+  const allItems = [...notes, ...todos];
+  return allItems.sort((a, b) => a.data.order - b.data.order); // Csak order!
+});
+
+// Promise.all használata - race condition elkerülése
+await Promise.all([
+  notesStore.update(id, { order: previousOrder }),
+  notesStore.update(previousItem.id, { order: currentOrder })
+]);
+```
+
+**4. Automatikus migráció** - [src/routes/+page.svelte:30-80](src/routes/+page.svelte#L30-L80):
+- `onMount` során ellenőrzi, hogy vannak-e `undefined` order értékek
+- Ha igen, automatikusan inicializálja őket (0, 1000, 2000, stb.)
+- 1000-es lépésközök jövőbeli insertekhez biztosítanak helyet
+- Migration csak egyszer fut le, utána már minden új kártya kap order értéket
+
+#### Működés
+
+- ✅ Kártyák valóban cserélnek pozíciót fel/le gombokkal
+- ✅ `updatedAt` NEM változik mozgatáskor
+- ✅ Urgent kártyák is szabadon mozgathatók bárhová
+- ✅ Race condition megoldva (Promise.all)
+- ✅ Régi adatok automatikusan migrálódnak
+- ✅ Új kártyák timestamp-et kapnak order értéknek (természetes sorrend)
+
+#### Kritikus Szabályok
+
+- ⚠️ SOHA ne frissítsd az `updatedAt`-et order-only változásnál
+- ⚠️ A rendezés CSAK az `order` mező alapján történjen
+- ⚠️ Urgent flag NE befolyásolja a rendezést
+- ⚠️ Mindig Promise.all-t használj párhuzamos update-eknél
+- ⚠️ Migration kód megmarad a backward compatibility miatt
