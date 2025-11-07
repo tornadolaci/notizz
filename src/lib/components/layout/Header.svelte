@@ -30,7 +30,7 @@
 <header class="header">
   <div class="header__content">
     <div class="header__brand">
-      <h1 class="header__title">Notizz</h1>
+      <h1 class="header__title">Notizz!</h1>
       <p class="header__subtitle">{formattedDate()}</p>
     </div>
     <div class="header__actions">
@@ -110,7 +110,7 @@
   }
 
   .header__subtitle {
-    font-size: var(--text-sm);
+    font-size: var(--text-base);
     color: var(--text-tertiary);
     margin: 0;
   }
@@ -184,11 +184,7 @@
     }
 
     .header__subtitle {
-      font-size: var(--text-xs);
-      max-width: 150px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
+      font-size: var(--text-sm);
     }
 
     .header__actions {
@@ -210,8 +206,7 @@
     }
 
     .header__subtitle {
-      font-size: 11px;
-      max-width: 140px;
+      font-size: var(--text-sm);
     }
 
     .header__actions {
