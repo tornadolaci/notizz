@@ -242,9 +242,14 @@ src/lib/components/
 - Visibility: Desktop hover-only, mobile always visible
 - Note: Urgent badge moved to top-left to avoid collision
 
-**Header Shadow** - Subtle, refined:
-- Fixed sticky header: `0 1px 2px rgba(0,0,0,0.04), 0 2px 8px rgba(0,0,0,0.06)`
-- Glassmorphism effect: `backdrop-filter: blur(20px)`
+**Header Design**:
+- **Shadow**: Subtle, refined - `0 1px 2px rgba(0,0,0,0.04), 0 2px 8px rgba(0,0,0,0.06)`
+- **Glassmorphism**: `backdrop-filter: blur(20px)` effect
+- **Date display**: Full date visible on all screen sizes without ellipsis
+  - Removed `max-width` constraints (was 150px/140px causing truncation)
+  - Removed `text-overflow: ellipsis`, `overflow: hidden`, `white-space: nowrap`
+  - Font size: `--text-base` (desktop), `--text-sm` (mobile)
+  - Flexbox layout naturally handles spacing between brand and actions
 
 **Mobile Scroll Behavior**:
 - Smooth scrolling disabled on mobile (<768px) to prevent iOS jump/bounce
