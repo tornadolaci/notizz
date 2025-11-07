@@ -8,7 +8,6 @@
   import { router } from 'tinro';
   import { settingsStore } from '$lib/stores/settings';
   import { exportData, downloadJSON, readFileAsText, validateImportData, importData, type ImportStrategy } from '$lib/utils/export';
-  import { PASTEL_COLORS } from '$lib/schemas/settings.schema';
 
   // Reactive state
   let isExporting = $state(false);
@@ -21,23 +20,6 @@
   onMount(async () => {
     await settingsStore.init();
   });
-
-  // Color options
-  const colorOptions = [
-    { value: '#E6E6FA', label: 'Levendula' },
-    { value: '#FFDAB9', label: 'Barack' },
-    { value: '#B2DFDB', label: 'Menta' },
-    { value: '#87CEEB', label: 'Égkék' },
-    { value: '#FFB6C1', label: 'Rózsa' },
-    { value: '#FFFACD', label: 'Citrom' },
-    { value: '#B2D3C2', label: 'Zsálya' },
-    { value: '#FFB5A7', label: 'Korall' },
-  ];
-
-  // Handlers
-  async function handleColorChange(color: string) {
-    await settingsStore.update({ defaultColor: color });
-  }
 
   async function handleExport() {
     try {
@@ -97,11 +79,23 @@
     }
   }
 
-  async function handleReset() {
-    if (confirm('Biztosan visszaállítod az alapértelmezett beállításokat?')) {
-      await settingsStore.reset();
-      importMessage = 'Beállítások visszaállítva!';
-      setTimeout(() => (importMessage = null), 3000);
+  async function handleDeleteDatabase() {
+    if (confirm('FIGYELEM! Ez véglegesen törli az ÖSSZES adatodat (jegyzetek, TODO-k, beállítások)!\n\nBiztosan folytatod?')) {
+      try {
+        // Delete all data from database
+        const { db } = await import('$lib/db');
+        await db.notes.clear();
+        await db.todos.clear();
+        await db.settings.clear();
+
+        importMessage = 'Adatbázis sikeresen törölve! Az oldal újratöltődik...';
+
+        // Reload page after 2 seconds
+        setTimeout(() => window.location.reload(), 2000);
+      } catch (error) {
+        importError = error instanceof Error ? error.message : 'Az adatbázis törlése sikertelen';
+        setTimeout(() => (importError = null), 5000);
+      }
     }
   }
 
@@ -122,56 +116,30 @@
   </header>
 
   <div class="settings-container">
-    <!-- Appearance Settings -->
-    <section class="settings-section">
-      <h2 class="section-title">Megjelenés</h2>
-
-      <div class="setting-group">
-        <label class="setting-label">Alapértelmezett szín</label>
-        <div class="color-picker">
-          {#each colorOptions as color}
-            <button
-              class="color-option"
-              class:selected={$settingsStore.defaultColor === color.value}
-              style="background-color: {color.value}"
-              onclick={() => handleColorChange(color.value)}
-              aria-label={color.label}
-              title={color.label}
-            >
-              {#if $settingsStore.defaultColor === color.value}
-                <span class="checkmark">✓</span>
-              {/if}
-            </button>
-          {/each}
-        </div>
-      </div>
-
-    </section>
-
     <!-- Data Management -->
     <section class="settings-section">
-      <h2 class="section-title">Adatkezelés</h2>
+      <h2 class="section-title">Adatbázis műveletek</h2>
 
       <div class="action-buttons">
         <button class="action-button" onclick={handleExport} disabled={isExporting}>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" />
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" />
           </svg>
           {isExporting ? 'Exportálás...' : 'Adatok exportálása'}
         </button>
 
         <button class="action-button" onclick={handleImport} disabled={isImporting}>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" />
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" />
           </svg>
           {isImporting ? 'Importálás...' : 'Adatok importálása'}
         </button>
 
-        <button class="action-button action-button--danger" onclick={handleReset}>
+        <button class="action-button action-button--danger" onclick={handleDeleteDatabase}>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8M3 12v-2m0 2l2.26-2.26M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16m18-4v2m0-2l-2.26 2.26" />
+            <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6" />
           </svg>
-          Alapértelmezések visszaállítása
+          Adatbázis törlése
         </button>
       </div>
 
@@ -261,6 +229,11 @@
     font-size: var(--text-xl);
     font-weight: var(--font-semibold);
     color: var(--text-primary);
+    margin: 0;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
   }
 
   .settings-container {
@@ -288,59 +261,6 @@
     font-weight: var(--font-semibold);
     color: var(--text-primary);
     margin-bottom: var(--space-5);
-  }
-
-  .setting-group {
-    margin-bottom: var(--space-5);
-  }
-
-  .setting-group:last-child {
-    margin-bottom: 0;
-  }
-
-  .setting-label {
-    display: block;
-    font-size: var(--text-base);
-    font-weight: var(--font-medium);
-    color: var(--text-primary);
-    margin-bottom: var(--space-3);
-  }
-
-  .color-picker {
-    display: flex;
-    gap: var(--space-2);
-    flex-wrap: wrap;
-  }
-
-  .color-option {
-    width: 48px;
-    height: 48px;
-    border-radius: 50%;
-    border: 3px solid transparent;
-    cursor: pointer;
-    transition: all 200ms ease;
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .color-option:hover {
-    transform: scale(1.1);
-  }
-
-  .color-option.selected {
-    border-color: var(--text-primary);
-    transform: scale(1.15);
-  }
-
-  .checkmark {
-    color: var(--text-primary);
-    font-size: 20px;
-    font-weight: bold;
-    text-shadow:
-      0 0 3px white,
-      0 0 6px white;
   }
 
   /* Action Buttons */
@@ -447,11 +367,6 @@
 
     .settings-section {
       padding: var(--space-4);
-    }
-
-    .color-option {
-      width: 40px;
-      height: 40px;
     }
   }
 

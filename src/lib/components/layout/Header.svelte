@@ -76,7 +76,7 @@
   }
 
   /* Dark mode glass effect */
-  [data-theme="dark"] .header {
+  :global([data-theme="dark"]) .header {
     background: rgba(28, 28, 30, 0.7);
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   }
@@ -113,6 +113,11 @@
     font-size: var(--text-base);
     color: var(--text-tertiary);
     margin: 0;
+  }
+
+  /* Dark mode - fehér dátum szöveg */
+  :global([data-theme="dark"]) .header__subtitle {
+    color: #FFFFFF;
   }
 
   .header__actions {
