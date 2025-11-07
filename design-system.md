@@ -143,7 +143,7 @@
   --padding-modal: 24px;
   
   /* Margin értékek */
-  --gap-cards: 12px;
+  --gap-cards: 20px;
   --gap-list-items: 8px;
   --gap-form-fields: 16px;
   --margin-section: 32px;
@@ -179,8 +179,8 @@
 
   /* 375px optimalizálás iPhone 13 mini számára */
   @media (max-width: 375px) {
-    padding: 6px;
-    gap: 6px;
+    padding: 8px;
+    gap: 16px;
   }
 
   /* Tablet: 2 oszlop */
@@ -217,18 +217,19 @@
   position: relative;
   transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1);
   
-  /* iOS-szerű árnyék */
-  box-shadow: 
-    0 1px 2px rgba(0, 0, 0, 0.04),
-    0 4px 8px rgba(0, 0, 0, 0.06),
-    0 8px 16px rgba(0, 0, 0, 0.08);
-  
+  /* iOS-szerű árnyék - Mérsékelt */
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.06),
+    0 4px 12px rgba(0, 0, 0, 0.08),
+    0 8px 20px rgba(0, 0, 0, 0.10);
+
   /* Hover/Touch feedback */
   &:hover {
     transform: translateY(-2px) scale(1.01);
-    box-shadow: 
-      0 4px 8px rgba(0, 0, 0, 0.08),
-      0 12px 24px rgba(0, 0, 0, 0.12);
+    box-shadow:
+      0 2px 6px rgba(0, 0, 0, 0.10),
+      0 8px 20px rgba(0, 0, 0, 0.12),
+      0 16px 32px rgba(0, 0, 0, 0.14);
   }
   
   &:active {

@@ -82,8 +82,10 @@
       title="Törlés"
       type="button"
     >
-      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor">
-        <path d="M12 4L4 12M4 4l8 8" stroke-width="2" stroke-linecap="round"/>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h14z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <line x1="10" y1="11" x2="10" y2="17" stroke-width="2" stroke-linecap="round"/>
+        <line x1="14" y1="11" x2="14" y2="17" stroke-width="2" stroke-linecap="round"/>
       </svg>
     </button>
   {/if}
@@ -155,11 +157,11 @@
     animation: slideUp 400ms ease both;
     animation-delay: calc(var(--index) * 50ms);
 
-    /* Shadow */
+    /* Shadow - Mérsékelt árnyékok */
     box-shadow:
-      0 1px 2px rgba(0, 0, 0, 0.04),
-      0 4px 8px rgba(0, 0, 0, 0.06),
-      0 8px 16px rgba(0, 0, 0, 0.08);
+      0 1px 3px rgba(0, 0, 0, 0.06),
+      0 4px 12px rgba(0, 0, 0, 0.08),
+      0 8px 20px rgba(0, 0, 0, 0.10);
   }
 
   @media (max-width: 375px) {
@@ -172,8 +174,9 @@
   .card:hover {
     transform: translateY(-2px) scale(1.01);
     box-shadow:
-      0 4px 8px rgba(0, 0, 0, 0.08),
-      0 12px 24px rgba(0, 0, 0, 0.12);
+      0 2px 6px rgba(0, 0, 0, 0.10),
+      0 8px 20px rgba(0, 0, 0, 0.12),
+      0 16px 32px rgba(0, 0, 0, 0.14);
   }
 
   .card:active {
@@ -195,7 +198,7 @@
   .card__badge {
     position: absolute;
     top: 12px;
-    right: 12px;
+    left: 12px;
     width: 24px;
     height: 24px;
     border-radius: 50%;
@@ -213,17 +216,17 @@
   .card__delete {
     position: absolute;
     top: 12px;
-    left: 12px;
-    width: 28px;
-    height: 28px;
+    right: 12px;
+    width: 32px;
+    height: 32px;
     border-radius: 50%;
-    background: rgba(255, 255, 255, 0.9);
+    background: var(--color-info);
     border: none;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--text-tertiary);
+    color: white;
     transition: all 200ms ease;
     opacity: 0;
     z-index: 2;
@@ -234,9 +237,9 @@
   }
 
   .card__delete:hover {
-    background: var(--color-error);
-    color: white;
+    background: #0051D5;
     transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(0, 122, 255, 0.5);
   }
 
   .card__delete:active {
@@ -247,7 +250,13 @@
   @media (hover: none) {
     .card__delete {
       opacity: 1;
-      background: rgba(255, 255, 255, 0.8);
+    }
+  }
+
+  @media (max-width: 375px) {
+    .card__delete {
+      width: 36px;
+      height: 36px;
     }
   }
 

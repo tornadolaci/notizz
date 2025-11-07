@@ -302,6 +302,7 @@
     display: grid;
     gap: var(--gap-cards);
     padding: var(--space-3);
+    padding-bottom: var(--space-6);
     grid-template-columns: 1fr;
     width: 100%;
     max-width: 100%;
@@ -321,8 +322,9 @@
     }
 
     .note-grid {
-      padding: 6px;
-      gap: 6px;
+      padding: 8px;
+      padding-bottom: max(24px, env(safe-area-inset-bottom));
+      gap: 16px;
     }
   }
 

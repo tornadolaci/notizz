@@ -69,6 +69,10 @@
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     width: 100%;
+    /* Finom árnyék a sticky fejlécre */
+    box-shadow:
+      0 1px 2px rgba(0, 0, 0, 0.04),
+      0 2px 8px rgba(0, 0, 0, 0.06);
   }
 
   /* Dark mode glass effect */
