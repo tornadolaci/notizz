@@ -26,7 +26,7 @@ export interface ITodo {
   isUrgent: boolean;
   completedCount: number; // Derived from items
   totalCount: number; // Derived from items
-  order: number; // Custom sort order for drag&drop
+  order: number; // Manual sort order
 }
 
 /**
@@ -35,7 +35,7 @@ export interface ITodo {
  */
 export type TodoCreateInput = Omit<
   ITodo,
-  'id' | 'createdAt' | 'updatedAt' | 'completedCount' | 'totalCount' | 'order'
+  'id' | 'createdAt' | 'updatedAt' | 'completedCount' | 'totalCount'
 >;
 
 /**

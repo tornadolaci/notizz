@@ -96,6 +96,7 @@ export const TodoUpdateSchema = z.object({
   updatedAt: z.date().optional(),
   completedCount: z.number().int().min(0).optional(),
   totalCount: z.number().int().min(0).optional(),
+  order: z.number().optional(),
 });
 
 /**

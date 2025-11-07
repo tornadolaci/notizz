@@ -10,7 +10,6 @@
   import EmptyState from '$lib/components/shared/EmptyState.svelte';
   import { notesStore } from '$lib/stores/notes';
   import { todosStore } from '$lib/stores/todos';
-  import { draggableItem } from '$lib/utils/gestures';
   import type { INote, ITodo } from '$lib/types';
 
   // Editor state
@@ -86,22 +85,14 @@
       ...todosState.value.map(todo => ({type: 'todo' as const, data: todo}))
     ];
 
-    // Sort by order (for drag&drop), with urgent items first, then by order/updatedAt
+    // Sort with urgent items first, then by order
     return allItems.sort((a, b) => {
       if (a.data.isUrgent !== b.data.isUrgent) {
         return a.data.isUrgent ? -1 : 1;
       }
 
-      // Sort by order if available
-      const aOrder = a.data.order ?? 999999;
-      const bOrder = b.data.order ?? 999999;
-
-      if (aOrder !== bOrder) {
-        return aOrder - bOrder;
-      }
-
-      // Fallback to updatedAt if orders are equal
-      return b.data.updatedAt.getTime() - a.data.updatedAt.getTime();
+      // Sort by order field
+      return a.data.order - b.data.order;
     });
   });
 
@@ -151,21 +142,66 @@
     await todosStore.toggleItem(todoId, itemId);
   }
 
-  // Handle drag&drop reorder
-  async function handleReorder(reorderedIds: string[]) {
-    // Separate note and todo IDs
-    const noteIds = reorderedIds.filter(id =>
-      get(notesStore).value.some(note => note.id === id)
-    );
-    const todoIds = reorderedIds.filter(id =>
-      get(todosStore).value.some(todo => todo.id === id)
-    );
+  async function handleMoveUp(id: string, type: 'note' | 'todo') {
+    const currentIndex = items.findIndex(item => item.data.id === id);
+    if (currentIndex <= 0) return;
 
-    // Update order for both types
-    await Promise.all([
-      noteIds.length > 0 ? notesStore.reorder(noteIds) : Promise.resolve(),
-      todoIds.length > 0 ? todosStore.reorder(todoIds) : Promise.resolve()
-    ]);
+    const currentItem = items[currentIndex];
+    const previousItem = items[currentIndex - 1];
+
+    // Swap order values between current and previous items
+    const currentOrder = currentItem.data.order;
+    const previousOrder = previousItem.data.order;
+
+    // Update current item to have previous item's order
+    if (type === 'note') {
+      await notesStore.update(id, { order: previousOrder });
+      // Also update the previous item's order
+      if (previousItem.type === 'note') {
+        await notesStore.update(previousItem.data.id!, { order: currentOrder });
+      } else {
+        await todosStore.update(previousItem.data.id!, { order: currentOrder });
+      }
+    } else {
+      await todosStore.update(id, { order: previousOrder });
+      // Also update the previous item's order
+      if (previousItem.type === 'note') {
+        await notesStore.update(previousItem.data.id!, { order: currentOrder });
+      } else {
+        await todosStore.update(previousItem.data.id!, { order: currentOrder });
+      }
+    }
+  }
+
+  async function handleMoveDown(id: string, type: 'note' | 'todo') {
+    const currentIndex = items.findIndex(item => item.data.id === id);
+    if (currentIndex < 0 || currentIndex >= items.length - 1) return;
+
+    const currentItem = items[currentIndex];
+    const nextItem = items[currentIndex + 1];
+
+    // Swap order values between current and next items
+    const currentOrder = currentItem.data.order;
+    const nextOrder = nextItem.data.order;
+
+    // Update current item to have next item's order
+    if (type === 'note') {
+      await notesStore.update(id, { order: nextOrder });
+      // Also update the next item's order
+      if (nextItem.type === 'note') {
+        await notesStore.update(nextItem.data.id!, { order: currentOrder });
+      } else {
+        await todosStore.update(nextItem.data.id!, { order: currentOrder });
+      }
+    } else {
+      await todosStore.update(id, { order: nextOrder });
+      // Also update the next item's order
+      if (nextItem.type === 'note') {
+        await notesStore.update(nextItem.data.id!, { order: currentOrder });
+      } else {
+        await todosStore.update(nextItem.data.id!, { order: currentOrder });
+      }
+    }
   }
 </script>
 
@@ -173,33 +209,32 @@
 
 <main class="container">
   {#if items.length > 0}
-    <div class="note-grid" data-draggable-container>
+    <div class="note-grid">
       {#each items as item, index (item.data.id)}
-        <div
-          use:draggableItem={{
-            id: item.data.id!,
-            containerSelector: '[data-draggable-container]',
-            onReorder: handleReorder
-          }}
-          class="draggable-wrapper"
-        >
-          {#if item.type === 'note'}
-            <NoteCard
-              note={item.data as INote}
-              index={index}
-              onEdit={() => openNoteEditor(item.data as INote)}
-              onDelete={() => handleNoteDelete(item.data.id!)}
-            />
-          {:else}
-            <TodoCard
-              todo={item.data as ITodo}
-              index={index}
-              onEdit={() => openTodoEditor(item.data as ITodo)}
-              onDelete={() => handleTodoDelete(item.data.id!)}
-              onToggleItem={handleTodoToggle}
-            />
-          {/if}
-        </div>
+        {#if item.type === 'note'}
+          <NoteCard
+            note={item.data as INote}
+            index={index}
+            onEdit={() => openNoteEditor(item.data as INote)}
+            onDelete={() => handleNoteDelete(item.data.id!)}
+            onMoveUp={() => handleMoveUp(item.data.id!, 'note')}
+            onMoveDown={() => handleMoveDown(item.data.id!, 'note')}
+            isFirst={index === 0}
+            isLast={index === items.length - 1}
+          />
+        {:else}
+          <TodoCard
+            todo={item.data as ITodo}
+            index={index}
+            onEdit={() => openTodoEditor(item.data as ITodo)}
+            onDelete={() => handleTodoDelete(item.data.id!)}
+            onToggleItem={handleTodoToggle}
+            onMoveUp={() => handleMoveUp(item.data.id!, 'todo')}
+            onMoveDown={() => handleMoveDown(item.data.id!, 'todo')}
+            isFirst={index === 0}
+            isLast={index === items.length - 1}
+          />
+        {/if}
       {/each}
     </div>
   {:else if $notesStore.value.length === 0 && $todosStore.value.length === 0}
@@ -289,26 +324,6 @@
       padding: 6px;
       gap: 6px;
     }
-  }
-
-  .draggable-wrapper {
-    cursor: grab;
-    -webkit-user-select: none;
-    user-select: none;
-    touch-action: pan-y;
-    min-width: 0;
-    box-sizing: border-box;
-    transition: transform 200ms cubic-bezier(0.4, 0, 0.2, 1);
-    will-change: transform;
-  }
-
-  .draggable-wrapper:active {
-    cursor: grabbing;
-  }
-
-  /* Smooth animations for reordering */
-  .draggable-wrapper:not([style*="position: fixed"]) {
-    transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   @media (min-width: 640px) {

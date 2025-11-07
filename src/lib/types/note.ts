@@ -14,14 +14,14 @@ export interface INote {
   createdAt: Date;
   updatedAt: Date;
   isUrgent: boolean;
-  order: number; // Custom sort order for drag&drop
+  order: number; // Manual sort order
 }
 
 /**
  * Note creation input - used when creating a new note
  * Omits auto-generated fields
  */
-export type NoteCreateInput = Omit<INote, 'id' | 'createdAt' | 'updatedAt' | 'order'>;
+export type NoteCreateInput = Omit<INote, 'id' | 'createdAt' | 'updatedAt'>;
 
 /**
  * Note update input - used when updating an existing note

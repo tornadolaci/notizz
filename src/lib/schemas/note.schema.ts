@@ -86,6 +86,7 @@ export const NoteUpdateSchema = z.object({
     .optional(),
   isUrgent: z.boolean().optional(),
   updatedAt: z.date().optional(),
+  order: z.number().optional(),
 });
 
 /**

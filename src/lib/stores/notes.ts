@@ -117,45 +117,5 @@ export const notesStore = {
   getById(id: string): INote | undefined {
     const state = get(notesStateWritable);
     return state.value.find(note => note.id === id);
-  },
-
-  /**
-   * Reorder notes after drag&drop
-   * Updates the order field for all affected notes
-   */
-  async reorder(noteIds: string[]): Promise<void> {
-    try {
-      // Update order in database
-      const updatePromises = noteIds.map((id, index) =>
-        NotesService.update({ id, order: index })
-      );
-      await Promise.all(updatePromises);
-
-      // Optimistic update in state - update order for matching notes
-      notesStateWritable.update(s => ({
-        ...s,
-        value: s.value.map(note => {
-          if (!note.id) return note;
-          const newIndex = noteIds.indexOf(note.id);
-          if (newIndex !== -1) {
-            return { ...note, order: newIndex };
-          }
-          return note;
-        }).sort((a, b) => {
-          // Sort by order field
-          const aOrder = a.order ?? 999999;
-          const bOrder = b.order ?? 999999;
-          if (aOrder !== bOrder) return aOrder - bOrder;
-          // Fallback to updatedAt
-          return b.updatedAt.getTime() - a.updatedAt.getTime();
-        })
-      }));
-    } catch (error) {
-      const err = error instanceof Error ? error : new Error('Failed to reorder notes');
-      notesStateWritable.update(s => ({ ...s, error: err }));
-      console.error('Error reordering notes:', error);
-      // Reload on error
-      await this.load();
-    }
   }
 };

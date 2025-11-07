@@ -2,23 +2,19 @@
   import type { INote } from '$lib/types';
   import { formatDistanceToNow } from 'date-fns';
   import { hu } from 'date-fns/locale';
-  import { createDragHandler, getDragTransform, type DragState, type SwipeDirection } from '$lib/utils/gestures';
 
   interface Props {
     note: INote;
     index?: number;
     onEdit?: () => void;
     onDelete?: () => void;
+    onMoveUp?: () => void;
+    onMoveDown?: () => void;
+    isFirst?: boolean;
+    isLast?: boolean;
   }
 
-  let { note, index = 0, onEdit, onDelete }: Props = $props();
-
-  let cardElement: HTMLElement;
-  let dragOffset = $state({ x: 0, y: 0 });
-  let isDragging = $state(false);
-  let swipeAction = $state<'edit' | 'delete' | null>(null);
-
-  const SWIPE_THRESHOLD = 100;
+  let { note, index = 0, onEdit, onDelete, onMoveUp, onMoveDown, isFirst = false, isLast = false }: Props = $props();
 
   const timeAgo = $derived(() => {
     return formatDistanceToNow(note.updatedAt, {
@@ -27,59 +23,7 @@
     });
   });
 
-  $effect(() => {
-    if (!cardElement) return;
-
-    const cleanup = createDragHandler(
-      cardElement,
-      {
-        onDragStart: () => {
-          isDragging = true;
-        },
-        onDrag: (state: DragState) => {
-          // Only horizontal swipe
-          dragOffset.x = state.deltaX;
-          dragOffset.y = 0;
-
-          // Determine swipe action based on direction
-          if (state.deltaX < -SWIPE_THRESHOLD) {
-            swipeAction = 'edit'; // Swipe left = edit
-          } else if (state.deltaX > SWIPE_THRESHOLD) {
-            swipeAction = 'delete'; // Swipe right = delete
-          } else {
-            swipeAction = null;
-          }
-        },
-        onDragEnd: (_state: DragState, swipe: SwipeDirection) => {
-          isDragging = false;
-
-          // Trigger actions based on swipe
-          if (swipe.direction === 'left' && onEdit) {
-            onEdit();
-          } else if (swipe.direction === 'right' && onDelete) {
-            onDelete();
-          }
-
-          // Reset state
-          dragOffset.x = 0;
-          dragOffset.y = 0;
-          swipeAction = null;
-        }
-      },
-      {
-        threshold: SWIPE_THRESHOLD,
-        maxDuration: 500,
-        minVelocity: 0.3
-      }
-    );
-
-    return cleanup;
-  });
-
   function handleClick() {
-    // Prevent click if dragging
-    if (isDragging || Math.abs(dragOffset.x) > 5) return;
-
     if (onEdit) {
       onEdit();
     }
@@ -92,6 +36,20 @@
     }
   }
 
+  function handleMoveUp(e: MouseEvent) {
+    e.stopPropagation();
+    if (onMoveUp) {
+      onMoveUp();
+    }
+  }
+
+  function handleMoveDown(e: MouseEvent) {
+    e.stopPropagation();
+    if (onMoveDown) {
+      onMoveDown();
+    }
+  }
+
   function handleKeydown(event: KeyboardEvent) {
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
@@ -100,39 +58,18 @@
   }
 </script>
 
-<div class="card-wrapper">
-  <!-- Swipe action backgrounds -->
-  <div class="swipe-action swipe-action--edit" class:swipe-action--active={swipeAction === 'edit'}>
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-    </svg>
-    <span>Szerkesztés</span>
-  </div>
-
-  <div class="swipe-action swipe-action--delete" class:swipe-action--active={swipeAction === 'delete'}>
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-      <polyline points="3 6 5 6 21 6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-    </svg>
-    <span>Törlés</span>
-  </div>
-
-  <!-- svelte-ignore a11y_no_noninteractive_element_to_interactive_role -->
-  <article
-    bind:this={cardElement}
-    class="card"
-    class:card--urgent={note.isUrgent}
-    class:card--dragging={isDragging}
-    style:--card-color={note.color}
-    style:--index={index}
-    style:transform={getDragTransform(dragOffset.x, dragOffset.y, 200)}
-    onclick={handleClick}
-    onkeydown={handleKeydown}
-    role="button"
-    tabindex="0"
-    aria-label="Jegyzet: {note.title}"
-  >
+<!-- svelte-ignore a11y_no_noninteractive_element_to_interactive_role -->
+<article
+  class="card"
+  class:card--urgent={note.isUrgent}
+  style:--card-color={note.color}
+  style:--index={index}
+  onclick={handleClick}
+  onkeydown={handleKeydown}
+  role="button"
+  tabindex="0"
+  aria-label="Jegyzet: {note.title}"
+>
   {#if note.isUrgent}
     <div class="card__badge" aria-label="Sürgős">!</div>
   {/if}
@@ -160,62 +97,41 @@
   </div>
 
   <div class="card__footer">
+    <div class="card__navigation">
+      {#if onMoveDown && !isLast}
+        <button
+          class="card__nav-btn card__nav-btn--down"
+          onclick={handleMoveDown}
+          aria-label="Kártya mozgatása lefelé"
+          title="Lefelé"
+          type="button"
+        >
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor">
+            <path d="M10 6L10 14M10 14L6 10M10 14L14 10" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+      {/if}
+      {#if onMoveUp && !isFirst}
+        <button
+          class="card__nav-btn card__nav-btn--up"
+          onclick={handleMoveUp}
+          aria-label="Kártya mozgatása felfelé"
+          title="Felfelé"
+          type="button"
+        >
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor">
+            <path d="M10 14L10 6M10 6L14 10M10 6L6 10" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+      {/if}
+    </div>
     <time class="card__time" datetime={note.updatedAt.toISOString()}>
       {timeAgo()}
     </time>
   </div>
   </article>
-</div>
 
 <style>
-  .card-wrapper {
-    position: relative;
-    isolation: isolate;
-    overflow: hidden;
-    box-sizing: border-box;
-    min-width: 0;
-  }
-
-  .swipe-action {
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: var(--space-2);
-    padding: 0 var(--space-6);
-    border-radius: 20px;
-    font-size: var(--text-sm);
-    font-weight: var(--font-semibold);
-    opacity: 0;
-    transition: opacity 200ms ease;
-    pointer-events: none;
-    z-index: 0;
-  }
-
-  .swipe-action--edit {
-    left: 0;
-    right: 50%;
-    background: var(--color-info);
-    color: white;
-  }
-
-  .swipe-action--delete {
-    left: 50%;
-    right: 0;
-    background: var(--color-error);
-    color: white;
-  }
-
-  .swipe-action--active {
-    opacity: 1;
-  }
-
-  .swipe-action svg {
-    flex-shrink: 0;
-  }
-
   .card {
     /* Layout */
     position: relative;
@@ -235,7 +151,7 @@
     cursor: pointer;
 
     /* Animation */
-    transition: transform 0ms, box-shadow 300ms cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform 300ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 300ms cubic-bezier(0.4, 0, 0.2, 1);
     animation: slideUp 400ms ease both;
     animation-delay: calc(var(--index) * 50ms);
 
@@ -244,9 +160,6 @@
       0 1px 2px rgba(0, 0, 0, 0.04),
       0 4px 8px rgba(0, 0, 0, 0.06),
       0 8px 16px rgba(0, 0, 0, 0.08);
-
-    /* Layering */
-    z-index: 1;
   }
 
   @media (max-width: 375px) {
@@ -254,10 +167,6 @@
       padding: 12px;
       gap: 8px;
     }
-  }
-
-  .card--dragging {
-    transition: none;
   }
 
   .card:hover {
@@ -397,12 +306,76 @@
   .card__footer {
     display: flex;
     align-items: center;
-    justify-content: flex-end;
+    justify-content: space-between;
+    gap: var(--space-3);
+  }
+
+  .card__navigation {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .card__nav-btn {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1);
+    opacity: 0;
+    transform: scale(0.9);
+    z-index: 3;
+  }
+
+  .card:hover .card__nav-btn {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  .card__nav-btn:hover {
+    background: rgba(255, 255, 255, 1);
+    color: var(--color-info);
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+
+  .card__nav-btn:active {
+    transform: scale(0.95);
+    transition: all 100ms ease;
+  }
+
+  /* Touch devices - always show navigation buttons */
+  @media (hover: none) {
+    .card__nav-btn {
+      opacity: 1;
+      transform: scale(1);
+      background: rgba(255, 255, 255, 0.85);
+    }
+  }
+
+  /* Mobile optimization */
+  @media (max-width: 375px) {
+    .card__nav-btn {
+      width: 40px;
+      height: 40px;
+      min-width: 40px;
+      min-height: 40px;
+    }
   }
 
   .card__time {
     font-size: var(--text-xs);
     color: var(--text-tertiary);
+    flex-shrink: 0;
   }
 
   @keyframes slideUp {
@@ -420,5 +393,22 @@
   :global([data-theme="dark"]) .card {
     opacity: 0.95;
     background: #293F3F !important;
+  }
+
+  :global([data-theme="dark"]) .card__nav-btn {
+    background: rgba(50, 50, 50, 0.9);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.9);
+  }
+
+  :global([data-theme="dark"]) .card__nav-btn:hover {
+    background: rgba(70, 70, 70, 1);
+    color: var(--color-info);
+  }
+
+  @media (hover: none) {
+    :global([data-theme="dark"]) .card__nav-btn {
+      background: rgba(50, 50, 50, 0.85);
+    }
   }
 </style>

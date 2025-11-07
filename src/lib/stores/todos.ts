@@ -159,45 +159,5 @@ export const todosStore = {
   getById(id: string): ITodo | undefined {
     const state = get(todosStateWritable);
     return state.value.find(todo => todo.id === id);
-  },
-
-  /**
-   * Reorder todos after drag&drop
-   * Updates the order field for all affected todos
-   */
-  async reorder(todoIds: string[]): Promise<void> {
-    try {
-      // Update order in database
-      const updatePromises = todoIds.map((id, index) =>
-        TodosService.update({ id, order: index })
-      );
-      await Promise.all(updatePromises);
-
-      // Optimistic update in state - update order for matching todos
-      todosStateWritable.update(s => ({
-        ...s,
-        value: s.value.map(todo => {
-          if (!todo.id) return todo;
-          const newIndex = todoIds.indexOf(todo.id);
-          if (newIndex !== -1) {
-            return { ...todo, order: newIndex };
-          }
-          return todo;
-        }).sort((a, b) => {
-          // Sort by order field
-          const aOrder = a.order ?? 999999;
-          const bOrder = b.order ?? 999999;
-          if (aOrder !== bOrder) return aOrder - bOrder;
-          // Fallback to updatedAt
-          return b.updatedAt.getTime() - a.updatedAt.getTime();
-        })
-      }));
-    } catch (error) {
-      const err = error instanceof Error ? error : new Error('Failed to reorder todos');
-      todosStateWritable.update(s => ({ ...s, error: err }));
-      console.error('Error reordering todos:', error);
-      // Reload on error
-      await this.load();
-    }
   }
 };
