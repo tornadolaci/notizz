@@ -82,10 +82,14 @@ export const todosStore = {
     try {
       await TodosService.update({ id, ...updates });
       // Optimistic update
+      // Only update updatedAt if it's not just an order change
+      const isOnlyOrderChange = Object.keys(updates).length === 1 && 'order' in updates;
       todosStateWritable.update(s => ({
         ...s,
         value: s.value.map(todo =>
-          todo.id === id ? { ...todo, ...updates, updatedAt: new Date() } : todo
+          todo.id === id
+            ? { ...todo, ...updates, ...(isOnlyOrderChange ? {} : { updatedAt: new Date() }) }
+            : todo
         )
       }));
     } catch (error) {

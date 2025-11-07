@@ -76,10 +76,14 @@ export const notesStore = {
     try {
       await NotesService.update({ id, ...updates });
       // Optimistic update
+      // Only update updatedAt if it's not just an order change
+      const isOnlyOrderChange = Object.keys(updates).length === 1 && 'order' in updates;
       notesStateWritable.update(s => ({
         ...s,
         value: s.value.map(note =>
-          note.id === id ? { ...note, ...updates, updatedAt: new Date() } : note
+          note.id === id
+            ? { ...note, ...updates, ...(isOnlyOrderChange ? {} : { updatedAt: new Date() }) }
+            : note
         )
       }));
     } catch (error) {

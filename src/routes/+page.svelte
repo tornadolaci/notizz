@@ -27,6 +27,58 @@
       todosStore.load()
     ]);
 
+    // Migration: Initialize order field for existing items without it
+    const migrateOrders = async () => {
+      const notes = get(notesStore).value;
+      const todos = get(todosStore).value;
+
+      let needsMigration = false;
+      const allItems = [...notes, ...todos];
+
+      // Check if any items are missing order field
+      for (const item of allItems) {
+        if (item.order === undefined || item.order === null) {
+          needsMigration = true;
+          break;
+        }
+      }
+
+      if (needsMigration) {
+        // Combine all items with their type and sort by updatedAt to preserve original order
+        const combinedItems = [
+          ...notes.map(note => ({ item: note, type: 'note' as const })),
+          ...todos.map(todo => ({ item: todo, type: 'todo' as const }))
+        ].sort((a, b) => b.item.updatedAt.getTime() - a.item.updatedAt.getTime());
+
+        // Assign sequential order values
+        const updates: Promise<void>[] = [];
+
+        for (let i = 0; i < combinedItems.length; i++) {
+          const { item, type } = combinedItems[i];
+          if (item.order === undefined || item.order === null) {
+            const newOrder = i * 1000; // Sequential with gaps
+
+            if (type === 'note') {
+              updates.push(notesStore.update(item.id!, { order: newOrder }));
+            } else {
+              updates.push(todosStore.update(item.id!, { order: newOrder }));
+            }
+          }
+        }
+
+        // Wait for all updates to complete
+        await Promise.all(updates);
+
+        // Reload to get fresh data
+        await Promise.all([
+          notesStore.load(),
+          todosStore.load()
+        ]);
+      }
+    };
+
+    await migrateOrders();
+
     // Cleanup on unmount
     return () => {
       // Ensure body styles are cleaned up
@@ -85,13 +137,8 @@
       ...todosState.value.map(todo => ({type: 'todo' as const, data: todo}))
     ];
 
-    // Sort with urgent items first, then by order
+    // Sort by order field only - manual ordering takes precedence over urgent flag
     return allItems.sort((a, b) => {
-      if (a.data.isUrgent !== b.data.isUrgent) {
-        return a.data.isUrgent ? -1 : 1;
-      }
-
-      // Sort by order field
       return a.data.order - b.data.order;
     });
   });
@@ -153,24 +200,16 @@
     const currentOrder = currentItem.data.order;
     const previousOrder = previousItem.data.order;
 
-    // Update current item to have previous item's order
-    if (type === 'note') {
-      await notesStore.update(id, { order: previousOrder });
-      // Also update the previous item's order
-      if (previousItem.type === 'note') {
-        await notesStore.update(previousItem.data.id!, { order: currentOrder });
-      } else {
-        await todosStore.update(previousItem.data.id!, { order: currentOrder });
-      }
-    } else {
-      await todosStore.update(id, { order: previousOrder });
-      // Also update the previous item's order
-      if (previousItem.type === 'note') {
-        await notesStore.update(previousItem.data.id!, { order: currentOrder });
-      } else {
-        await todosStore.update(previousItem.data.id!, { order: currentOrder });
-      }
-    }
+    // Update BOTH items simultaneously using Promise.all
+    // This prevents race conditions and ensures atomic updates
+    await Promise.all([
+      type === 'note'
+        ? notesStore.update(id, { order: previousOrder })
+        : todosStore.update(id, { order: previousOrder }),
+      previousItem.type === 'note'
+        ? notesStore.update(previousItem.data.id!, { order: currentOrder })
+        : todosStore.update(previousItem.data.id!, { order: currentOrder })
+    ]);
   }
 
   async function handleMoveDown(id: string, type: 'note' | 'todo') {
@@ -184,24 +223,16 @@
     const currentOrder = currentItem.data.order;
     const nextOrder = nextItem.data.order;
 
-    // Update current item to have next item's order
-    if (type === 'note') {
-      await notesStore.update(id, { order: nextOrder });
-      // Also update the next item's order
-      if (nextItem.type === 'note') {
-        await notesStore.update(nextItem.data.id!, { order: currentOrder });
-      } else {
-        await todosStore.update(nextItem.data.id!, { order: currentOrder });
-      }
-    } else {
-      await todosStore.update(id, { order: nextOrder });
-      // Also update the next item's order
-      if (nextItem.type === 'note') {
-        await notesStore.update(nextItem.data.id!, { order: currentOrder });
-      } else {
-        await todosStore.update(nextItem.data.id!, { order: currentOrder });
-      }
-    }
+    // Update BOTH items simultaneously using Promise.all
+    // This prevents race conditions and ensures atomic updates
+    await Promise.all([
+      type === 'note'
+        ? notesStore.update(id, { order: nextOrder })
+        : todosStore.update(id, { order: nextOrder }),
+      nextItem.type === 'note'
+        ? notesStore.update(nextItem.data.id!, { order: currentOrder })
+        : todosStore.update(nextItem.data.id!, { order: currentOrder })
+    ]);
   }
 </script>
 

@@ -69,13 +69,13 @@ export class NotesService {
 
   /**
    * Get all notes
-   * Sorts by updatedAt (newest first)
+   * Sorts by order (ascending - lower order values appear first)
    */
   static async getAll(): Promise<INote[]> {
     try {
       const notes = await db.notes.toArray();
       return notes.sort((a, b) => {
-        return b.updatedAt.getTime() - a.updatedAt.getTime();
+        return a.order - b.order;
       });
     } catch (error) {
       console.error('[NotesService] Failed to get all notes:', error);
@@ -129,9 +129,12 @@ export class NotesService {
 
       const { id, ...updates } = validatedInput;
 
+      // Only update updatedAt if it's not just an order change
+      const isOnlyOrderChange = Object.keys(updates).length === 1 && 'order' in updates;
+
       await db.notes.update(id, {
         ...updates,
-        updatedAt: new Date(),
+        ...(isOnlyOrderChange ? {} : { updatedAt: new Date() }),
       });
 
       return await db.notes.get(id);
@@ -237,13 +240,13 @@ export class TodosService {
 
   /**
    * Get all todos
-   * Sorts by updatedAt (newest first)
+   * Sorts by order (ascending - lower order values appear first)
    */
   static async getAll(): Promise<ITodo[]> {
     try {
       const todos = await db.todos.toArray();
       return todos.sort((a, b) => {
-        return b.updatedAt.getTime() - a.updatedAt.getTime();
+        return a.order - b.order;
       });
     } catch (error) {
       console.error('[TodosService] Failed to get all todos:', error);
@@ -310,11 +313,14 @@ export class TodosService {
       // Recalculate counts if items changed
       const counts = items ? this.calculateCounts(items) : {};
 
+      // Only update updatedAt if it's not just an order change
+      const isOnlyOrderChange = Object.keys(validatedInput).length === 2 && 'order' in validatedInput && 'id' in validatedInput;
+
       await db.todos.update(id, {
         ...updates,
         ...(items && { items }),
         ...counts,
-        updatedAt: new Date(),
+        ...(isOnlyOrderChange ? {} : { updatedAt: new Date() }),
       });
 
       return await db.todos.get(id);
