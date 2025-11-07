@@ -220,3 +220,33 @@ src/lib/components/
 - ✅ Preserve all other item properties during order updates
 - ❌ Never update only one item's order (causes incorrect positioning)
 - ❌ Don't use sequential increment/decrement (use swap for stability)
+
+### UI Design Updates - Cards & Spacing
+
+**Card Spacing**:
+- Default gap between cards: `--gap-cards: 20px`
+- Mobile (375px): 16px gap for optimal spacing on small screens
+- Grid bottom padding: 24px with safe-area support for iOS devices
+- Prevents scroll jump on mobile by using `overscroll-behavior-y: none`
+
+**Card Shadows** - Moderate, elegant depth:
+- Base state: `0 1px 3px rgba(0,0,0,0.06), 0 4px 12px rgba(0,0,0,0.08), 0 8px 20px rgba(0,0,0,0.10)`
+- Hover state: `0 2px 6px rgba(0,0,0,0.10), 0 8px 20px rgba(0,0,0,0.12), 0 16px 32px rgba(0,0,0,0.14)`
+
+**Delete Button Design**:
+- Position: Top-right corner of card (`top: 12px; right: 12px`)
+- Color: `var(--color-info)` (#007AFF) - matches settings gear icon
+- Icon: Trash bin/kuka icon (18x18px SVG)
+- Size: 32x32px (mobile 375px: 36x36px for better touch target)
+- Hover: Darker blue (#0051D5) with scale 1.1 and blue glow shadow
+- Visibility: Desktop hover-only, mobile always visible
+- Note: Urgent badge moved to top-left to avoid collision
+
+**Header Shadow** - Subtle, refined:
+- Fixed sticky header: `0 1px 2px rgba(0,0,0,0.04), 0 2px 8px rgba(0,0,0,0.06)`
+- Glassmorphism effect: `backdrop-filter: blur(20px)`
+
+**Mobile Scroll Behavior**:
+- Smooth scrolling disabled on mobile (<768px) to prevent iOS jump/bounce
+- `scroll-behavior: auto` on mobile, `smooth` on desktop (768px+)
+- `overscroll-behavior-y: none` prevents rubber band scroll artifacts
