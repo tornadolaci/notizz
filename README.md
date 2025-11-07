@@ -15,7 +15,7 @@ Modern jegyzet és TODO lista kezelő Progressive Web App (PWA) iOS-inspired des
 - 📊 **Haladáskövetés** - TODO listák automatikus progress bar-ral
 - 🎨 **8 pasztell szín** - Vizuális kategorizálás
 - 💾 **Export/Import** - Adatok mentése és visszatöltése JSON formátumban
-- 🔄 **Drag & drop** - Elemek átrendezése (mobil long-press, desktop Alt+Drag)
+- 🔄 **Manuális rendezés** - Fel/le nyíl gombok a kártyákon, mobilra optimalizálva
 - ♿ **Accessibility** - Teljes keyboard navigáció és screen reader támogatás
 
 ## 🚀 Technológiai Stack
@@ -120,9 +120,12 @@ Az alkalmazás teljesen reszponzív és minden képernyőméreten tökéletesen 
 - **Csak TODO-k** - Csak TODO listák
 
 ### Rendezés
-- Mobil: **Long-press** (300ms) egy elemre, majd húzd az új helyére
-- Desktop: **Alt + Drag** egy elemre, majd húzd
-- A sorrend automatikusan mentésre kerül
+- Minden kártya alján **fel/le nyíl gombok** találhatóak
+- **Bal alsó sarok**: Lefelé nyíl - kártya mozgatása lefelé
+- **Jobb alsó sarok**: Felfelé nyíl - kártya mozgatása felfelé
+- Mobilon: 44x44px érintési területek, mindig láthatóak
+- Desktopon: Hover-re jelennek meg, scale és glassmorphism effektek
+- A sorrend automatikusan mentésre kerül az adatbázisba
 
 ### Beállítások
 - **Téma**: Világos / Sötét / Automatikus

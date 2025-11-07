@@ -187,26 +187,36 @@ src/lib/components/
 4. Update TypeScript interfaces in [src/lib/types/](src/lib/types/)
 5. Update Zod schemas in [src/lib/schemas/](src/lib/schemas/)
 
-### Drag & Drop Implementation
-**Location**: [src/lib/utils/gestures.ts](src/lib/utils/gestures.ts) - `draggableItem()` action
+### Manual Card Sorting Implementation
+**Location**: [src/routes/+page.svelte](src/routes/+page.svelte) - `handleMoveUp()` and `handleMoveDown()` functions
 
 **Key Features**:
-- **Long-press activation**: 300ms touch hold or Alt+Click on desktop
-- **Smooth animations**: Scale 1.03, opacity 0.95, smooth transitions
-- **Throttling**: 150ms between placeholder reorders to prevent vibration
-- **Dead zone**: 30% overlap threshold before reordering triggers
-- **Optimistic updates**: UI updates immediately, then syncs to DB
+- **Navigation buttons**: Up/down arrow buttons in card footer (left: down, right: up)
+- **Touch-optimized**: 44x44px buttons (40x40px on mobile @375px)
+- **Smooth animations**: 300ms cubic-bezier transitions with scale effects
+- **Glassmorphism design**: Blur effects with theme-aware backgrounds
+- **Order-based sorting**: Uses numeric `order` field instead of timestamps
+- **Swap logic**: Exchanges order values between adjacent items
+- **Cross-type sorting**: Notes and todos can be reordered relative to each other
 
-**Critical Implementation Details**:
-1. **Position tracking**: Use `getBoundingClientRect()` once at drag start, cache rect
-2. **Transition handling**: Disable during drag (`transition: none`), re-enable for drop animation
-3. **Reference management**: Save `draggedElement` and `placeholder` refs before clearing in `handleDragEnd()`
-4. **Reorder callback**: Must update ALL items in store, not just reordered ones (use `map()` + `sort()`)
-5. **Type safety**: Always check `note.id` / `todo.id` for undefined before using `indexOf()`
+**Implementation Details**:
+1. **Order field**: Added to `INote` and `ITodo` interfaces, auto-generated from timestamp on create
+2. **Swap mechanism**: When moving up/down, current and adjacent item's order values are swapped
+3. **Optimistic updates**: Both items updated in DB, UI reacts to store changes
+4. **Position detection**: Uses combined `items` array sorted by order field
+5. **Boundary checks**: First item can't move up, last item can't move down
+6. **Theme support**: Light mode (white bg), dark mode (dark grey bg for visibility)
 
-**Common Pitfalls**:
-- ❌ Never replace entire store value with only reordered items (causes freezing)
-- ❌ Don't use `element.style.top` when you meant `draggedElement.style.top`
-- ❌ Avoid tight reorder loops without throttling (causes vibration)
-- ✅ Always preserve all items when updating order field
-- ✅ Use closure-safe references in `setTimeout` callbacks
+**Button Visibility**:
+- Desktop: Hidden by default, visible on card hover (`opacity: 0` → `opacity: 1`)
+- Mobile/Touch: Always visible (`@media (hover: none)`)
+- Hover effects: Scale 1.05, brighter background, info color
+- Active state: Scale 0.95 for tactile feedback
+
+**Critical Rules**:
+- ✅ Always update BOTH items' order values (swap logic)
+- ✅ Check item type before calling correct store update method
+- ✅ Use `order` field for sorting, not `updatedAt` or `createdAt`
+- ✅ Preserve all other item properties during order updates
+- ❌ Never update only one item's order (causes incorrect positioning)
+- ❌ Don't use sequential increment/decrement (use swap for stability)
