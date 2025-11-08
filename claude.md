@@ -359,3 +359,145 @@ await Promise.all([
 - ⚠️ Urgent flag NE befolyásolja a rendezést
 - ⚠️ Mindig Promise.all-t használj párhuzamos update-eknél
 - ⚠️ Migration kód megmarad a backward compatibility miatt
+
+### Új Elemek Automatikus Tetejére Kerülése (2025-01-08)
+
+**Probléma**: Új jegyzetek és TODO-k timestamp alapú `order` értéket kaptak, így a lista aljára kerültek.
+
+**Megoldás**: A store-ok `add()` metódusai most automatikusan a legkisebb order értéket adják az új elemeknek.
+
+**Implementáció** - [src/lib/stores/notes.ts](src/lib/stores/notes.ts), [src/lib/stores/todos.ts](src/lib/stores/todos.ts):
+```typescript
+async add(note: INote): Promise<void> {
+  // Calculate order to place new note at the top
+  const state = get(notesStateWritable);
+  const minOrder = state.value.length > 0
+    ? Math.min(...state.value.map(n => n.order))
+    : Date.now();
+
+  // New note gets minimum order - 1000 (or Date.now() if first note)
+  const noteWithOrder = {
+    ...note,
+    order: state.value.length > 0 ? minOrder - 1000 : minOrder
+  };
+
+  await NotesService.create(noteWithOrder);
+}
+```
+
+**Működés**:
+- ✅ Első elem: `order = Date.now()` (pl. 1736333251234)
+- ✅ Második elem: `order = minOrder - 1000` → tetejére kerül
+- ✅ Harmadik elem: `order = minOrder - 1000` → tetejére kerül
+- ✅ 1000-es lépésköz biztosítja a jövőbeli beszúrásokat
+
+### TODO Progress Bar Modern Redesign (2025-01-08)
+
+**Változtatások** - [src/lib/components/todos/TodoProgress.svelte](src/lib/components/todos/TodoProgress.svelte):
+
+**Progress Bar**:
+- Vastagság: 6px → **12px** (dupla)
+- Szín: Gradiens → **#007AFF** egyszínű kék
+- Háttér: `rgba(0, 0, 0, 0.08)` semi-transparent
+- Shadow: `inset 0 1px 3px rgba(0, 0, 0, 0.1)` + `0 1px 4px rgba(0, 122, 255, 0.3)` glow
+
+**Progress Text (pl. 2/4)**:
+- Betűméret: `--text-sm` → **`--text-base`** (minden képernyőméret)
+- Szín: `--text-tertiary` → **#007AFF** (világos mód)
+- Font weight: `--font-medium` → **`--font-semibold`**
+
+**Dark Mode**:
+- Progress bar szín: **#007AFF** (ugyanaz!)
+- Progress text szín: `var(--text-tertiary)` (szürke, jobb láthatóság)
+- Betűméret: **`--text-base`** (nagyobb)
+
+### Szerkesztő Dinamikus Háttérszínek (2025-01-08)
+
+**TODO Szerkesztő** - [src/lib/components/todos/TodoEditor.svelte](src/lib/components/todos/TodoEditor.svelte):
+```svelte
+<div class="items-list" style:--items-list-bg={todo?.color}>
+```
+```css
+.items-list {
+  background: var(--items-list-bg, var(--bg-secondary));
+}
+
+:global([data-theme="dark"]) .items-list {
+  background: var(--bg-secondary);
+}
+```
+
+**Jegyzet Szerkesztő** - [src/lib/components/notes/NoteEditor.svelte](src/lib/components/notes/NoteEditor.svelte):
+```svelte
+<textarea style:--textarea-bg={note?.color}></textarea>
+```
+```css
+.textarea {
+  background: var(--textarea-bg, var(--bg-primary));
+}
+
+:global([data-theme="dark"]) .textarea {
+  background: var(--bg-primary);
+}
+```
+
+**Működés**:
+- ✅ Világos mód + Szerkesztés: Kártya saját pasztell háttérszíne
+- ✅ Világos mód + Új létrehozás: Alapértelmezett szürke/fehér
+- ✅ Sötét mód: MINDIG alapértelmezett sötét háttér
+
+### Globális Scrollbar Elrejtés - Natív App Élmény (2025-01-08)
+
+**Cél**: PWA natív alkalmazás megjelenés, scrollbar nélkül
+
+**Implementáció** - [src/app.css](src/app.css):
+```css
+html, body, * {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar,
+*::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+```
+
+**Működés**:
+- ✅ Főoldal görgetősáv: Láthatatlan
+- ✅ Modal dialógusok: Scrollbar nélkül
+- ✅ TODO items-list: Láthatatlan scrollbar
+- ✅ Jegyzet textarea: Láthatatlan scrollbar
+- ✅ Cross-browser kompatibilitás (Chrome, Safari, Firefox, Edge)
+
+**Megjegyzés**: A görgetési funkció megmarad, csak a vizuális scrollbar indikátor tűnik el.
+
+### Urgent Flag Eltávolítása (2025-01-08)
+
+**Változtatások**:
+- ❌ `isUrgent` mező törölve `INote` és `ITodo` interface-ekből
+- ❌ Sürgős badge és styling eltávolítva
+- ❌ Urgent checkbox törlve a szerkesztő űrlapokról
+- ✅ **Version 3 migration**: Automatikusan eltávolítja az `isUrgent` mezőt a meglévő adatokból
+- ✅ Egyszerűsített UX - csak szín alapú kategorizálás
+
+### Színválasztó Optimalizálás (2025-01-08)
+
+**Új alapértelmezett színek**:
+- Jegyzetek: **Lemon** (#FFFACD) - világos, barátságos
+- TODO listák: **Mint** (#B2DFDB) - nyugodt, produktív
+
+**Új helper függvény** - [src/lib/constants/colors.ts](src/lib/constants/colors.ts):
+```typescript
+export function hexToColorKey(hex: string): PastelColorKey {
+  const upperHex = hex.toUpperCase();
+  const entry = Object.entries(PASTEL_COLORS).find(([_, value]) => value.toUpperCase() === upperHex);
+  return entry ? (entry[0] as PastelColorKey) : DEFAULT_COLOR;
+}
+```
+
+**Használat szerkesztőkben**:
+```typescript
+selectedColor = hexToColorKey(note.color); // HEX → ColorKey konverzió
+```
