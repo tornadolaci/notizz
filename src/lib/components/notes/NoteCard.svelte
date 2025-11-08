@@ -61,7 +61,6 @@
 <!-- svelte-ignore a11y_no_noninteractive_element_to_interactive_role -->
 <article
   class="card"
-  class:card--urgent={note.isUrgent}
   style:--card-color={note.color}
   style:--index={index}
   onclick={handleClick}
@@ -70,10 +69,6 @@
   tabindex="0"
   aria-label="Jegyzet: {note.title}"
 >
-  {#if note.isUrgent}
-    <div class="card__badge" aria-label="Sürgős">!</div>
-  {/if}
-
   {#if onDelete}
     <button
       class="card__delete"
@@ -188,31 +183,6 @@
     outline-offset: 2px;
   }
 
-  .card--urgent {
-    border: 2px solid var(--color-urgent);
-    box-shadow:
-      0 0 0 1px var(--color-urgent),
-      0 4px 12px rgba(255, 107, 107, 0.2);
-  }
-
-  .card__badge {
-    position: absolute;
-    top: 12px;
-    left: 12px;
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    background: var(--color-urgent);
-    color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: var(--font-bold);
-    font-size: var(--text-sm);
-    animation: pulse 2s ease-in-out infinite;
-    z-index: 1;
-  }
-
   .card__delete {
     position: absolute;
     top: 12px;
@@ -257,17 +227,6 @@
     .card__delete {
       width: 36px;
       height: 36px;
-    }
-  }
-
-  @keyframes pulse {
-    0%, 100% {
-      transform: scale(1);
-      opacity: 1;
-    }
-    50% {
-      transform: scale(1.1);
-      opacity: 0.8;
     }
   }
 

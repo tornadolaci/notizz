@@ -25,4 +25,17 @@ export const PASTEL_COLOR_NAMES: Record<PastelColorKey, string> = {
 	coral: 'Korall'
 };
 
-export const DEFAULT_COLOR: PastelColorKey = 'lavender';
+// Default colors by entity type
+export const DEFAULT_NOTE_COLOR: PastelColorKey = 'lemon'; // #FFFACD
+export const DEFAULT_TODO_COLOR: PastelColorKey = 'mint'; // #B2DFDB
+export const DEFAULT_COLOR: PastelColorKey = 'lavender'; // For backwards compatibility
+
+/**
+ * Convert HEX color value to PastelColorKey
+ * Returns the key if found, otherwise returns the default color key
+ */
+export function hexToColorKey(hex: string): PastelColorKey {
+	const upperHex = hex.toUpperCase();
+	const entry = Object.entries(PASTEL_COLORS).find(([_, value]) => value.toUpperCase() === upperHex);
+	return entry ? (entry[0] as PastelColorKey) : DEFAULT_COLOR;
+}

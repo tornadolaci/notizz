@@ -23,7 +23,6 @@ export interface ITodo {
   color: string; // One of the 8 pastel colors
   createdAt: Date;
   updatedAt: Date;
-  isUrgent: boolean;
   completedCount: number; // Derived from items
   totalCount: number; // Derived from items
   order: number; // Manual sort order
@@ -57,7 +56,6 @@ export type TodoItemCreateInput = Omit<ITodoItem, 'id' | 'createdAt'>;
  * Todo filter options for querying todos
  */
 export interface ITodoFilter {
-  isUrgent?: boolean;
   color?: string;
   searchTerm?: string;
   completed?: boolean; // Filter by completion status

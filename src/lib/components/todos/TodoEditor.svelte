@@ -5,7 +5,7 @@
 	 */
 	import { todosStore } from '$lib/stores/todos';
 	import type { ITodo, ITodoItem } from '$lib/types/todo';
-	import { DEFAULT_COLOR, PASTEL_COLORS, type PastelColorKey } from '$lib/constants/colors';
+	import { DEFAULT_TODO_COLOR, PASTEL_COLORS, hexToColorKey, type PastelColorKey } from '$lib/constants/colors';
 	import Modal from '$lib/components/common/Modal.svelte';
 	import ColorPicker from '$lib/components/notes/ColorPicker.svelte';
 	import TodoItem from './TodoItem.svelte';
@@ -22,8 +22,7 @@
 	// Form state
 	let title = $state('');
 	let items = $state<ITodoItem[]>([]);
-	let selectedColor = $state<PastelColorKey>(DEFAULT_COLOR);
-	let isUrgent = $state(false);
+	let selectedColor = $state<PastelColorKey>(DEFAULT_TODO_COLOR);
 	let isSaving = $state(false);
 
 	// New item input
@@ -35,14 +34,12 @@
 			if (todo) {
 				title = todo.title;
 				items = [...todo.items];
-				selectedColor = todo.color as PastelColorKey;
-				isUrgent = todo.isUrgent;
+				selectedColor = hexToColorKey(todo.color);
 			} else {
-				// Reset form for new todo
+				// Reset form for new todo - use default todo color (mint)
 				title = '';
 				items = [];
-				selectedColor = DEFAULT_COLOR;
-				isUrgent = false;
+				selectedColor = DEFAULT_TODO_COLOR;
 			}
 			newItemText = '';
 		}
@@ -106,7 +103,6 @@
 					title: title.trim(),
 					items,
 					color: colorHex,
-					isUrgent,
 					completedCount,
 					totalCount,
 					updatedAt: new Date()
@@ -120,9 +116,9 @@
 					color: colorHex,
 					createdAt: new Date(),
 					updatedAt: new Date(),
-					isUrgent,
 					completedCount,
-					totalCount
+					totalCount,
+					order: Date.now()
 				};
 				await todosStore.add(newTodo);
 			}
@@ -174,7 +170,7 @@
 			</label>
 			<div class="todo-items">
 				{#if items.length > 0}
-					<div class="items-list">
+					<div class="items-list" style:--items-list-bg={todo?.color}>
 						{#each items as item (item.id)}
 							<TodoItem
 								{item}
@@ -206,17 +202,12 @@
 			</div>
 		</div>
 
-		<div class="form-group">
-			<label class="form-label">Szín</label>
-			<ColorPicker {selectedColor} onSelect={handleColorSelect} />
-		</div>
-
-		<div class="form-group">
-			<label class="checkbox-label">
-				<input type="checkbox" bind:checked={isUrgent} class="checkbox-input" />
-				<span class="checkbox-text">Sürgős</span>
-			</label>
-		</div>
+		{#if !todo}
+			<div class="form-group">
+				<label class="form-label">Szín</label>
+				<ColorPicker {selectedColor} onSelect={handleColorSelect} />
+			</div>
+		{/if}
 
 		<div class="form-actions">
 			<button
@@ -232,7 +223,7 @@
 				class="button button--primary"
 				disabled={isSaving || !title.trim() || items.length === 0}
 			>
-				{isSaving ? 'Mentés...' : todo ? 'Frissítés' : 'Létrehozás'}
+				{isSaving ? 'Mentés...' : todo ? 'Mentés' : 'Létrehozás'}
 			</button>
 		</div>
 	</form>
@@ -296,10 +287,15 @@
 		flex-direction: column;
 		gap: var(--space-1);
 		padding: var(--space-3);
-		background: var(--bg-secondary);
+		background: var(--items-list-bg, var(--bg-secondary));
 		border-radius: 12px;
 		max-height: 300px;
 		overflow-y: auto;
+	}
+
+	/* Dark mode - always use default background */
+	:global([data-theme="dark"]) .items-list {
+		background: var(--bg-secondary);
 	}
 
 	.add-item {
@@ -309,26 +305,6 @@
 
 	.add-item .input {
 		flex: 1;
-	}
-
-	.checkbox-label {
-		display: flex;
-		align-items: center;
-		gap: var(--space-2);
-		cursor: pointer;
-		user-select: none;
-	}
-
-	.checkbox-input {
-		width: 20px;
-		height: 20px;
-		cursor: pointer;
-		accent-color: var(--color-urgent);
-	}
-
-	.checkbox-text {
-		font-size: var(--text-base);
-		color: var(--text-primary);
 	}
 
 	.form-actions {

@@ -49,7 +49,6 @@ export const TodoSchema = z.object({
     }),
   createdAt: z.date(),
   updatedAt: z.date(),
-  isUrgent: z.boolean(),
   completedCount: z.number().int().min(0),
   totalCount: z.number().int().min(0),
   order: z.number(),
@@ -69,7 +68,6 @@ export const TodoCreateSchema = z.object({
     .refine((val) => PASTEL_COLORS.includes(val as any), {
       message: 'Érvénytelen szín',
     }),
-  isUrgent: z.boolean(),
 });
 
 /**
@@ -92,7 +90,6 @@ export const TodoUpdateSchema = z.object({
       message: 'Érvénytelen szín',
     })
     .optional(),
-  isUrgent: z.boolean().optional(),
   updatedAt: z.date().optional(),
   completedCount: z.number().int().min(0).optional(),
   totalCount: z.number().int().min(0).optional(),

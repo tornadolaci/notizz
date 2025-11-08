@@ -39,7 +39,6 @@ export const NoteSchema = z.object({
     }),
   createdAt: z.date(),
   updatedAt: z.date(),
-  isUrgent: z.boolean(),
   order: z.number(),
 });
 
@@ -60,7 +59,6 @@ export const NoteCreateSchema = z.object({
     .refine((val) => PASTEL_COLORS.includes(val as any), {
       message: 'Érvénytelen szín',
     }),
-  isUrgent: z.boolean(),
 });
 
 /**
@@ -84,7 +82,6 @@ export const NoteUpdateSchema = z.object({
       message: 'Érvénytelen szín',
     })
     .optional(),
-  isUrgent: z.boolean().optional(),
   updatedAt: z.date().optional(),
   order: z.number().optional(),
 });

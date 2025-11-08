@@ -64,6 +64,33 @@ export class NotizzDB extends Dexie {
         await tx.table('todos').update(sortedTodos[i].id, { order: i });
       }
     });
+
+    // Version 3: Remove isUrgent field and index
+    this.version(3).stores({
+      notes: 'id, updatedAt, order',
+      todos: 'id, updatedAt, order',
+      settings: 'id',
+    }).upgrade(async (tx) => {
+      // Remove isUrgent field from existing data
+      const notes = await tx.table('notes').toArray();
+      const todos = await tx.table('todos').toArray();
+
+      // Remove isUrgent from notes
+      for (const note of notes) {
+        if ('isUrgent' in note) {
+          const { isUrgent, ...noteWithoutUrgent } = note as any;
+          await tx.table('notes').put(noteWithoutUrgent);
+        }
+      }
+
+      // Remove isUrgent from todos
+      for (const todo of todos) {
+        if ('isUrgent' in todo) {
+          const { isUrgent, ...todoWithoutUrgent } = todo as any;
+          await tx.table('todos').put(todoWithoutUrgent);
+        }
+      }
+    });
   }
 }
 

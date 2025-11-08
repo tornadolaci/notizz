@@ -25,35 +25,59 @@
   .progress {
     display: flex;
     align-items: center;
-    gap: var(--space-2);
-    font-size: var(--text-sm);
-    color: var(--text-tertiary);
+    gap: var(--space-3);
   }
 
   .progress-bar {
     flex: 1;
-    height: 6px;
-    background: var(--bg-tertiary);
-    border-radius: 3px;
+    height: 12px;
+    background: rgba(0, 0, 0, 0.08);
+    border-radius: 6px;
     overflow: hidden;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
   }
 
   .progress-fill {
     height: 100%;
-    background: linear-gradient(90deg, #667eea, #764ba2);
-    border-radius: 3px;
-    transition: width 300ms ease;
+    background: #007AFF;
+    border-radius: 6px;
+    transition: width 300ms cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 1px 4px rgba(0, 122, 255, 0.3);
   }
 
   .progress-text {
-    min-width: 50px;
+    min-width: 55px;
     text-align: right;
     font-variant-numeric: tabular-nums;
-    font-weight: var(--font-medium);
+    font-weight: var(--font-semibold);
+    font-size: var(--text-base);
+    color: #007AFF;
+  }
+
+  @media (max-width: 768px) {
+    .progress-text {
+      font-size: var(--text-base);
+    }
+  }
+
+  @media (max-width: 375px) {
+    .progress-text {
+      font-size: var(--text-base);
+    }
   }
 
   /* Dark mode adjustments */
   :global([data-theme="dark"]) .progress-bar {
-    background: var(--dark-bg-tertiary);
+    background: rgba(255, 255, 255, 0.08);
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
+  }
+
+  :global([data-theme="dark"]) .progress-fill {
+    background: #007AFF;
+    box-shadow: 0 1px 4px rgba(0, 122, 255, 0.4);
+  }
+
+  :global([data-theme="dark"]) .progress-text {
+    color: var(--text-tertiary);
   }
 </style>

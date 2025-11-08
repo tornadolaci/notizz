@@ -90,11 +90,6 @@ export class NotesService {
     try {
       let collection = db.notes.toCollection();
 
-      // Filter by urgent
-      if (filter.isUrgent !== undefined) {
-        collection = db.notes.where('isUrgent').equals(filter.isUrgent ? 1 : 0);
-      }
-
       // Filter by color
       if (filter.color) {
         const allNotes = await collection.toArray();
@@ -164,18 +159,6 @@ export class NotesService {
       await db.notes.clear();
     } catch (error) {
       console.error('[NotesService] Failed to delete all notes:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Get urgent notes
-   */
-  static async getUrgent(): Promise<INote[]> {
-    try {
-      return await db.notes.where('isUrgent').equals(1).reverse().sortBy('updatedAt');
-    } catch (error) {
-      console.error('[NotesService] Failed to get urgent notes:', error);
       throw error;
     }
   }
@@ -261,11 +244,6 @@ export class TodosService {
     try {
       let collection = db.todos.toCollection();
 
-      // Filter by urgent
-      if (filter.isUrgent !== undefined) {
-        collection = db.todos.where('isUrgent').equals(filter.isUrgent ? 1 : 0);
-      }
-
       // Filter by color
       if (filter.color) {
         const allTodos = await collection.toArray();
@@ -350,18 +328,6 @@ export class TodosService {
       await db.todos.clear();
     } catch (error) {
       console.error('[TodosService] Failed to delete all todos:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Get urgent todos
-   */
-  static async getUrgent(): Promise<ITodo[]> {
-    try {
-      return await db.todos.where('isUrgent').equals(1).reverse().sortBy('updatedAt');
-    } catch (error) {
-      console.error('[TodosService] Failed to get urgent todos:', error);
       throw error;
     }
   }

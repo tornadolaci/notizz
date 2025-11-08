@@ -67,26 +67,13 @@ function applyTheme(theme: 'light' | 'dark'): void {
 }
 
 /**
- * Resolve effective theme (session override > settings > system)
- */
-function resolveEffectiveTheme(): 'light' | 'dark' {
-  // Check session override first
-  const sessionTheme = getSessionTheme();
-  if (sessionTheme) {
-    return sessionTheme;
-  }
-
-  // Fall back to system preference (always auto mode by default)
-  return get(systemPreferenceWritable);
-}
-
-/**
  * Initialize theme
+ * Always starts in light mode, regardless of system or session preferences
  */
 function initTheme(): void {
   if (typeof window === 'undefined') return;
 
-  // Detect system preference
+  // Detect system preference (for future toggles)
   const systemPref = detectSystemTheme();
   systemPreferenceWritable.set(systemPref);
 
@@ -102,9 +89,11 @@ function initTheme(): void {
     }
   });
 
-  // Apply initial theme
-  const effectiveTheme = resolveEffectiveTheme();
-  applyTheme(effectiveTheme);
+  // Clear any previous session theme to ensure fresh start
+  clearSessionTheme();
+
+  // Always apply light theme on app startup
+  applyTheme('light');
 }
 
 /**

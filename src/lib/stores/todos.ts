@@ -23,9 +23,6 @@ const todosStateWritable = writable<TodosState>({
 export const todosValue = derived(todosStateWritable, ($state) => $state.value);
 export const todosLoading = derived(todosStateWritable, ($state) => $state.loading);
 export const todosError = derived(todosStateWritable, ($state) => $state.error);
-export const urgentTodos = derived(todosStateWritable, ($state) =>
-  $state.value.filter(todo => todo.isUrgent)
-);
 export const incompleteTodos = derived(todosStateWritable, ($state) =>
   $state.value.filter(todo => todo.completedCount < todo.totalCount)
 );
@@ -57,14 +54,27 @@ export const todosStore = {
 
   /**
    * Add a new todo
+   * Note: The todo's order should be set before calling this method
    */
   async add(todo: ITodo): Promise<void> {
     try {
-      await TodosService.create(todo);
+      // Calculate order to place new todo at the top
+      const state = get(todosStateWritable);
+      const minOrder = state.value.length > 0
+        ? Math.min(...state.value.map(t => t.order))
+        : Date.now();
+
+      // New todo gets minimum order - 1000 (or Date.now() if first todo)
+      const todoWithOrder = {
+        ...todo,
+        order: state.value.length > 0 ? minOrder - 1000 : minOrder
+      };
+
+      await TodosService.create(todoWithOrder);
       // Optimistic update
       todosStateWritable.update(s => ({
         ...s,
-        value: [...s.value, todo]
+        value: [...s.value, todoWithOrder]
       }));
     } catch (error) {
       const err = error instanceof Error ? error : new Error('Failed to add todo');

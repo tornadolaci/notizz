@@ -32,7 +32,6 @@
   --color-warning: #FF9500;
   --color-error: #FF3B30;
   --color-info: #007AFF;
-  --color-urgent: #FF6B6B;
 
   /* Typography */
   --font-system: -apple-system, BlinkMacSystemFont, 'SF Pro Display',
@@ -117,6 +116,13 @@ html {
   box-sizing: border-box;
   /* Overscroll viselkedés javítása */
   overscroll-behavior-y: none;
+  /* Hide scrollbar globally - Native app feel */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+html::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
 }
 
 body {
@@ -135,11 +141,25 @@ body {
   -webkit-overflow-scrolling: touch;
   /* Overscroll viselkedés javítása */
   overscroll-behavior-y: none;
+  /* Hide scrollbar globally - Native app feel */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+body::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
 }
 
 /* Disable iOS tap highlight */
 * {
   -webkit-tap-highlight-color: transparent;
+  /* Hide scrollbar on all elements - Native app feel */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+*::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
 }
 
 /* --------------------------------------------------------------------------

@@ -23,9 +23,6 @@ const notesStateWritable = writable<NotesState>({
 export const notesValue = derived(notesStateWritable, ($state) => $state.value);
 export const notesLoading = derived(notesStateWritable, ($state) => $state.loading);
 export const notesError = derived(notesStateWritable, ($state) => $state.error);
-export const urgentNotes = derived(notesStateWritable, ($state) =>
-  $state.value.filter(note => note.isUrgent)
-);
 
 /**
  * Notes store with actions
@@ -51,14 +48,27 @@ export const notesStore = {
 
   /**
    * Add a new note
+   * Note: The note's order should be set before calling this method
    */
   async add(note: INote): Promise<void> {
     try {
-      await NotesService.create(note);
+      // Calculate order to place new note at the top
+      const state = get(notesStateWritable);
+      const minOrder = state.value.length > 0
+        ? Math.min(...state.value.map(n => n.order))
+        : Date.now();
+
+      // New note gets minimum order - 1000 (or Date.now() if first note)
+      const noteWithOrder = {
+        ...note,
+        order: state.value.length > 0 ? minOrder - 1000 : minOrder
+      };
+
+      await NotesService.create(noteWithOrder);
       // Optimistic update
       notesStateWritable.update(s => ({
         ...s,
-        value: [...s.value, note]
+        value: [...s.value, noteWithOrder]
       }));
     } catch (error) {
       const err = error instanceof Error ? error : new Error('Failed to add note');

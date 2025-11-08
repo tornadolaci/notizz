@@ -5,7 +5,7 @@
 	 */
 	import { notesStore } from '$lib/stores/notes';
 	import type { INote } from '$lib/types/note';
-	import { DEFAULT_COLOR, PASTEL_COLORS, type PastelColorKey } from '$lib/constants/colors';
+	import { DEFAULT_NOTE_COLOR, PASTEL_COLORS, hexToColorKey, type PastelColorKey } from '$lib/constants/colors';
 	import Modal from '$lib/components/common/Modal.svelte';
 	import ColorPicker from './ColorPicker.svelte';
 	import { generateId } from '$lib/utils/uuid';
@@ -21,8 +21,7 @@
 	// Form state
 	let title = $state('');
 	let content = $state('');
-	let selectedColor = $state<PastelColorKey>(DEFAULT_COLOR);
-	let isUrgent = $state(false);
+	let selectedColor = $state<PastelColorKey>(DEFAULT_NOTE_COLOR);
 	let isSaving = $state(false);
 
 	// Populate form when editing existing note
@@ -31,14 +30,12 @@
 			if (note) {
 				title = note.title;
 				content = note.content;
-				selectedColor = note.color as PastelColorKey;
-				isUrgent = note.isUrgent;
+				selectedColor = hexToColorKey(note.color);
 			} else {
-				// Reset form for new note
+				// Reset form for new note - use default note color (lemon)
 				title = '';
 				content = '';
-				selectedColor = DEFAULT_COLOR;
-				isUrgent = false;
+				selectedColor = DEFAULT_NOTE_COLOR;
 			}
 		}
 	});
@@ -63,7 +60,6 @@
 					title: title.trim(),
 					content: content.trim(),
 					color: colorHex,
-					isUrgent,
 					updatedAt: new Date()
 				});
 			} else {
@@ -75,7 +71,7 @@
 					color: colorHex,
 					createdAt: new Date(),
 					updatedAt: new Date(),
-					isUrgent
+					order: Date.now()
 				};
 				await notesStore.add(newNote);
 			}
@@ -129,20 +125,16 @@
 				bind:value={content}
 				placeholder="Írd ide a jegyzet tartalmát..."
 				rows="6"
+				style:--textarea-bg={note?.color}
 			></textarea>
 		</div>
 
-		<div class="form-group">
-			<label class="form-label">Szín</label>
-			<ColorPicker {selectedColor} onSelect={handleColorSelect} />
-		</div>
-
-		<div class="form-group">
-			<label class="checkbox-label">
-				<input type="checkbox" bind:checked={isUrgent} class="checkbox-input" />
-				<span class="checkbox-text">Sürgős</span>
-			</label>
-		</div>
+		{#if !note}
+			<div class="form-group">
+				<label class="form-label">Szín</label>
+				<ColorPicker {selectedColor} onSelect={handleColorSelect} />
+			</div>
+		{/if}
 
 		<div class="form-actions">
 			<button
@@ -158,7 +150,7 @@
 				class="button button--primary"
 				disabled={isSaving || !title.trim()}
 			>
-				{isSaving ? 'Mentés...' : note ? 'Frissítés' : 'Létrehozás'}
+				{isSaving ? 'Mentés...' : note ? 'Mentés' : 'Létrehozás'}
 			</button>
 		</div>
 	</form>
@@ -225,26 +217,12 @@
 		min-height: 120px;
 		resize: vertical;
 		line-height: var(--leading-normal);
+		background: var(--textarea-bg, var(--bg-primary));
 	}
 
-	.checkbox-label {
-		display: flex;
-		align-items: center;
-		gap: var(--space-2);
-		cursor: pointer;
-		user-select: none;
-	}
-
-	.checkbox-input {
-		width: 20px;
-		height: 20px;
-		cursor: pointer;
-		accent-color: var(--color-urgent);
-	}
-
-	.checkbox-text {
-		font-size: var(--text-base);
-		color: var(--text-primary);
+	/* Dark mode - always use default background */
+	:global([data-theme="dark"]) .textarea {
+		background: var(--bg-primary);
 	}
 
 	.form-actions {
