@@ -31,16 +31,17 @@
   .progress-bar {
     flex: 1;
     height: 12px;
-    background: rgba(0, 0, 0, 0.08);
+    background: #F5F5F7;
     border-radius: 6px;
-    overflow: hidden;
-    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+    overflow: visible;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.08);
+    padding: 2px;
   }
 
   .progress-fill {
     height: 100%;
     background: #007AFF;
-    border-radius: 6px;
+    border-radius: 4px;
     transition: width 300ms cubic-bezier(0.4, 0, 0.2, 1);
     box-shadow: 0 1px 4px rgba(0, 122, 255, 0.3);
   }

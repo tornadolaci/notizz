@@ -264,6 +264,11 @@
 		transition: all 200ms ease;
 	}
 
+	/* Dark mode - darker borders for inputs */
+	:global([data-theme="dark"]) .input {
+		border: 1px solid rgba(255, 255, 255, 0.3);
+	}
+
 	.input:focus {
 		outline: none;
 		border-color: var(--color-info);
@@ -288,14 +293,16 @@
 		gap: var(--space-1);
 		padding: var(--space-3);
 		background: var(--items-list-bg, var(--bg-secondary));
+		border: 1px solid var(--border-light);
 		border-radius: 12px;
 		max-height: 300px;
 		overflow-y: auto;
 	}
 
-	/* Dark mode - always use default background */
+	/* Dark mode - dark green background with darker border */
 	:global([data-theme="dark"]) .items-list {
-		background: var(--bg-secondary);
+		background: #293F3F;
+		border: 1px solid rgba(255, 255, 255, 0.3);
 	}
 
 	.add-item {
@@ -333,14 +340,14 @@
 	}
 
 	.button--primary {
-		background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+		background: #5AC9A0;
 		color: white;
-		box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+		box-shadow: 0 4px 12px rgba(90, 201, 160, 0.3);
 	}
 
 	.button--primary:hover:not(:disabled) {
 		transform: translateY(-1px);
-		box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+		box-shadow: 0 6px 20px rgba(90, 201, 160, 0.4);
 	}
 
 	.button--primary:active:not(:disabled) {
@@ -358,6 +365,11 @@
 
 	.button--secondary:active:not(:disabled) {
 		transform: scale(0.98);
+	}
+
+	/* Dark mode - lighter background for secondary button */
+	:global([data-theme="dark"]) .button--secondary {
+		background: #636366;
 	}
 
 	.button--add {

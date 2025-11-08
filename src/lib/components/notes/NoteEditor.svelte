@@ -220,9 +220,14 @@
 		background: var(--textarea-bg, var(--bg-primary));
 	}
 
-	/* Dark mode - always use default background */
+	/* Dark mode - always use default background and darker borders */
 	:global([data-theme="dark"]) .textarea {
 		background: var(--bg-primary);
+	}
+
+	:global([data-theme="dark"]) .input,
+	:global([data-theme="dark"]) .textarea {
+		border: 1px solid rgba(255, 255, 255, 0.3);
 	}
 
 	.form-actions {
@@ -255,14 +260,14 @@
 	}
 
 	.button--primary {
-		background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+		background: #5AC9A0;
 		color: white;
-		box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+		box-shadow: 0 4px 12px rgba(90, 201, 160, 0.3);
 	}
 
 	.button--primary:hover:not(:disabled) {
 		transform: translateY(-1px);
-		box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+		box-shadow: 0 6px 20px rgba(90, 201, 160, 0.4);
 	}
 
 	.button--primary:active:not(:disabled) {
@@ -280,6 +285,11 @@
 
 	.button--secondary:active:not(:disabled) {
 		transform: scale(0.98);
+	}
+
+	/* Dark mode - lighter background for secondary button */
+	:global([data-theme="dark"]) .button--secondary {
+		background: #636366;
 	}
 
 	/* Responsive */
