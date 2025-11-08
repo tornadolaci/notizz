@@ -5,14 +5,17 @@
 	 */
 	import { onMount } from 'svelte';
 
+	import type { Snippet } from 'svelte';
+
 	interface Props {
 		isOpen: boolean;
 		onClose: () => void;
 		title?: string;
 		maxWidth?: string;
+		children: Snippet;
 	}
 
-	let { isOpen = $bindable(false), onClose, title, maxWidth = '600px' }: Props = $props();
+	let { isOpen = $bindable(false), onClose, title, maxWidth = '600px', children }: Props = $props();
 
 	let dialogElement: HTMLDialogElement;
 	let previousFocus: HTMLElement | null = null;
@@ -102,7 +105,7 @@
 			</button>
 		</div>
 		<div class="modal-body">
-			<slot />
+			{@render children()}
 		</div>
 	</div>
 </dialog>

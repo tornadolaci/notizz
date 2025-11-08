@@ -152,6 +152,7 @@
 			<label for="todo-title" class="form-label">
 				Cím <span class="required">*</span>
 			</label>
+			<!-- svelte-ignore a11y_autofocus -->
 			<input
 				id="todo-title"
 				type="text"
@@ -164,10 +165,10 @@
 			/>
 		</div>
 
-		<div class="form-group">
-			<label class="form-label">
+		<div class="form-group" role="group" aria-labelledby="todo-items-label">
+			<div id="todo-items-label" class="form-label">
 				Teendők <span class="required">*</span>
-			</label>
+			</div>
 			<div class="todo-items">
 				{#if items.length > 0}
 					<div class="items-list" style:--items-list-bg={todo?.color}>
@@ -203,8 +204,8 @@
 		</div>
 
 		{#if !todo}
-			<div class="form-group">
-				<label class="form-label">Szín</label>
+			<div class="form-group" role="group" aria-labelledby="todo-color-label">
+				<div id="todo-color-label" class="form-label">Szín</div>
 				<ColorPicker {selectedColor} onSelect={handleColorSelect} />
 			</div>
 		{/if}

@@ -285,9 +285,9 @@
 <!-- Type Picker Modal -->
 {#if isTypePickerOpen}
   <!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
-  <div class="modal-backdrop" role="dialog" aria-modal="true" onclick={closeTypePicker} onkeydown={(e) => e.key === 'Escape' && closeTypePicker()}>
+  <div class="modal-backdrop" role="dialog" aria-modal="true" tabindex="-1" onclick={closeTypePicker} onkeydown={(e) => e.key === 'Escape' && closeTypePicker()}>
     <!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
-    <div class="type-picker" role="document" onclick={(e) => e.stopPropagation()}>
+    <div class="type-picker" role="presentation" onclick={(e) => e.stopPropagation()}>
       <h2 class="type-picker-title">Új elem létrehozása</h2>
       <div class="type-buttons">
         <button class="type-button" onclick={() => openNoteEditor()}>

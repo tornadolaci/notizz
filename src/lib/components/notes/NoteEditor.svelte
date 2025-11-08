@@ -105,6 +105,7 @@
 			<label for="note-title" class="form-label">
 				Cím <span class="required">*</span>
 			</label>
+			<!-- svelte-ignore a11y_autofocus -->
 			<input
 				id="note-title"
 				type="text"
@@ -130,8 +131,8 @@
 		</div>
 
 		{#if !note}
-			<div class="form-group">
-				<label class="form-label">Szín</label>
+			<div class="form-group" role="group" aria-labelledby="note-color-label">
+				<div id="note-color-label" class="form-label">Szín</div>
 				<ColorPicker {selectedColor} onSelect={handleColorSelect} />
 			</div>
 		{/if}

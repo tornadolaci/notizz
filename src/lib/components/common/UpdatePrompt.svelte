@@ -72,7 +72,7 @@
       0 24px 80px rgba(0, 0, 0, 0.1);
   }
 
-  [data-theme="dark"] .update-content {
+  :global([data-theme="dark"]) .update-content {
     background: rgba(30, 30, 30, 0.95);
     border: 1px solid rgba(255, 255, 255, 0.1);
   }
