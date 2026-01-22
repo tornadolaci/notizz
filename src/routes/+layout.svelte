@@ -30,9 +30,9 @@
   .app-container {
     min-height: 100vh;
     min-height: 100dvh;
-    display: flex;
-    flex-direction: column;
+    display: block;
     background: var(--bg-secondary);
     overflow-x: hidden;
+    overflow-y: visible;
   }
 </style>

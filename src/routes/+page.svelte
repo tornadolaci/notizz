@@ -318,7 +318,7 @@
     margin: 0 auto;
     padding: 0;
     padding-top: 90px;
-    flex: 1;
+    padding-bottom: 100px;
     overflow-x: hidden;
     box-sizing: border-box;
   }
