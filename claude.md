@@ -473,6 +473,43 @@ body::-webkit-scrollbar,
 
 **Megjegyzés**: A görgetési funkció megmarad, csak a vizuális scrollbar indikátor tűnik el.
 
+### Mobil Görgetés Javítás - Android Chrome (2025-01-22)
+
+**Probléma**: Android Chrome-on a lista nem volt görgethető touch gesztusokkal.
+
+**Gyökér okok**:
+1. `overscroll-behavior-y: none` blokkolta a touch scroll-t
+2. `display: flex` az `.app-container`-en interferált a görgetéssel
+3. `flex: 1` a main container-en problémát okozott
+
+**Megoldás** - [src/app.css](src/app.css), [src/routes/+layout.svelte](src/routes/+layout.svelte):
+```css
+/* html és body - explicit scroll engedélyezés */
+html, body {
+  overflow-y: scroll;  /* NEM 'auto' - explicit scroll */
+  /* overscroll-behavior-y: none ELTÁVOLÍTVA */
+}
+
+/* app-container - block layout flexbox helyett */
+.app-container {
+  display: block;      /* NEM 'flex' */
+  overflow-y: visible; /* NEM 'hidden' vagy 'auto' */
+}
+
+/* main container - flex: 1 eltávolítva */
+.container {
+  padding-bottom: 100px; /* FAB gomb alatti hely */
+  /* flex: 1 ELTÁVOLÍTVA */
+}
+```
+
+**Kritikus szabályok mobil görgetéshez**:
+- ⚠️ SOHA ne használj `overscroll-behavior-y: none` - blokkol(hat)ja a touch scroll-t
+- ⚠️ `overflow-y: scroll` explicit beállítás szükséges, nem `auto`
+- ⚠️ Kerüld a `display: flex` + `min-height: 100vh` kombinációt scroll konténereken
+- ⚠️ Ne használj `touch-action` manipulációt az `*` univerzális szelektoron
+- ✅ `-webkit-overflow-scrolling: touch` iOS smooth scroll támogatáshoz
+
 ### Urgent Flag Eltávolítása (2025-01-08)
 
 **Változtatások**:
