@@ -23,12 +23,13 @@ export async function signUpWithEmail(
   password: string
 ): Promise<AuthResult> {
   try {
+    const baseUrl = import.meta.env.BASE_URL || '/';
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         // Email confirmation required
-        emailRedirectTo: `${window.location.origin}/`,
+        emailRedirectTo: `${window.location.origin}${baseUrl}`,
       },
     });
 
@@ -87,10 +88,14 @@ export async function signInWithEmail(
  */
 export async function signInWithGoogle(): Promise<AuthResult> {
   try {
+    // Use full base URL including path for GitHub Pages
+    const baseUrl = import.meta.env.BASE_URL || '/';
+    const redirectUrl = `${window.location.origin}${baseUrl}`;
+
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/`,
+        redirectTo: redirectUrl,
         queryParams: {
           access_type: 'offline',
           prompt: 'consent',
@@ -155,8 +160,9 @@ export async function getUser(): Promise<User | null> {
  */
 export async function resetPassword(email: string): Promise<AuthResult> {
   try {
+    const baseUrl = import.meta.env.BASE_URL || '/';
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
+      redirectTo: `${window.location.origin}${baseUrl}reset-password`,
     });
 
     if (error) {
