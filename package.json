@@ -1,6 +1,6 @@
 {
   "name": "notizz",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Jegyzet és TODO lista kezelő PWA - iOS-inspired design",
   "type": "module",
   "scripts": {

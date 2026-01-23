@@ -66,10 +66,21 @@
 		}
 	}
 
-	function toggleItem(id: string) {
+	async function toggleItem(id: string) {
+		// 1. Lokális UI frissítés (optimistic update)
 		items = items.map((item) =>
 			item.id === id ? { ...item, completed: !item.completed } : item
 		);
+
+		// 2. Ha van mentett TODO (szerkesztés mód), azonnal DB mentés
+		if (todo?.id) {
+			try {
+				await todosStore.toggleItem(todo.id, id);
+			} catch (error) {
+				console.error('Failed to save checkbox state:', error);
+			}
+		}
+		// Új TODO esetén marad a régi működés (mentés gombbal)
 	}
 
 	function deleteItem(id: string) {
