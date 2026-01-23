@@ -126,7 +126,7 @@
 	}
 
 	/* Touch-friendly sizing */
-	@media (hover: none) {
+	@media (hover: none), (pointer: coarse) {
 		.color-option {
 			width: 48px;
 			height: 48px;

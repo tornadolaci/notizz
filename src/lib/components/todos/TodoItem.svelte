@@ -206,7 +206,7 @@
 	}
 
 	/* Touch devices - always show delete button */
-	@media (hover: none) {
+	@media (hover: none), (pointer: coarse) {
 		.delete-button {
 			opacity: 1;
 		}

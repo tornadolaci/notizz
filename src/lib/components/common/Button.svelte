@@ -162,7 +162,7 @@
   }
 
   /* Touch devices */
-  @media (hover: none) {
+  @media (hover: none), (pointer: coarse) {
     .button:focus-visible {
       outline: none;
     }

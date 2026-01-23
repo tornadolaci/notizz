@@ -91,7 +91,7 @@
   }
 
   /* Touch devices - larger tap target */
-  @media (hover: none) {
+  @media (hover: none), (pointer: coarse) {
     .fab {
       width: 64px;
       height: 64px;

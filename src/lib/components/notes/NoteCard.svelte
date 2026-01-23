@@ -213,7 +213,7 @@
   }
 
   /* Touch devices - always show delete button */
-  @media (hover: none) {
+  @media (hover: none), (pointer: coarse) {
     .card__delete {
       opacity: 1;
     }
@@ -318,7 +318,7 @@
   }
 
   /* Touch devices - always show navigation buttons */
-  @media (hover: none) {
+  @media (hover: none), (pointer: coarse) {
     .card__nav-btn {
       opacity: 1;
       transform: scale(1);
@@ -370,7 +370,7 @@
     color: var(--color-info);
   }
 
-  @media (hover: none) {
+  @media (hover: none), (pointer: coarse) {
     :global([data-theme="dark"]) .card__nav-btn {
       background: rgba(50, 50, 50, 0.85);
     }
