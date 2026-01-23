@@ -14,14 +14,19 @@ test.describe('Notizz App', () => {
     await expect(page).toHaveTitle(/Notizz/);
   });
 
-  test('should display filter buttons', async ({ page }) => {
+  test('should display FAB and header elements', async ({ page }) => {
     await page.goto('/');
     await page.waitForLoadState('networkidle');
 
-    // Check for filter buttons
-    await expect(page.getByRole('button', { name: 'Összes' })).toBeVisible();
-    await expect(page.getByRole('button', { name: /Csak jegyzetek/ })).toBeVisible();
-    await expect(page.getByRole('button', { name: /Csak TODO/ })).toBeVisible();
+    // Check for FAB button
+    await expect(page.getByLabel('Új elem létrehozása')).toBeVisible();
+
+    // Check for header elements
+    await expect(page.getByText('Notizz!')).toBeVisible();
+
+    // Check for settings and theme toggle buttons
+    await expect(page.getByLabel('Beállítások')).toBeVisible();
+    await expect(page.getByLabel('Téma váltása')).toBeVisible();
   });
 
   test('should be responsive', async ({ page }) => {

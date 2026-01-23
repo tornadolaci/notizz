@@ -1,26 +1,197 @@
 <script lang="ts">
   import '../app.css';
-  import { onMount } from 'svelte';
+  import { onMount, onDestroy } from 'svelte';
   import UpdatePrompt from '$lib/components/common/UpdatePrompt.svelte';
   import OfflineIndicator from '$lib/components/common/OfflineIndicator.svelte';
+  import AuthModal from '$lib/components/auth/AuthModal.svelte';
+  import WelcomeModal from '$lib/components/auth/WelcomeModal.svelte';
   import { settingsStore } from '$lib/stores/settings';
   import { themeStore } from '$lib/stores/theme';
+  import { authStore, isAuthenticated, isInitialized, authUser } from '$lib/stores/auth';
+  import { notesStore } from '$lib/stores/notes';
+  import { todosStore } from '$lib/stores/todos';
+  import {
+    fullSync,
+    subscribeToChanges,
+    unsubscribeFromChanges,
+    clearLocalData,
+    processSyncQueue,
+    isOnline,
+  } from '$lib/supabase';
 
   let { children } = $props();
 
-  // Initialize settings and theme
+  // Auth modal state
+  let showAuthModal = $state(false);
+
+  // Welcome modal state (first time user)
+  let showWelcomeModal = $state(false);
+  let appInitialized = $state(false);
+
+  // LocalStorage key for tracking if user has made initial choice
+  const WELCOME_COMPLETED_KEY = 'notizz_welcome_completed';
+
+  // Real-time subscription cleanup
+  let unsubscribeRealtime: (() => void) | null = null;
+
+  // Online status listener
+  let handleOnline: (() => void) | null = null;
+
+  // Initialize settings, theme, and auth
   onMount(async () => {
     await settingsStore.init();
     themeStore.init();
 
     // Set fixed font size to 18px
     document.documentElement.style.setProperty('--text-base', '18px');
+
+    // Initialize auth state
+    await authStore.initialize();
+
+    // Check if this is the first time user (after auth is initialized)
+    const welcomeCompleted = localStorage.getItem(WELCOME_COMPLETED_KEY);
+    const isLoggedIn = authStore.isAuthenticated();
+
+    // Show welcome modal only if:
+    // 1. User hasn't completed the welcome flow
+    // 2. User is not already logged in
+    if (!welcomeCompleted && !isLoggedIn) {
+      showWelcomeModal = true;
+    }
+
+    appInitialized = true;
   });
+
+  // React to auth state changes
+  $effect(() => {
+    const user = $authUser;
+    const initialized = $isInitialized;
+
+    if (initialized && user) {
+      // User is logged in - setup sync
+      setupSync(user.id);
+    } else if (initialized && !user) {
+      // User is logged out - cleanup
+      cleanupSync();
+    }
+  });
+
+  async function setupSync(userId: string) {
+    try {
+      // Process any pending sync queue first
+      if (isOnline()) {
+        await processSyncQueue(userId);
+      }
+
+      // Perform full sync to get latest data
+      if (isOnline()) {
+        await fullSync(userId);
+      }
+
+      // Reload stores with synced data
+      await Promise.all([notesStore.load(), todosStore.load()]);
+
+      // Subscribe to real-time changes
+      unsubscribeRealtime = subscribeToChanges(
+        userId,
+        (notes) => {
+          notesStore.setNotes(notes);
+        },
+        (todos) => {
+          todosStore.setTodos(todos);
+        }
+      );
+
+      // Listen for coming back online
+      handleOnline = async () => {
+        if (isOnline()) {
+          console.log('Back online, syncing...');
+          await processSyncQueue(userId);
+          await fullSync(userId);
+          await Promise.all([notesStore.load(), todosStore.load()]);
+        }
+      };
+      window.addEventListener('online', handleOnline);
+    } catch (error) {
+      console.error('Error setting up sync:', error);
+    }
+  }
+
+  function cleanupSync() {
+    // Unsubscribe from real-time changes
+    if (unsubscribeRealtime) {
+      unsubscribeRealtime();
+      unsubscribeRealtime = null;
+    }
+    unsubscribeFromChanges();
+
+    // Remove online listener
+    if (handleOnline) {
+      window.removeEventListener('online', handleOnline);
+      handleOnline = null;
+    }
+  }
+
+  // Handle successful login
+  async function handleAuthSuccess() {
+    showAuthModal = false;
+    // Sync will be triggered by the auth state change effect
+  }
+
+  // Handle logout
+  async function handleLogout() {
+    cleanupSync();
+    await clearLocalData();
+    await authStore.signOut();
+    // Reload empty state
+    await Promise.all([notesStore.load(), todosStore.load()]);
+  }
+
+  onDestroy(() => {
+    cleanupSync();
+  });
+
+  // Handle welcome modal choices
+  function handleGuestMode() {
+    // Mark welcome as completed
+    localStorage.setItem(WELCOME_COMPLETED_KEY, 'true');
+    showWelcomeModal = false;
+  }
+
+  function handleWelcomeLogin() {
+    // Mark welcome as completed (will be confirmed after successful login)
+    localStorage.setItem(WELCOME_COMPLETED_KEY, 'true');
+    showWelcomeModal = false;
+    showAuthModal = true;
+  }
+
+  // Expose logout handler globally for settings page
+  // @ts-expect-error - global window property
+  if (typeof window !== 'undefined') {
+    // @ts-expect-error - global window property
+    window.__notizz_logout = handleLogout;
+    // @ts-expect-error - global window property
+    window.__notizz_showAuth = () => { showAuthModal = true; };
+  }
 </script>
 
 <div class="app-container page-enter">
   {@render children()}
 </div>
+
+<!-- Welcome Modal (first time user) -->
+<WelcomeModal
+  bind:isOpen={showWelcomeModal}
+  onGuestMode={handleGuestMode}
+  onLogin={handleWelcomeLogin}
+/>
+
+<!-- Auth Modal -->
+<AuthModal
+  bind:isOpen={showAuthModal}
+  onClose={() => { showAuthModal = false; }}
+  onSuccess={handleAuthSuccess}
+/>
 
 <!-- PWA components -->
 <UpdatePrompt />

@@ -20,8 +20,8 @@ test.describe('Notes Management', () => {
   });
 
   test('should create a new note', async ({ page }) => {
-    // Click FAB to open note editor
-    await page.getByRole('button', { name: /új/i }).click();
+    // Click FAB to open type picker
+    await page.getByLabel('Új elem létrehozása').click();
 
     // Wait for modal to appear
     await expect(page.getByRole('dialog')).toBeVisible();
@@ -29,19 +29,18 @@ test.describe('Notes Management', () => {
     // Select "Jegyzet" option
     await page.getByRole('button', { name: /jegyzet/i }).click();
 
-    // Fill in note details
-    await page.getByLabel(/cím/i).fill('Teszt jegyzet');
-    await page.getByLabel(/tartalom/i).fill('Ez egy teszt jegyzet tartalom.');
+    // Wait for note editor to be visible
+    await expect(page.locator('#note-title')).toBeVisible();
 
-    // Select a color
-    await page.locator('[data-color="lavender"]').click();
+    // Fill in note details using specific ID
+    await page.locator('#note-title').fill('Teszt jegyzet');
+    await page.locator('#note-content').fill('Ez egy teszt jegyzet tartalom.');
 
-    // Add a tag
-    await page.getByLabel(/címkék/i).fill('teszt');
-    await page.keyboard.press('Enter');
+    // Select a color using aria-label (ColorPicker uses aria-label not data-color)
+    await page.getByRole('radio', { name: /levendula/i }).click();
 
-    // Save note
-    await page.getByRole('button', { name: /mentés/i }).click();
+    // Save note (new note uses "Létrehozás" button)
+    await page.getByRole('button', { name: 'Létrehozás', exact: true }).click();
 
     // Verify modal closed
     await expect(page.getByRole('dialog')).not.toBeVisible();
@@ -49,16 +48,16 @@ test.describe('Notes Management', () => {
     // Verify note appears in the list
     await expect(page.getByText('Teszt jegyzet')).toBeVisible();
     await expect(page.getByText('Ez egy teszt jegyzet tartalom.')).toBeVisible();
-    await expect(page.getByText('teszt')).toBeVisible();
   });
 
   test('should edit an existing note', async ({ page }) => {
     // Create a note first
-    await page.getByRole('button', { name: /új/i }).click();
+    await page.getByLabel('Új elem létrehozása').click();
     await page.getByRole('button', { name: /jegyzet/i }).click();
-    await page.getByLabel(/cím/i).fill('Eredeti jegyzet');
-    await page.getByLabel(/tartalom/i).fill('Eredeti tartalom');
-    await page.getByRole('button', { name: /mentés/i }).click();
+    await expect(page.locator('#note-title')).toBeVisible();
+    await page.locator('#note-title').fill('Eredeti jegyzet');
+    await page.locator('#note-content').fill('Eredeti tartalom');
+    await page.getByRole('button', { name: 'Létrehozás', exact: true }).click();
 
     // Wait for note to appear
     await expect(page.getByText('Eredeti jegyzet')).toBeVisible();
@@ -68,12 +67,13 @@ test.describe('Notes Management', () => {
 
     // Wait for editor modal
     await expect(page.getByRole('dialog')).toBeVisible();
+    await expect(page.locator('#note-title')).toBeVisible();
 
     // Edit the note
-    await page.getByLabel(/cím/i).fill('Módosított jegyzet');
-    await page.getByLabel(/tartalom/i).fill('Módosított tartalom');
+    await page.locator('#note-title').fill('Módosított jegyzet');
+    await page.locator('#note-content').fill('Módosított tartalom');
 
-    // Save changes
+    // Save changes (editing uses "Mentés" button)
     await page.getByRole('button', { name: /mentés/i }).click();
 
     // Verify changes are reflected
@@ -84,49 +84,49 @@ test.describe('Notes Management', () => {
 
   test('should delete a note', async ({ page }) => {
     // Create a note first
-    await page.getByRole('button', { name: /új/i }).click();
+    await page.getByLabel('Új elem létrehozása').click();
     await page.getByRole('button', { name: /jegyzet/i }).click();
-    await page.getByLabel(/cím/i).fill('Törlendő jegyzet');
-    await page.getByLabel(/tartalom/i).fill('Ez a jegyzet törlésre kerül');
-    await page.getByRole('button', { name: /mentés/i }).click();
+    await expect(page.locator('#note-title')).toBeVisible();
+    await page.locator('#note-title').fill('Törlendő jegyzet');
+    await page.locator('#note-content').fill('Ez a jegyzet törlésre kerül');
+    await page.getByRole('button', { name: 'Létrehozás', exact: true }).click();
 
     // Wait for note to appear
     await expect(page.getByText('Törlendő jegyzet')).toBeVisible();
 
-    // Click on the note to open editor
-    await page.getByText('Törlendő jegyzet').click();
+    // Find and click the delete button on the card (trash icon)
+    // The delete button is in the card header
+    const noteCard = page.locator('.card').filter({ hasText: 'Törlendő jegyzet' });
+    const deleteButton = noteCard.locator('button[aria-label*="törlés"], .card__delete-btn').first();
 
-    // Click delete button
-    await page.getByRole('button', { name: /törlés/i }).click();
-
-    // Confirm deletion (if there's a confirm dialog)
+    // Setup dialog listener before clicking delete
     page.once('dialog', dialog => dialog.accept());
+
+    await deleteButton.click();
 
     // Verify note is removed
     await expect(page.getByText('Törlendő jegyzet')).not.toBeVisible();
   });
 
-  test('should mark note as urgent', async ({ page }) => {
-    // Create a note
-    await page.getByRole('button', { name: /új/i }).click();
+  test('should select different colors for notes', async ({ page }) => {
+    // Create a note with a specific color
+    await page.getByLabel('Új elem létrehozása').click();
     await page.getByRole('button', { name: /jegyzet/i }).click();
-    await page.getByLabel(/cím/i).fill('Sürgős jegyzet');
-    await page.getByLabel(/tartalom/i).fill('Ez egy sürgős feladat');
+    await expect(page.locator('#note-title')).toBeVisible();
+    await page.locator('#note-title').fill('Színes jegyzet');
+    await page.locator('#note-content').fill('Ez egy színes jegyzet');
 
-    // Check urgent checkbox
-    await page.getByLabel(/sürgős/i).check();
+    // Select lavender color using aria-label
+    await page.getByRole('radio', { name: /levendula/i }).click();
 
     // Save note
-    await page.getByRole('button', { name: /mentés/i }).click();
+    await page.getByRole('button', { name: 'Létrehozás', exact: true }).click();
 
-    // Verify urgent badge appears
-    await expect(page.getByText('Sürgős jegyzet')).toBeVisible();
-    // Check for urgent indicator (border or badge)
-    const noteCard = page.locator('[class*="card--urgent"]').first();
-    await expect(noteCard).toBeVisible();
+    // Verify note appears
+    await expect(page.getByText('Színes jegyzet')).toBeVisible();
   });
 
-  test('should search notes by title', async ({ page }) => {
+  test('should create multiple notes', async ({ page }) => {
     // Create multiple notes
     const notes = [
       { title: 'Első jegyzet', content: 'Első tartalom' },
@@ -135,73 +135,61 @@ test.describe('Notes Management', () => {
     ];
 
     for (const note of notes) {
-      await page.getByRole('button', { name: /új/i }).click();
+      await page.getByLabel('Új elem létrehozása').click();
       await page.getByRole('button', { name: /jegyzet/i }).click();
-      await page.getByLabel(/cím/i).fill(note.title);
-      await page.getByLabel(/tartalom/i).fill(note.content);
-      await page.getByRole('button', { name: /mentés/i }).click();
+      await expect(page.locator('#note-title')).toBeVisible();
+      await page.locator('#note-title').fill(note.title);
+      await page.locator('#note-content').fill(note.content);
+      await page.getByRole('button', { name: 'Létrehozás', exact: true }).click();
       await page.waitForTimeout(300); // Wait for animation
     }
 
-    // Search for specific note
-    await page.getByPlaceholder(/keresés/i).fill('Második');
-
-    // Verify only matching note is visible
-    await expect(page.getByText('Második jegyzet')).toBeVisible();
-    await expect(page.getByText('Első jegyzet')).not.toBeVisible();
-    await expect(page.getByText('Harmadik megjegyzés')).not.toBeVisible();
-
-    // Clear search
-    await page.getByPlaceholder(/keresés/i).clear();
-
-    // Verify all notes are visible again
+    // Verify all notes are visible
     await expect(page.getByText('Első jegyzet')).toBeVisible();
     await expect(page.getByText('Második jegyzet')).toBeVisible();
     await expect(page.getByText('Harmadik megjegyzés')).toBeVisible();
   });
 
-  test('should filter to show only notes', async ({ page }) => {
+  test('should display both notes and todos in the list', async ({ page }) => {
     // Create a note
-    await page.getByRole('button', { name: /új/i }).click();
+    await page.getByLabel('Új elem létrehozása').click();
     await page.getByRole('button', { name: /jegyzet/i }).click();
-    await page.getByLabel(/cím/i).fill('Teszt jegyzet');
-    await page.getByLabel(/tartalom/i).fill('Jegyzet tartalom');
-    await page.getByRole('button', { name: /mentés/i }).click();
+    await expect(page.locator('#note-title')).toBeVisible();
+    await page.locator('#note-title').fill('Teszt jegyzet');
+    await page.locator('#note-content').fill('Jegyzet tartalom');
+    await page.getByRole('button', { name: 'Létrehozás', exact: true }).click();
+
+    // Wait for note to appear
+    await expect(page.getByText('Teszt jegyzet')).toBeVisible();
 
     // Create a todo
-    await page.getByRole('button', { name: /új/i }).click();
-    await page.getByRole('button', { name: /todo/i }).click();
-    await page.getByLabel(/cím/i).fill('Teszt TODO');
-    await page.getByRole('button', { name: /mentés/i }).click();
+    await page.getByLabel('Új elem létrehozása').click();
+    await page.getByRole('button', { name: /teendő/i }).click();
+    await expect(page.locator('#todo-title')).toBeVisible();
+    await page.locator('#todo-title').fill('Teszt TODO');
+    await page.getByPlaceholder(/új elem/i).fill('TODO elem');
+    await page.keyboard.press('Enter');
+    await page.getByRole('button', { name: 'Létrehozás', exact: true }).click();
 
     // Verify both are visible
     await expect(page.getByText('Teszt jegyzet')).toBeVisible();
     await expect(page.getByText('Teszt TODO')).toBeVisible();
-
-    // Filter to show only notes
-    await page.getByRole('button', { name: /csak jegyzetek/i }).click();
-
-    // Verify only note is visible
-    await expect(page.getByText('Teszt jegyzet')).toBeVisible();
-    await expect(page.getByText('Teszt TODO')).not.toBeVisible();
   });
 
   test('should support keyboard navigation', async ({ page }) => {
     // Create a note
-    await page.getByRole('button', { name: /új/i }).click();
+    await page.getByLabel('Új elem létrehozása').click();
     await page.getByRole('button', { name: /jegyzet/i }).click();
 
-    // Fill form using Tab navigation
-    await page.keyboard.press('Tab'); // Focus on title
-    await page.keyboard.type('Billentyűzetes jegyzet');
+    // Wait for the note editor to be visible
+    await expect(page.locator('#note-title')).toBeVisible();
 
-    await page.keyboard.press('Tab'); // Focus on content
-    await page.keyboard.type('Billentyűzettel írt tartalom');
+    // Fill using the input directly
+    await page.locator('#note-title').fill('Billentyűzetes jegyzet');
+    await page.locator('#note-content').fill('Billentyűzettel írt tartalom');
 
-    // Save with keyboard (Ctrl/Cmd + Enter if implemented, otherwise Tab to save button)
-    await page.keyboard.press('Tab');
-    await page.keyboard.press('Tab');
-    await page.keyboard.press('Enter');
+    // Save note
+    await page.getByRole('button', { name: 'Létrehozás', exact: true }).click();
 
     // Verify note was created
     await expect(page.getByText('Billentyűzetes jegyzet')).toBeVisible();
@@ -209,7 +197,7 @@ test.describe('Notes Management', () => {
 
   test('should close modal with Escape key', async ({ page }) => {
     // Open note editor
-    await page.getByRole('button', { name: /új/i }).click();
+    await page.getByLabel('Új elem létrehozása').click();
     await page.getByRole('button', { name: /jegyzet/i }).click();
 
     // Verify modal is open

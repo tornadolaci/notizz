@@ -1,20 +1,26 @@
 <script lang="ts">
   /**
    * Settings Page
-   * User preferences and data management
+   * User preferences, data management, and authentication
    */
 
   import { onMount } from 'svelte';
   import { router } from 'tinro';
   import { settingsStore } from '$lib/stores/settings';
+  import { authStore, isAuthenticated, authUser } from '$lib/stores/auth';
   import { exportData, downloadJSON, readFileAsText, validateImportData, importData, type ImportStrategy } from '$lib/utils/export';
 
   // Reactive state
   let isExporting = $state(false);
   let isImporting = $state(false);
+  let isLoggingOut = $state(false);
   let importMessage = $state<string | null>(null);
   let importError = $state<string | null>(null);
   let fileInput: HTMLInputElement;
+
+  // Derived state
+  const authenticated = $derived($isAuthenticated);
+  const user = $derived($authUser);
 
   // Initialize settings on mount
   onMount(async () => {
@@ -99,6 +105,37 @@
     }
   }
 
+  function handleLogin() {
+    // @ts-expect-error - global window property
+    if (typeof window !== 'undefined' && window.__notizz_showAuth) {
+      // @ts-expect-error - global window property
+      window.__notizz_showAuth();
+    }
+  }
+
+  async function handleLogout() {
+    if (confirm('Biztosan ki szeretnél jelentkezni?')) {
+      try {
+        isLoggingOut = true;
+        // @ts-expect-error - global window property
+        if (typeof window !== 'undefined' && window.__notizz_logout) {
+          // @ts-expect-error - global window property
+          await window.__notizz_logout();
+        }
+        importMessage = 'Sikeres kijelentkezés!';
+        setTimeout(() => {
+          importMessage = null;
+          router.goto('/');
+        }, 1500);
+      } catch (error) {
+        importError = 'A kijelentkezés sikertelen';
+        setTimeout(() => (importError = null), 3000);
+      } finally {
+        isLoggingOut = false;
+      }
+    }
+  }
+
   function goBack() {
     router.goto('/');
   }
@@ -116,6 +153,57 @@
   </header>
 
   <div class="settings-container">
+    <!-- Account Section -->
+    <section class="settings-section">
+      <h2 class="section-title">Fiók</h2>
+
+      {#if authenticated && user}
+        <div class="account-info">
+          <div class="user-avatar">
+            {user.email?.charAt(0).toUpperCase() || 'U'}
+          </div>
+          <div class="user-details">
+            <p class="user-email">{user.email}</p>
+            <p class="user-status">Bejelentkezve</p>
+          </div>
+        </div>
+
+        <button
+          class="action-button action-button--logout"
+          onclick={handleLogout}
+          disabled={isLoggingOut}
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />
+          </svg>
+          {isLoggingOut ? 'Kijelentkezés...' : 'Kijelentkezés'}
+        </button>
+      {:else}
+        <div class="account-info account-info--guest">
+          <div class="user-avatar user-avatar--guest">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" />
+            </svg>
+          </div>
+          <div class="user-details">
+            <p class="user-email">Vendég mód</p>
+            <p class="user-status">Az adatok csak ezen az eszközön érhetők el</p>
+          </div>
+        </div>
+
+        <button class="action-button action-button--login" onclick={handleLogin}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3" />
+          </svg>
+          Bejelentkezés / Regisztráció
+        </button>
+
+        <p class="sync-info">
+          Jelentkezz be, hogy szinkronizáld az adataidat több eszköz között!
+        </p>
+      {/if}
+    </section>
+
     <!-- Data Management -->
     <section class="settings-section">
       <h2 class="section-title">Adatbázis műveletek</h2>
@@ -173,6 +261,12 @@
           <span class="info-label">Build:</span>
           <span class="info-value">PWA</span>
         </p>
+        {#if authenticated}
+          <p class="info-item">
+            <span class="info-label">Szinkronizálás:</span>
+            <span class="info-value info-value--active">Aktív</span>
+          </p>
+        {/if}
       </div>
     </section>
   </div>
@@ -263,6 +357,71 @@
     margin-bottom: var(--space-5);
   }
 
+  /* Account Section */
+  .account-info {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    padding: var(--space-4);
+    background: var(--bg-secondary);
+    border-radius: 16px;
+    margin-bottom: var(--space-4);
+  }
+
+  .account-info--guest {
+    background: rgba(0, 122, 255, 0.08);
+  }
+
+  .user-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--text-lg);
+    font-weight: var(--font-semibold);
+    flex-shrink: 0;
+  }
+
+  .user-avatar--guest {
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+  }
+
+  .user-details {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .user-email {
+    font-size: var(--text-base);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .user-status {
+    font-size: var(--text-sm);
+    color: var(--text-tertiary);
+    margin: var(--space-1) 0 0;
+  }
+
+  .sync-info {
+    font-size: var(--text-sm);
+    color: var(--text-secondary);
+    text-align: center;
+    margin-top: var(--space-3);
+    padding: var(--space-3);
+    background: rgba(0, 122, 255, 0.05);
+    border-radius: 8px;
+  }
+
   /* Action Buttons */
   .action-buttons {
     display: flex;
@@ -307,6 +466,29 @@
     color: white;
   }
 
+  .action-button--login {
+    border-color: var(--color-info);
+    color: var(--color-info);
+    background: rgba(0, 122, 255, 0.05);
+  }
+
+  .action-button--login:hover:not(:disabled) {
+    background: var(--color-info);
+    color: white;
+  }
+
+  .action-button--logout {
+    border-color: var(--text-tertiary);
+    color: var(--text-secondary);
+    margin-top: 0;
+  }
+
+  .action-button--logout:hover:not(:disabled) {
+    border-color: var(--color-error);
+    background: var(--color-error);
+    color: white;
+  }
+
   /* Messages */
   .message {
     margin-top: var(--space-4);
@@ -346,6 +528,10 @@
   .info-value {
     color: var(--text-primary);
     font-weight: var(--font-medium);
+  }
+
+  .info-value--active {
+    color: var(--color-success);
   }
 
   @keyframes slideUp {

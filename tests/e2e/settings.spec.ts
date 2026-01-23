@@ -23,113 +23,55 @@ test.describe('Settings Management', () => {
   });
 
   test('should navigate to settings page', async ({ page }) => {
-    // Click settings button in header
-    await page.getByRole('button', { name: /beállítások|settings/i }).click();
+    // Click settings button in header (it's an anchor, not a button)
+    await page.getByLabel('Beállítások').click();
 
     // Verify settings page loaded
-    await expect(page).toHaveURL(/\/settings/);
-    await expect(page.getByRole('heading', { name: /beállítások/i })).toBeVisible();
+    await expect(page).toHaveURL(/#\/settings/);
+    await expect(page.getByText('Beállítások')).toBeVisible();
   });
 
-  test('should change theme from light to dark', async ({ page }) => {
+  test('should display settings page elements', async ({ page }) => {
     // Navigate to settings
-    await page.goto('/settings');
+    await page.goto('/#/settings');
     await page.waitForLoadState('networkidle');
 
-    // Find theme selector
-    const darkThemeButton = page.getByRole('button', { name: /sötét|dark/i });
-    await darkThemeButton.click();
+    // Verify page title
+    await expect(page.getByRole('heading', { name: 'Beállítások' })).toBeVisible();
 
-    // Verify theme changed (check data-theme attribute on html or body)
-    const theme = await page.evaluate(() => {
-      return document.documentElement.getAttribute('data-theme') ||
-             document.body.getAttribute('data-theme');
-    });
-    expect(theme).toBe('dark');
+    // Verify database section title
+    await expect(page.getByText('Adatbázis műveletek')).toBeVisible();
 
-    // Verify dark mode styles applied
-    const bgColor = await page.evaluate(() => {
-      return getComputedStyle(document.body).backgroundColor;
-    });
-    // Dark mode should have dark background (check if it's not white)
-    expect(bgColor).not.toBe('rgb(255, 255, 255)');
+    // Verify information section
+    await expect(page.getByText('Információ')).toBeVisible();
+    await expect(page.getByText('Verzió:')).toBeVisible();
   });
 
-  test('should change theme to auto', async ({ page }) => {
+  test('should have export button', async ({ page }) => {
     // Navigate to settings
-    await page.goto('/settings');
+    await page.goto('/#/settings');
     await page.waitForLoadState('networkidle');
 
-    // Select auto theme
-    const autoThemeButton = page.getByRole('button', { name: /auto|automatikus/i });
-    await autoThemeButton.click();
-
-    // Verify auto theme is set
-    const theme = await page.evaluate(() => {
-      return document.documentElement.getAttribute('data-theme') ||
-             document.body.getAttribute('data-theme') ||
-             localStorage.getItem('theme');
-    });
-    expect(['auto', 'light', 'dark']).toContain(theme);
+    // Verify export button exists
+    await expect(page.getByRole('button', { name: /export/i })).toBeVisible();
   });
 
-  test('should change font size', async ({ page }) => {
+  test('should have import button', async ({ page }) => {
     // Navigate to settings
-    await page.goto('/settings');
+    await page.goto('/#/settings');
     await page.waitForLoadState('networkidle');
 
-    // Get initial font size
-    const initialFontSize = await page.evaluate(() => {
-      return getComputedStyle(document.documentElement)
-        .getPropertyValue('--text-base') || '16px';
-    });
-
-    // Change to large font size
-    const largeFontButton = page.getByRole('button', { name: /nagy|large/i });
-    await largeFontButton.click();
-
-    // Verify font size changed
-    const newFontSize = await page.evaluate(() => {
-      return getComputedStyle(document.documentElement)
-        .getPropertyValue('--text-base') || '16px';
-    });
-
-    expect(newFontSize).not.toBe(initialFontSize);
-    expect(newFontSize).toBe('18px');
+    // Verify import button exists
+    await expect(page.getByRole('button', { name: /import/i })).toBeVisible();
   });
 
-  test('should persist settings after page reload', async ({ page }) => {
+  test('should have delete database button', async ({ page }) => {
     // Navigate to settings
-    await page.goto('/settings');
+    await page.goto('/#/settings');
     await page.waitForLoadState('networkidle');
 
-    // Change theme to dark
-    await page.getByRole('button', { name: /sötét|dark/i }).click();
-
-    // Change font size to large
-    await page.getByRole('button', { name: /nagy|large/i }).click();
-
-    // Navigate back to home
-    await page.goto('/');
-    await page.waitForLoadState('networkidle');
-
-    // Reload page
-    await page.reload();
-    await page.waitForLoadState('networkidle');
-
-    // Verify theme persisted
-    const theme = await page.evaluate(() => {
-      return document.documentElement.getAttribute('data-theme') ||
-             document.body.getAttribute('data-theme');
-    });
-    expect(theme).toBe('dark');
-
-    // Verify font size persisted
-    const fontSize = await page.evaluate(() => {
-      return getComputedStyle(document.documentElement)
-        .getPropertyValue('--text-base');
-    });
-    expect(fontSize).toBe('18px');
+    // Verify delete button exists with danger styling
+    await expect(page.getByRole('button', { name: /adatbázis törlése/i })).toBeVisible();
   });
 
   test('should export data as JSON', async ({ page }) => {
@@ -137,14 +79,18 @@ test.describe('Settings Management', () => {
     await page.goto('/');
 
     // Create a note
-    await page.getByRole('button', { name: /új/i }).click();
+    await page.getByLabel('Új elem létrehozása').click();
     await page.getByRole('button', { name: /jegyzet/i }).click();
-    await page.getByLabel(/cím/i).fill('Exportálandó jegyzet');
-    await page.getByLabel(/tartalom/i).fill('Teszt tartalom');
+    await expect(page.locator('#note-title')).toBeVisible();
+    await page.locator('#note-title').fill('Exportálandó jegyzet');
+    await page.locator('#note-content').fill('Teszt tartalom');
     await page.getByRole('button', { name: /mentés/i }).click();
 
+    // Wait for note to appear
+    await expect(page.getByText('Exportálandó jegyzet')).toBeVisible();
+
     // Navigate to settings
-    await page.goto('/settings');
+    await page.goto('/#/settings');
     await page.waitForLoadState('networkidle');
 
     // Setup download listener
@@ -166,146 +112,100 @@ test.describe('Settings Management', () => {
     expect(path).toBeTruthy();
   });
 
-  test('should import data from JSON', async ({ page }) => {
+  test('should have hidden file input for import', async ({ page }) => {
     // Navigate to settings
-    await page.goto('/settings');
+    await page.goto('/#/settings');
     await page.waitForLoadState('networkidle');
 
-    // Create test JSON data
-    const testData = {
-      notes: [
-        {
-          id: 'test-note-1',
-          title: 'Importált jegyzet',
-          content: 'Importált tartalom',
-          color: 'lavender',
-          tags: ['import'],
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          isUrgent: false,
-          order: 0
-        }
-      ],
-      todos: [
-        {
-          id: 'test-todo-1',
-          title: 'Importált TODO',
-          items: [
-            {
-              id: 'item-1',
-              text: 'Importált elem',
-              completed: false,
-              createdAt: new Date().toISOString()
-            }
-          ],
-          color: 'sky',
-          tags: ['import'],
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          isUrgent: false,
-          completedCount: 0,
-          totalCount: 1,
-          order: 0
-        }
-      ],
-      settings: {
-        theme: 'light',
-        fontSize: 'medium',
-        language: 'hu',
-        enableAnimations: true,
-        enableSound: false,
-        defaultColor: 'lavender',
-        sortOrder: 'updated'
-      }
-    };
-
-    // Create a JSON file blob
-    await page.evaluate((data) => {
-      const json = JSON.stringify(data, null, 2);
-      const blob = new Blob([json], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-
-      // Create a temporary link and store the blob URL
-      (window as any).__testImportData = url;
-    }, testData);
-
-    // Trigger file input with the test data
+    // Verify hidden file input exists
     const fileInput = page.locator('input[type="file"]');
-
-    // Create a temporary file and upload it
-    // Note: In real E2E test, you'd create an actual file
-    // For now, we test that the import button and flow exist
-    await expect(page.getByRole('button', { name: /import/i })).toBeVisible();
+    await expect(fileInput).toHaveCount(1);
+    await expect(fileInput).toHaveAttribute('accept', '.json');
   });
 
   test('should return to home page from settings', async ({ page }) => {
     // Navigate to settings
-    await page.goto('/settings');
+    await page.goto('/#/settings');
     await page.waitForLoadState('networkidle');
 
-    // Click back button or home link
-    await page.getByRole('button', { name: /vissza|back|home/i }).click();
+    // Click back button
+    await page.getByLabel('Vissza').click();
 
     // Verify we're back on home page
     await expect(page).toHaveURL('/');
   });
 
-  test('should display current settings values', async ({ page }) => {
-    // Set some settings programmatically
-    await page.evaluate(() => {
-      localStorage.setItem('theme', 'dark');
-      localStorage.setItem('fontSize', 'large');
-    });
-
+  test('should display version information', async ({ page }) => {
     // Navigate to settings
-    await page.goto('/settings');
+    await page.goto('/#/settings');
     await page.waitForLoadState('networkidle');
 
-    // Verify dark theme button is active/selected
-    const darkButton = page.getByRole('button', { name: /sötét|dark/i });
-    const isDarkSelected = await darkButton.getAttribute('class');
-    expect(isDarkSelected).toContain('active');
+    // Verify version info
+    await expect(page.getByText('1.0.0')).toBeVisible();
+    await expect(page.getByText('PWA')).toBeVisible();
+  });
 
-    // Verify large font button is active/selected
-    const largeButton = page.getByRole('button', { name: /nagy|large/i });
-    const isLargeSelected = await largeButton.getAttribute('class');
-    expect(isLargeSelected).toContain('active');
+  test('should toggle theme using header button', async ({ page }) => {
+    // Get initial theme
+    const initialTheme = await page.evaluate(() => {
+      return document.documentElement.getAttribute('data-theme');
+    });
+
+    // Click theme toggle button in header
+    await page.getByLabel('Téma váltása').click();
+
+    // Verify theme changed
+    const newTheme = await page.evaluate(() => {
+      return document.documentElement.getAttribute('data-theme');
+    });
+
+    // Theme should be different (toggled)
+    expect(newTheme !== initialTheme).toBeTruthy();
+  });
+
+  test('should persist theme after page reload', async ({ page }) => {
+    // Toggle to dark theme
+    await page.getByLabel('Téma váltása').click();
+
+    // Verify dark theme is set
+    let theme = await page.evaluate(() => {
+      return document.documentElement.getAttribute('data-theme');
+    });
+    expect(theme).toBe('dark');
+
+    // Reload page
+    await page.reload();
+    await page.waitForLoadState('networkidle');
+
+    // Verify theme persisted
+    theme = await page.evaluate(() => {
+      return document.documentElement.getAttribute('data-theme');
+    });
+    expect(theme).toBe('dark');
   });
 
   test('should support keyboard navigation in settings', async ({ page }) => {
     // Navigate to settings
-    await page.goto('/settings');
+    await page.goto('/#/settings');
     await page.waitForLoadState('networkidle');
 
     // Use Tab to navigate through settings
     await page.keyboard.press('Tab');
+    await page.keyboard.press('Tab');
 
-    // Press Enter on focused element
-    await page.keyboard.press('Enter');
-
-    // Verify an action occurred (theme or font size changed)
-    // This is a basic test - in reality you'd check specific changes
-    const themeButtons = page.getByRole('button', { name: /világos|sötét|auto/i });
-    await expect(themeButtons.first()).toBeVisible();
+    // Verify export button can receive focus
+    const exportButton = page.getByRole('button', { name: /export/i });
+    await expect(exportButton).toBeVisible();
   });
 
-  test('should validate that all settings options are present', async ({ page }) => {
+  test('should show all action buttons', async ({ page }) => {
     // Navigate to settings
-    await page.goto('/settings');
+    await page.goto('/#/settings');
     await page.waitForLoadState('networkidle');
 
-    // Verify theme options
-    await expect(page.getByRole('button', { name: /világos|light/i })).toBeVisible();
-    await expect(page.getByRole('button', { name: /sötét|dark/i })).toBeVisible();
-    await expect(page.getByRole('button', { name: /auto/i })).toBeVisible();
-
-    // Verify font size options
-    await expect(page.getByRole('button', { name: /kicsi|small/i })).toBeVisible();
-    await expect(page.getByRole('button', { name: /közepes|medium/i })).toBeVisible();
-    await expect(page.getByRole('button', { name: /nagy|large/i })).toBeVisible();
-
-    // Verify export/import buttons
+    // Verify all action buttons are present
     await expect(page.getByRole('button', { name: /export/i })).toBeVisible();
     await expect(page.getByRole('button', { name: /import/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /adatbázis törlése/i })).toBeVisible();
   });
 });

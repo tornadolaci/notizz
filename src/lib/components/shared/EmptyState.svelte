@@ -40,8 +40,16 @@
     </svg>
   </div>
 
-  <h2 class="empty-state-title">{title}</h2>
-  <p class="empty-state-message">{message}</p>
+  <h2 class="empty-state-title">
+    {#if title.includes('Notizz!')}
+      {title.split('Notizz!')[0]}<span class="gradient-text">Notizz!</span>
+    {:else}
+      {title}
+    {/if}
+  </h2>
+  {#if message}
+    <p class="empty-state-message">{message}</p>
+  {/if}
 
   {#if actionLabel && onaction}
     <button type="button" class="empty-state-action" onclick={onaction}>
@@ -103,6 +111,13 @@
     font-weight: var(--font-semibold);
     color: var(--text-primary);
     margin: 0 0 var(--space-2);
+  }
+
+  .gradient-text {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
   }
 
   .empty-state-message {

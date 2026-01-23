@@ -1,6 +1,12 @@
 import { writable, derived, get } from 'svelte/store';
 import type { INote } from '$lib/types';
 import { NotesService } from '$lib/services';
+import {
+  SupabaseNotesService,
+  addToSyncQueue,
+  isOnline,
+} from '$lib/supabase';
+import { getCurrentUserId } from './auth';
 
 interface NotesState {
   value: INote[];
@@ -33,6 +39,7 @@ export const notesStore = {
 
   /**
    * Load all notes from database
+   * If online and authenticated, syncs with Supabase first
    */
   async load(): Promise<void> {
     try {
@@ -47,10 +54,19 @@ export const notesStore = {
   },
 
   /**
+   * Set notes directly (used by sync service)
+   */
+  setNotes(notes: INote[]): void {
+    notesStateWritable.set({ value: notes, loading: false, error: null });
+  },
+
+  /**
    * Add a new note
    * Note: The note's order should be set before calling this method
    */
   async add(note: INote): Promise<void> {
+    const userId = getCurrentUserId();
+
     try {
       // Calculate order to place new note at the top
       const state = get(notesStateWritable);
@@ -64,12 +80,28 @@ export const notesStore = {
         order: state.value.length > 0 ? minOrder - 1000 : minOrder
       };
 
+      // Save to local IndexedDB first
       await NotesService.create(noteWithOrder);
+
       // Optimistic update
       notesStateWritable.update(s => ({
         ...s,
         value: [...s.value, noteWithOrder]
       }));
+
+      // Sync to Supabase if online and authenticated
+      if (userId && isOnline()) {
+        try {
+          await SupabaseNotesService.create(noteWithOrder, userId);
+        } catch {
+          // Add to sync queue for later
+          addToSyncQueue('INSERT', 'notes', noteWithOrder.id!, noteWithOrder);
+          console.log('Note added to sync queue');
+        }
+      } else if (userId) {
+        // Offline - add to sync queue
+        addToSyncQueue('INSERT', 'notes', noteWithOrder.id!, noteWithOrder);
+      }
     } catch (error) {
       const err = error instanceof Error ? error : new Error('Failed to add note');
       notesStateWritable.update(s => ({ ...s, error: err }));
@@ -83,19 +115,42 @@ export const notesStore = {
    * Update an existing note
    */
   async update(id: string, updates: Partial<Omit<INote, 'id' | 'createdAt'>>): Promise<void> {
+    const userId = getCurrentUserId();
+
     try {
       await NotesService.update({ id, ...updates });
+
       // Optimistic update
       // Only update updatedAt if it's not just an order change
       const isOnlyOrderChange = Object.keys(updates).length === 1 && 'order' in updates;
+      let updatedNote: INote | undefined;
+
       notesStateWritable.update(s => ({
         ...s,
-        value: s.value.map(note =>
-          note.id === id
-            ? { ...note, ...updates, ...(isOnlyOrderChange ? {} : { updatedAt: new Date() }) }
-            : note
-        )
+        value: s.value.map(note => {
+          if (note.id === id) {
+            updatedNote = { ...note, ...updates, ...(isOnlyOrderChange ? {} : { updatedAt: new Date() }) };
+            return updatedNote;
+          }
+          return note;
+        })
       }));
+
+      // Sync to Supabase if online and authenticated
+      if (userId && updatedNote) {
+        if (isOnline()) {
+          try {
+            await SupabaseNotesService.update(id, updates, userId);
+          } catch {
+            // Add to sync queue for later
+            addToSyncQueue('UPDATE', 'notes', id, updatedNote);
+            console.log('Note update added to sync queue');
+          }
+        } else {
+          // Offline - add to sync queue
+          addToSyncQueue('UPDATE', 'notes', id, updatedNote);
+        }
+      }
     } catch (error) {
       const err = error instanceof Error ? error : new Error('Failed to update note');
       notesStateWritable.update(s => ({ ...s, error: err }));
@@ -109,13 +164,32 @@ export const notesStore = {
    * Delete a note
    */
   async remove(id: string): Promise<void> {
+    const userId = getCurrentUserId();
+
     try {
       await NotesService.delete(id);
+
       // Optimistic update
       notesStateWritable.update(s => ({
         ...s,
         value: s.value.filter(note => note.id !== id)
       }));
+
+      // Sync to Supabase if online and authenticated
+      if (userId) {
+        if (isOnline()) {
+          try {
+            await SupabaseNotesService.delete(id, userId);
+          } catch {
+            // Add to sync queue for later
+            addToSyncQueue('DELETE', 'notes', id);
+            console.log('Note delete added to sync queue');
+          }
+        } else {
+          // Offline - add to sync queue
+          addToSyncQueue('DELETE', 'notes', id);
+        }
+      }
     } catch (error) {
       const err = error instanceof Error ? error : new Error('Failed to delete note');
       notesStateWritable.update(s => ({ ...s, error: err }));

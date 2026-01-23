@@ -1,6 +1,12 @@
 import { writable, derived, get } from 'svelte/store';
 import type { ITodo } from '$lib/types';
 import { TodosService } from '$lib/services';
+import {
+  SupabaseTodosService,
+  addToSyncQueue,
+  isOnline,
+} from '$lib/supabase';
+import { getCurrentUserId } from './auth';
 
 interface TodosState {
   value: ITodo[];
@@ -53,10 +59,19 @@ export const todosStore = {
   },
 
   /**
+   * Set todos directly (used by sync service)
+   */
+  setTodos(todos: ITodo[]): void {
+    todosStateWritable.set({ value: todos, loading: false, error: null });
+  },
+
+  /**
    * Add a new todo
    * Note: The todo's order should be set before calling this method
    */
   async add(todo: ITodo): Promise<void> {
+    const userId = getCurrentUserId();
+
     try {
       // Calculate order to place new todo at the top
       const state = get(todosStateWritable);
@@ -76,6 +91,20 @@ export const todosStore = {
         ...s,
         value: [...s.value, todoWithOrder]
       }));
+
+      // Sync to Supabase if online and authenticated
+      if (userId && isOnline()) {
+        try {
+          await SupabaseTodosService.create(todoWithOrder, userId);
+        } catch {
+          // Add to sync queue for later
+          addToSyncQueue('INSERT', 'todos', todoWithOrder.id!, todoWithOrder);
+          console.log('Todo added to sync queue');
+        }
+      } else if (userId) {
+        // Offline - add to sync queue
+        addToSyncQueue('INSERT', 'todos', todoWithOrder.id!, todoWithOrder);
+      }
     } catch (error) {
       const err = error instanceof Error ? error : new Error('Failed to add todo');
       todosStateWritable.update(s => ({ ...s, error: err }));
@@ -89,19 +118,41 @@ export const todosStore = {
    * Update an existing todo
    */
   async update(id: string, updates: Partial<Omit<ITodo, 'id' | 'createdAt'>>): Promise<void> {
+    const userId = getCurrentUserId();
+
     try {
       await TodosService.update({ id, ...updates });
       // Optimistic update
       // Only update updatedAt if it's not just an order change
       const isOnlyOrderChange = Object.keys(updates).length === 1 && 'order' in updates;
+      let updatedTodo: ITodo | undefined;
+
       todosStateWritable.update(s => ({
         ...s,
-        value: s.value.map(todo =>
-          todo.id === id
-            ? { ...todo, ...updates, ...(isOnlyOrderChange ? {} : { updatedAt: new Date() }) }
-            : todo
-        )
+        value: s.value.map(todo => {
+          if (todo.id === id) {
+            updatedTodo = { ...todo, ...updates, ...(isOnlyOrderChange ? {} : { updatedAt: new Date() }) };
+            return updatedTodo;
+          }
+          return todo;
+        })
       }));
+
+      // Sync to Supabase if online and authenticated
+      if (userId && updatedTodo) {
+        if (isOnline()) {
+          try {
+            await SupabaseTodosService.update(id, updates, userId);
+          } catch {
+            // Add to sync queue for later
+            addToSyncQueue('UPDATE', 'todos', id, updatedTodo);
+            console.log('Todo update added to sync queue');
+          }
+        } else {
+          // Offline - add to sync queue
+          addToSyncQueue('UPDATE', 'todos', id, updatedTodo);
+        }
+      }
     } catch (error) {
       const err = error instanceof Error ? error : new Error('Failed to update todo');
       todosStateWritable.update(s => ({ ...s, error: err }));
@@ -115,6 +166,8 @@ export const todosStore = {
    * Delete a todo
    */
   async remove(id: string): Promise<void> {
+    const userId = getCurrentUserId();
+
     try {
       await TodosService.delete(id);
       // Optimistic update
@@ -122,6 +175,22 @@ export const todosStore = {
         ...s,
         value: s.value.filter(todo => todo.id !== id)
       }));
+
+      // Sync to Supabase if online and authenticated
+      if (userId) {
+        if (isOnline()) {
+          try {
+            await SupabaseTodosService.delete(id, userId);
+          } catch {
+            // Add to sync queue for later
+            addToSyncQueue('DELETE', 'todos', id);
+            console.log('Todo delete added to sync queue');
+          }
+        } else {
+          // Offline - add to sync queue
+          addToSyncQueue('DELETE', 'todos', id);
+        }
+      }
     } catch (error) {
       const err = error instanceof Error ? error : new Error('Failed to delete todo');
       todosStateWritable.update(s => ({ ...s, error: err }));
@@ -135,10 +204,14 @@ export const todosStore = {
    * Toggle a todo item's completed status
    */
   async toggleItem(todoId: string, itemId: string): Promise<void> {
+    const userId = getCurrentUserId();
+
     try {
       await TodosService.toggleItem(todoId, itemId);
 
       // Optimistic update
+      let updatedTodo: ITodo | undefined;
+
       todosStateWritable.update(s => ({
         ...s,
         value: s.value.map(todo => {
@@ -148,16 +221,36 @@ export const todosStore = {
             );
             const completedCount = updatedItems.filter(item => item.completed).length;
 
-            return {
+            updatedTodo = {
               ...todo,
               items: updatedItems,
               completedCount,
               updatedAt: new Date()
             };
+            return updatedTodo;
           }
           return todo;
         })
       }));
+
+      // Sync to Supabase if online and authenticated
+      if (userId && updatedTodo) {
+        if (isOnline()) {
+          try {
+            await SupabaseTodosService.update(todoId, {
+              items: updatedTodo.items,
+              completedCount: updatedTodo.completedCount,
+            }, userId);
+          } catch {
+            // Add to sync queue for later
+            addToSyncQueue('UPDATE', 'todos', todoId, updatedTodo);
+            console.log('Todo toggle added to sync queue');
+          }
+        } else {
+          // Offline - add to sync queue
+          addToSyncQueue('UPDATE', 'todos', todoId, updatedTodo);
+        }
+      }
     } catch (error) {
       const err = error instanceof Error ? error : new Error('Failed to toggle todo item');
       todosStateWritable.update(s => ({ ...s, error: err }));

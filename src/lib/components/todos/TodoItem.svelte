@@ -89,6 +89,7 @@
 		transition: all 200ms ease;
 		user-select: none;
 		position: relative;
+		background: transparent;
 	}
 
 	.todo-item:hover {

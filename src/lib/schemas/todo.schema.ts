@@ -4,20 +4,12 @@
  */
 
 import { z } from 'zod';
+import { PASTEL_COLORS } from '../constants/colors';
 
 /**
- * Pastel color palette validation
+ * Pastel color palette validation - uses centralized color definitions
  */
-const PASTEL_COLORS = [
-  '#E6E6FA', // Lavender
-  '#FFDAB9', // Peach
-  '#B2DFDB', // Mint
-  '#87CEEB', // Sky
-  '#FFB6C1', // Rose
-  '#FFFACD', // Lemon
-  '#B2D3C2', // Sage
-  '#FFB5A7', // Coral
-] as const;
+const PASTEL_COLOR_VALUES = Object.values(PASTEL_COLORS) as readonly string[];
 
 /**
  * TodoItem schema - validates a single todo item
@@ -44,7 +36,7 @@ export const TodoSchema = z.object({
   items: z.array(TodoItemSchema).max(100, 'Maximum 100 feladat engedélyezett listánként'),
   color: z
     .string()
-    .refine((val) => PASTEL_COLORS.includes(val as any), {
+    .refine((val) => PASTEL_COLOR_VALUES.includes(val), {
       message: 'Érvénytelen szín',
     }),
   createdAt: z.date(),
@@ -65,7 +57,7 @@ export const TodoCreateSchema = z.object({
   items: z.array(TodoItemSchema).max(100, 'Maximum 100 feladat engedélyezett listánként'),
   color: z
     .string()
-    .refine((val) => PASTEL_COLORS.includes(val as any), {
+    .refine((val) => PASTEL_COLOR_VALUES.includes(val), {
       message: 'Érvénytelen szín',
     }),
 });
@@ -86,7 +78,7 @@ export const TodoUpdateSchema = z.object({
     .optional(),
   color: z
     .string()
-    .refine((val) => PASTEL_COLORS.includes(val as any), {
+    .refine((val) => PASTEL_COLOR_VALUES.includes(val), {
       message: 'Érvénytelen szín',
     })
     .optional(),
@@ -109,8 +101,10 @@ export const TodoItemCreateSchema = z.object({
 
 /**
  * Export pastel colors for use in components
+ * Re-exported from centralized color definitions
  */
-export { PASTEL_COLORS };
+export { PASTEL_COLORS } from '../constants/colors';
+export { PASTEL_COLOR_VALUES };
 
 /**
  * Type exports inferred from schemas

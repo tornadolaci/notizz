@@ -5,7 +5,8 @@
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { NotesService, TodosService, SettingsService } from '../../../src/lib/services';
-import { db, openDatabase, deleteDatabase } from '../../../src/lib/db';
+import { openDatabase, deleteDatabase } from '../../../src/lib/db';
+import { generateUUID } from '../../../src/lib/utils/uuid';
 import type { NoteCreateInput, TodoCreateInput } from '../../../src/lib/types';
 
 describe('NotesService', () => {
@@ -22,8 +23,7 @@ describe('NotesService', () => {
       title: 'Test Note',
       content: 'This is a test note',
       color: '#E6E6FA',
-      tags: ['test'],
-      isUrgent: false,
+      order: Date.now(),
     };
 
     const note = await NotesService.create(input);
@@ -32,8 +32,10 @@ describe('NotesService', () => {
     expect(note.id).toBeDefined();
     expect(note.title).toBe(input.title);
     expect(note.content).toBe(input.content);
+    expect(note.color).toBe(input.color);
     expect(note.createdAt).toBeInstanceOf(Date);
     expect(note.updatedAt).toBeInstanceOf(Date);
+    expect(note.order).toBeDefined();
   });
 
   it('should get all notes', async () => {
@@ -41,12 +43,11 @@ describe('NotesService', () => {
       title: 'Test Note',
       content: 'Content',
       color: '#E6E6FA',
-      tags: [],
-      isUrgent: false,
+      order: Date.now(),
     };
 
     await NotesService.create(input);
-    await NotesService.create({ ...input, title: 'Test Note 2' });
+    await NotesService.create({ ...input, title: 'Test Note 2', order: Date.now() + 1 });
 
     const notes = await NotesService.getAll();
 
@@ -58,8 +59,7 @@ describe('NotesService', () => {
       title: 'Original Title',
       content: 'Content',
       color: '#E6E6FA',
-      tags: [],
-      isUrgent: false,
+      order: Date.now(),
     };
 
     const note = await NotesService.create(input);
@@ -76,8 +76,7 @@ describe('NotesService', () => {
       title: 'Test Note',
       content: 'Content',
       color: '#E6E6FA',
-      tags: [],
-      isUrgent: false,
+      order: Date.now(),
     };
 
     const note = await NotesService.create(input);
@@ -87,30 +86,28 @@ describe('NotesService', () => {
     expect(retrieved).toBeUndefined();
   });
 
-  it('should filter urgent notes', async () => {
-    const urgentInput: NoteCreateInput = {
-      title: 'Urgent Note',
+  it('should filter notes by color', async () => {
+    const lavenderInput: NoteCreateInput = {
+      title: 'Lavender Note',
       content: 'Content',
       color: '#E6E6FA',
-      tags: [],
-      isUrgent: true,
+      order: Date.now(),
     };
 
-    const normalInput: NoteCreateInput = {
-      title: 'Normal Note',
+    const mintInput: NoteCreateInput = {
+      title: 'Mint Note',
       content: 'Content',
-      color: '#E6E6FA',
-      tags: [],
-      isUrgent: false,
+      color: '#B2DFDB',
+      order: Date.now() + 1,
     };
 
-    await NotesService.create(urgentInput);
-    await NotesService.create(normalInput);
+    await NotesService.create(lavenderInput);
+    await NotesService.create(mintInput);
 
-    const urgentNotes = await NotesService.getUrgent();
+    const lavenderNotes = await NotesService.getFiltered({ color: '#E6E6FA' });
 
-    expect(urgentNotes).toHaveLength(1);
-    expect(urgentNotes[0].isUrgent).toBe(true);
+    expect(lavenderNotes).toHaveLength(1);
+    expect(lavenderNotes[0].color).toBe('#E6E6FA');
   });
 });
 
@@ -128,15 +125,14 @@ describe('TodosService', () => {
       title: 'Test Todo',
       items: [
         {
-          id: 'item-1',
+          id: generateUUID(),
           text: 'Task 1',
           completed: false,
           createdAt: new Date(),
         },
       ],
       color: '#E6E6FA',
-      tags: ['test'],
-      isUrgent: false,
+      order: Date.now(),
     };
 
     const todo = await TodosService.create(input);
@@ -154,21 +150,20 @@ describe('TodosService', () => {
       title: 'Test Todo',
       items: [
         {
-          id: 'item-1',
+          id: generateUUID(),
           text: 'Task 1',
           completed: true,
           createdAt: new Date(),
         },
         {
-          id: 'item-2',
+          id: generateUUID(),
           text: 'Task 2',
           completed: false,
           createdAt: new Date(),
         },
       ],
       color: '#E6E6FA',
-      tags: [],
-      isUrgent: false,
+      order: Date.now(),
     };
 
     const todo = await TodosService.create(input);
@@ -178,23 +173,23 @@ describe('TodosService', () => {
   });
 
   it('should toggle todo item', async () => {
+    const itemId = generateUUID();
     const input: TodoCreateInput = {
       title: 'Test Todo',
       items: [
         {
-          id: 'item-1',
+          id: itemId,
           text: 'Task 1',
           completed: false,
           createdAt: new Date(),
         },
       ],
       color: '#E6E6FA',
-      tags: [],
-      isUrgent: false,
+      order: Date.now(),
     };
 
     const todo = await TodosService.create(input);
-    const updated = await TodosService.toggleItem(todo.id!, 'item-1');
+    const updated = await TodosService.toggleItem(todo.id!, itemId);
 
     expect(updated?.items[0].completed).toBe(true);
     expect(updated?.completedCount).toBe(1);
@@ -205,8 +200,7 @@ describe('TodosService', () => {
       title: 'Test Todo',
       items: [],
       color: '#E6E6FA',
-      tags: [],
-      isUrgent: false,
+      order: Date.now(),
     };
 
     const todo = await TodosService.create(input);
@@ -214,6 +208,30 @@ describe('TodosService', () => {
 
     const retrieved = await TodosService.getById(todo.id!);
     expect(retrieved).toBeUndefined();
+  });
+
+  it('should filter todos by color', async () => {
+    const lavenderInput: TodoCreateInput = {
+      title: 'Lavender Todo',
+      items: [],
+      color: '#E6E6FA',
+      order: Date.now(),
+    };
+
+    const mintInput: TodoCreateInput = {
+      title: 'Mint Todo',
+      items: [],
+      color: '#B2DFDB',
+      order: Date.now() + 1,
+    };
+
+    await TodosService.create(lavenderInput);
+    await TodosService.create(mintInput);
+
+    const lavenderTodos = await TodosService.getFiltered({ color: '#E6E6FA' });
+
+    expect(lavenderTodos).toHaveLength(1);
+    expect(lavenderTodos[0].color).toBe('#E6E6FA');
   });
 });
 
@@ -248,11 +266,13 @@ describe('SettingsService', () => {
   it('should reset settings to default', async () => {
     await SettingsService.update({
       theme: 'dark',
+      fontSize: 'small',
     });
 
     const resetSettings = await SettingsService.reset();
 
+    // DEFAULT_SETTINGS has theme: 'auto' and fontSize: 'large'
     expect(resetSettings.theme).toBe('auto');
-    expect(resetSettings.fontSize).toBe('medium');
+    expect(resetSettings.fontSize).toBe('large');
   });
 });

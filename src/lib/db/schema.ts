@@ -78,7 +78,7 @@ export class NotizzDB extends Dexie {
       // Remove isUrgent from notes
       for (const note of notes) {
         if ('isUrgent' in note) {
-          const { isUrgent, ...noteWithoutUrgent } = note as any;
+          const { isUrgent: _isUrgentNote, ...noteWithoutUrgent } = note as Record<string, unknown>;
           await tx.table('notes').put(noteWithoutUrgent);
         }
       }
@@ -86,7 +86,7 @@ export class NotizzDB extends Dexie {
       // Remove isUrgent from todos
       for (const todo of todos) {
         if ('isUrgent' in todo) {
-          const { isUrgent, ...todoWithoutUrgent } = todo as any;
+          const { isUrgent: _isUrgentTodo, ...todoWithoutUrgent } = todo as Record<string, unknown>;
           await tx.table('todos').put(todoWithoutUrgent);
         }
       }
