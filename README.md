@@ -1,22 +1,19 @@
 # Notizz - Jegyzetek és TODO-k 📝✅
 
-Modern jegyzet és TODO lista kezelő Progressive Web App (PWA) iOS-inspired designnal. Offline-first, gyors, biztonságos és telepíthető bármilyen eszközre.
-
-![Notizz Banner](./docs/banner.png)
+Jegyzet és TODO lista kezelő, telepíthető Progressive Web App (PWA). Kis kódméret, gyors, biztonságos és böngészőből telepíthető bármilyen eszközre. Claude Code teszt projekt. Figyelem, hibákat még tartalmazhat!
 
 ## ✨ Főbb jellemzők
 
-- 📱 **PWA** - Telepíthető mobilra és desktopra
-- 🔒 **Offline-first** - Teljes működés internet nélkül
-- ☁️ **Cloud Sync** - Supabase-alapú szinkronizálás több eszköz között
+- 📱 **PWA** - Telepíthető mobilra és desktopra oprendszertől függetlenül
+- 🔒 **Offline-first** - Telepített üzemben gyorsítótárból betöltődik netkapcsolat nélkül is
+- ☁️ **Vendég mód** - Regisztráció nélkül is futtatható standalone módban
+- ☁️ **Cloud Sync** - Felhő alapú szinkronizálás több eszköz között (regisztrációval)
 - 🔐 **Authentication** - Email/jelszó és Google OAuth támogatás
-- 🎨 **iOS-inspired design** - Glassmorphism és smooth animációk
-- ✨ **Sticky glassmorphism header** - Fixed pozíciójú átlátszó fejléc blur effekttel
-- 🌗 **Dark mode** - Automatikus vagy manuális témaváltás
-- 📊 **Haladáskövetés** - TODO listák automatikus progress bar-ral
+- 🌗 **Dark mode** - Manuális témaváltás lehetősége
+- 📊 **Feladatkövetés** - TODO listák automatikus progress bar-ral
 - 🎨 **8 pasztell szín** - Vizuális kategorizálás
 - 💾 **Export/Import** - Adatok mentése és visszatöltése JSON formátumban
-- 🔄 **Manuális rendezés** - Fel/le nyíl gombok a kártyákon, mobilra optimalizálva
+- 🔄 **Manuális rendezés** - Fel/le nyíl gombok a kártyákon, a sorrend beállításához
 - ♿ **Accessibility** - Teljes keyboard navigáció és screen reader támogatás
 
 ## 🚀 Technológiai Stack
@@ -35,16 +32,6 @@ Modern jegyzet és TODO lista kezelő Progressive Web App (PWA) iOS-inspired des
 ### PWA & Offline
 - **vite-plugin-pwa 0.21+** - PWA generálás és service worker
 - **Workbox 7.3+** - Cache stratégiák és offline support
-
-### Testing & Quality
-- **Vitest 2.1+** - Unit testing framework
-- **Playwright 1.49+** - E2E testing (Chrome, Mobile Chrome, Mobile Safari)
-- **ESLint 9.18+** - Code linting
-- **Prettier 3.4+** - Code formatting
-
-### Other
-- **Zod 3.24+** - Runtime schema validation
-- **date-fns 4.1+** - Dátumkezelés
 
 ## 📦 Fejlesztés
 
@@ -101,7 +88,7 @@ Az alkalmazás teljesen reszponzív és minden képernyőméreten tökéletesen 
 ## 🎯 Használat
 
 ### Authentication
-- **Guest Mode** - Használat bejelentkezés nélkül (csak lokális adatok)
+- **Guest Mode** - Használat bejelentkezés nélkül (adattárolás csak helyben a készüléken)
 - **Email/Password** - Regisztráció és bejelentkezés email címmel
 - **Google OAuth** - Gyors bejelentkezés Google fiókkal
 - **Auto-sync** - Bejelentkezés után automatikus szinkronizálás
@@ -109,38 +96,22 @@ Az alkalmazás teljesen reszponzív és minden képernyőméreten tökéletesen 
 ### Jegyzetek létrehozása
 1. Kattints a jobb alsó sarokban lévő **+** gombra
 2. Válaszd a "Jegyzet" opciót
-3. Add meg a címet, tartalmat, választhatsz színt és címkéket
+3. Add meg a címet, tartalmat, választhatsz színt hozzá
 4. Kattints a "Mentés" gombra
 
 ### TODO listák kezelése
 1. Kattints a **+** gombra
 2. Válaszd a "TODO lista" opciót
 3. Add meg a lista címét
-4. Add hozzá az egyes teendőket (Enter billentyűvel új elem)
-5. Válassz színt és adj hozzá címkéket
-6. Mentés után pipa-zd ki a kész elemeket
-
-### Keresés
-- Írj be bármit a keresőmezőbe a tetején
-- Keresel címekben, tartalomban, címkékben és TODO elemekben
-- Fuzzy search: nem kell pontos egyezés
-
-### Szűrés
-- **Összes** - Minden elem látszik
-- **Csak jegyzetek** - Csak jegyzetek
-- **Csak TODO-k** - Csak TODO listák
+4. Add hozzá az egyes teendőket ("Hozzáad" gomb)
+5. Válassz színt, majd "Létrehozás" gomb
 
 ### Rendezés
 - Minden kártya alján **fel/le nyíl gombok** találhatóak
-- **Bal alsó sarok**: Lefelé nyíl - kártya mozgatása lefelé
-- **Jobb alsó sarok**: Felfelé nyíl - kártya mozgatása felfelé
-- Mobilon: 44x44px érintési területek, mindig láthatóak
-- Desktopon: Hover-re jelennek meg, scale és glassmorphism effektek
 - A sorrend automatikusan mentésre kerül az adatbázisba
 
 ### Beállítások
-- **Téma**: Világos / Sötét / Automatikus
-- **Betűméret**: Kicsi / Közepes / Nagy
+- **Téma**: Világos / Sötét
 - **Export**: Letölt egy JSON fájlt az összes adatoddal
 - **Import**: Visszatölti a JSON fájlt
 - **Kijelentkezés**: Bezárja a sessiont (adatok megmaradnak)
@@ -186,7 +157,6 @@ notizz/
 - **Session management** - Biztonságos token tárolás localStorage-ban
 - **CSP headers** - Content Security Policy konfiguráció
 - **Rate limiting** - Abuse protection
-- **IndexedDB encryption ready** - Készült kibővítésre
 
 ## 📊 Performance metrikák
 
@@ -206,62 +176,6 @@ notizz/
 - **FCP** (First Contentful Paint): <1.5s
 - **LCP** (Largest Contentful Paint): <2.5s
 - **TTI** (Time to Interactive): <3.0s
-
-## 🧪 Tesztelés
-
-### Unit tesztek futtatása
-```bash
-npm run test:unit
-```
-
-### E2E tesztek futtatása
-```bash
-npm run test:e2e
-```
-
-### E2E tesztek debug módban
-```bash
-npx playwright test --debug
-```
-
-### Tesztek UI módban
-```bash
-npx playwright test --ui
-```
-
-## 🚀 Deployment
-
-### Netlify
-```bash
-npm run build
-# Deploy a dist/ könyvtárat
-```
-
-### Vercel
-```bash
-npm run build
-# Deploy a dist/ könyvtárat
-```
-
-### GitHub Pages
-```bash
-npm run build
-# Push a dist/ könyvtárat a gh-pages branch-re
-```
-
-### Docker
-```dockerfile
-FROM node:20-alpine
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci
-COPY . .
-RUN npm run build
-FROM nginx:alpine
-COPY --from=0 /app/dist /usr/share/nginx/html
-EXPOSE 80
-CMD ["nginx", "-g", "daemon off;"]
-```
 
 ## 🤝 Hozzájárulás
 
@@ -291,7 +205,7 @@ Ha hibát találsz vagy javaslatod van, nyiss egy issue-t a GitHub-on.
 
 ## 👨‍💻 Szerző
 
-Notizz - Modern jegyzet és TODO kezelő
+@tornadolaci : Notizz - Jegyzet és TODO kezelő
 
 ## 📄 Licenc
 
