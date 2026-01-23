@@ -255,7 +255,7 @@
       <div class="info-group">
         <p class="info-item">
           <span class="info-label">Verzió:</span>
-          <span class="info-value">1.0.0</span>
+          <span class="info-value">1.0.1</span>
         </p>
         <p class="info-item">
           <span class="info-label">Build:</span>

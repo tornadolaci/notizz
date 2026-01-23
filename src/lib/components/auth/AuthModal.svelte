@@ -22,6 +22,8 @@
 	let loading = $state(false);
 	let error = $state('');
 	let successMessage = $state('');
+	let showPassword = $state(false);
+	let showConfirmPassword = $state(false);
 
 	let dialogElement: HTMLDialogElement;
 	let previousFocus: HTMLElement | null = null;
@@ -36,6 +38,8 @@
 			confirmPassword = '';
 			error = '';
 			successMessage = '';
+			showPassword = false;
+			showConfirmPassword = false;
 			loading = false;
 
 			// Save current scroll position
@@ -239,33 +243,75 @@
 				{#if mode !== 'forgot'}
 					<div class="form-group">
 						<label for="password" class="form-label">Jelszó</label>
-						<input
-							type="password"
-							id="password"
-							bind:value={password}
-							class="form-input"
-							placeholder="Minimum 6 karakter"
-							disabled={loading}
-							autocomplete={mode === 'login' ? 'current-password' : 'new-password'}
-							required
-							minlength="6"
-						/>
+						<div class="password-input-wrapper">
+							<input
+								type={showPassword ? 'text' : 'password'}
+								id="password"
+								bind:value={password}
+								class="form-input password-input"
+								placeholder="Minimum 6 karakter"
+								disabled={loading}
+								autocomplete={mode === 'login' ? 'current-password' : 'new-password'}
+								required
+								minlength="6"
+							/>
+							<button
+								type="button"
+								class="password-toggle"
+								onclick={() => showPassword = !showPassword}
+								aria-label={showPassword ? 'Jelszó elrejtése' : 'Jelszó megjelenítése'}
+								disabled={loading}
+							>
+								{#if showPassword}
+									<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+										<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+										<line x1="1" y1="1" x2="23" y2="23"/>
+									</svg>
+								{:else}
+									<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+										<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+										<circle cx="12" cy="12" r="3"/>
+									</svg>
+								{/if}
+							</button>
+						</div>
 					</div>
 
 					{#if mode === 'register'}
 						<div class="form-group">
 							<label for="confirmPassword" class="form-label">Jelszó megerősítése</label>
-							<input
-								type="password"
-								id="confirmPassword"
-								bind:value={confirmPassword}
-								class="form-input"
-								placeholder="Jelszó újra"
-								disabled={loading}
-								autocomplete="new-password"
-								required
-								minlength="6"
-							/>
+							<div class="password-input-wrapper">
+								<input
+									type={showConfirmPassword ? 'text' : 'password'}
+									id="confirmPassword"
+									bind:value={confirmPassword}
+									class="form-input password-input"
+									placeholder="Jelszó újra"
+									disabled={loading}
+									autocomplete="new-password"
+									required
+									minlength="6"
+								/>
+								<button
+									type="button"
+									class="password-toggle"
+									onclick={() => showConfirmPassword = !showConfirmPassword}
+									aria-label={showConfirmPassword ? 'Jelszó elrejtése' : 'Jelszó megjelenítése'}
+									disabled={loading}
+								>
+									{#if showConfirmPassword}
+										<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+											<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+											<line x1="1" y1="1" x2="23" y2="23"/>
+										</svg>
+									{:else}
+										<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+											<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+											<circle cx="12" cy="12" r="3"/>
+										</svg>
+									{/if}
+								</button>
+							</div>
 						</div>
 					{/if}
 				{/if}
@@ -515,6 +561,51 @@
 	.form-input:disabled {
 		opacity: 0.6;
 		cursor: not-allowed;
+	}
+
+	/* Password input wrapper */
+	.password-input-wrapper {
+		position: relative;
+		display: flex;
+		align-items: center;
+	}
+
+	.password-input {
+		padding-right: 48px;
+	}
+
+	.password-toggle {
+		position: absolute;
+		right: 12px;
+		background: none;
+		border: none;
+		cursor: pointer;
+		padding: var(--space-2);
+		color: var(--text-tertiary);
+		transition: all 200ms ease;
+		border-radius: 8px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.password-toggle:hover:not(:disabled) {
+		color: var(--text-secondary);
+		background: var(--bg-tertiary);
+	}
+
+	.password-toggle:active:not(:disabled) {
+		transform: scale(0.95);
+	}
+
+	.password-toggle:disabled {
+		opacity: 0.5;
+		cursor: not-allowed;
+	}
+
+	.password-toggle:focus-visible {
+		outline: 2px solid var(--color-info);
+		outline-offset: 2px;
 	}
 
 	/* Submit button */

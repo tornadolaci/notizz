@@ -141,7 +141,7 @@ test.describe('Settings Management', () => {
     await page.waitForLoadState('networkidle');
 
     // Verify version info
-    await expect(page.getByText('1.0.0')).toBeVisible();
+    await expect(page.getByText('1.0.1')).toBeVisible();
     await expect(page.getByText('PWA')).toBeVisible();
   });
 
