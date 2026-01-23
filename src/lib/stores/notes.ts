@@ -62,7 +62,8 @@ export const notesStore = {
 
   /**
    * Add a new note
-   * Note: The note's order should be set before calling this method
+   * When online + authenticated: save to Supabase only (realtime/polling syncs to local)
+   * When offline or guest: save to local IndexedDB
    */
   async add(note: INote): Promise<void> {
     const userId = getCurrentUserId();
@@ -80,27 +81,38 @@ export const notesStore = {
         order: state.value.length > 0 ? minOrder - 1000 : minOrder
       };
 
-      // Save to local IndexedDB first
-      await NotesService.create(noteWithOrder);
-
-      // Optimistic update
-      notesStateWritable.update(s => ({
-        ...s,
-        value: [...s.value, noteWithOrder]
-      }));
-
-      // Sync to Supabase if online and authenticated
+      // Online + authenticated: save to Supabase ONLY (avoids duplication)
       if (userId && isOnline()) {
         try {
-          await SupabaseNotesService.create(noteWithOrder, userId);
+          const savedNote = await SupabaseNotesService.create(noteWithOrder, userId);
+          // Update local store with the saved note from Supabase
+          notesStateWritable.update(s => ({
+            ...s,
+            value: [...s.value, savedNote]
+          }));
+          // Also save to local IndexedDB for offline access
+          await NotesService.create(savedNote);
         } catch {
-          // Add to sync queue for later
+          // Supabase failed - fall back to local storage + sync queue
+          await NotesService.create(noteWithOrder);
+          notesStateWritable.update(s => ({
+            ...s,
+            value: [...s.value, noteWithOrder]
+          }));
           addToSyncQueue('INSERT', 'notes', noteWithOrder.id!, noteWithOrder);
-          console.log('Note added to sync queue');
+          console.log('Note added to sync queue (Supabase unavailable)');
         }
-      } else if (userId) {
-        // Offline - add to sync queue
-        addToSyncQueue('INSERT', 'notes', noteWithOrder.id!, noteWithOrder);
+      } else {
+        // Offline or guest mode: save to local IndexedDB only
+        await NotesService.create(noteWithOrder);
+        notesStateWritable.update(s => ({
+          ...s,
+          value: [...s.value, noteWithOrder]
+        }));
+        // If authenticated but offline, add to sync queue
+        if (userId) {
+          addToSyncQueue('INSERT', 'notes', noteWithOrder.id!, noteWithOrder);
+        }
       }
     } catch (error) {
       const err = error instanceof Error ? error : new Error('Failed to add note');

@@ -67,7 +67,8 @@ export const todosStore = {
 
   /**
    * Add a new todo
-   * Note: The todo's order should be set before calling this method
+   * When online + authenticated: save to Supabase only (realtime/polling syncs to local)
+   * When offline or guest: save to local IndexedDB
    */
   async add(todo: ITodo): Promise<void> {
     const userId = getCurrentUserId();
@@ -85,25 +86,38 @@ export const todosStore = {
         order: state.value.length > 0 ? minOrder - 1000 : minOrder
       };
 
-      await TodosService.create(todoWithOrder);
-      // Optimistic update
-      todosStateWritable.update(s => ({
-        ...s,
-        value: [...s.value, todoWithOrder]
-      }));
-
-      // Sync to Supabase if online and authenticated
+      // Online + authenticated: save to Supabase ONLY (avoids duplication)
       if (userId && isOnline()) {
         try {
-          await SupabaseTodosService.create(todoWithOrder, userId);
+          const savedTodo = await SupabaseTodosService.create(todoWithOrder, userId);
+          // Update local store with the saved todo from Supabase
+          todosStateWritable.update(s => ({
+            ...s,
+            value: [...s.value, savedTodo]
+          }));
+          // Also save to local IndexedDB for offline access
+          await TodosService.create(savedTodo);
         } catch {
-          // Add to sync queue for later
+          // Supabase failed - fall back to local storage + sync queue
+          await TodosService.create(todoWithOrder);
+          todosStateWritable.update(s => ({
+            ...s,
+            value: [...s.value, todoWithOrder]
+          }));
           addToSyncQueue('INSERT', 'todos', todoWithOrder.id!, todoWithOrder);
-          console.log('Todo added to sync queue');
+          console.log('Todo added to sync queue (Supabase unavailable)');
         }
-      } else if (userId) {
-        // Offline - add to sync queue
-        addToSyncQueue('INSERT', 'todos', todoWithOrder.id!, todoWithOrder);
+      } else {
+        // Offline or guest mode: save to local IndexedDB only
+        await TodosService.create(todoWithOrder);
+        todosStateWritable.update(s => ({
+          ...s,
+          value: [...s.value, todoWithOrder]
+        }));
+        // If authenticated but offline, add to sync queue
+        if (userId) {
+          addToSyncQueue('INSERT', 'todos', todoWithOrder.id!, todoWithOrder);
+        }
       }
     } catch (error) {
       const err = error instanceof Error ? error : new Error('Failed to add todo');
