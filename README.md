@@ -8,10 +8,11 @@ Modern jegyzet és TODO lista kezelő Progressive Web App (PWA) iOS-inspired des
 
 - 📱 **PWA** - Telepíthető mobilra és desktopra
 - 🔒 **Offline-first** - Teljes működés internet nélkül
+- ☁️ **Cloud Sync** - Supabase-alapú szinkronizálás több eszköz között
+- 🔐 **Authentication** - Email/jelszó és Google OAuth támogatás
 - 🎨 **iOS-inspired design** - Glassmorphism és smooth animációk
 - ✨ **Sticky glassmorphism header** - Fixed pozíciójú átlátszó fejléc blur effekttel
 - 🌗 **Dark mode** - Automatikus vagy manuális témaváltás
-- 🎯 **Sürgősség jelölés** - Fontos elemek kiemelése
 - 📊 **Haladáskövetés** - TODO listák automatikus progress bar-ral
 - 🎨 **8 pasztell szín** - Vizuális kategorizálás
 - 💾 **Export/Import** - Adatok mentése és visszatöltése JSON formátumban
@@ -25,6 +26,11 @@ Modern jegyzet és TODO lista kezelő Progressive Web App (PWA) iOS-inspired des
 - **TypeScript 5.7+** - Strict mode type safety
 - **Vite 6.0+** - Ultragyors build tool és dev server
 - **Dexie.js 4.0+** - IndexedDB wrapper perzisztens adattároláshoz
+
+### Cloud & Auth
+- **Supabase 2.47+** - Backend as a Service (PostgreSQL + Auth + Realtime)
+- **Offline-first sync** - Queue-based sync mechanizmus
+- **Realtime subscriptions** - Automatikus frissítések több eszközről
 
 ### PWA & Offline
 - **vite-plugin-pwa 0.21+** - PWA generálás és service worker
@@ -94,12 +100,17 @@ Az alkalmazás teljesen reszponzív és minden képernyőméreten tökéletesen 
 
 ## 🎯 Használat
 
+### Authentication
+- **Guest Mode** - Használat bejelentkezés nélkül (csak lokális adatok)
+- **Email/Password** - Regisztráció és bejelentkezés email címmel
+- **Google OAuth** - Gyors bejelentkezés Google fiókkal
+- **Auto-sync** - Bejelentkezés után automatikus szinkronizálás
+
 ### Jegyzetek létrehozása
 1. Kattints a jobb alsó sarokban lévő **+** gombra
 2. Válaszd a "Jegyzet" opciót
 3. Add meg a címet, tartalmat, választhatsz színt és címkéket
-4. Ha sürgős, jelöld be a "Sürgős" checkbox-ot
-5. Kattints a "Mentés" gombra
+4. Kattints a "Mentés" gombra
 
 ### TODO listák kezelése
 1. Kattints a **+** gombra
@@ -132,6 +143,7 @@ Az alkalmazás teljesen reszponzív és minden képernyőméreten tökéletesen 
 - **Betűméret**: Kicsi / Közepes / Nagy
 - **Export**: Letölt egy JSON fájlt az összes adatoddal
 - **Import**: Visszatölti a JSON fájlt
+- **Kijelentkezés**: Bezárja a sessiont (adatok megmaradnak)
 
 ## 🏗️ Projekt struktúra
 
@@ -140,12 +152,14 @@ notizz/
 ├── src/
 │   ├── lib/
 │   │   ├── components/        # Svelte komponensek
+│   │   │   ├── auth/          # Auth UI komponensek
 │   │   │   ├── common/        # Általános UI komponensek
 │   │   │   ├── notes/         # Jegyzet komponensek
 │   │   │   ├── todos/         # TODO komponensek
 │   │   │   ├── layout/        # Layout komponensek
 │   │   │   └── shared/        # Megosztott komponensek
 │   │   ├── stores/            # Svelte 5 stores
+│   │   ├── supabase/          # Supabase integráció
 │   │   ├── db/                # Dexie.js IndexedDB
 │   │   ├── utils/             # Utility függvények
 │   │   ├── types/             # TypeScript típusok
@@ -168,9 +182,10 @@ notizz/
 ## 🔒 Biztonság
 
 - **Input sanitization** - XSS védelem minden user input-nál
+- **Row Level Security** - Supabase RLS policies felhasználónként
+- **Session management** - Biztonságos token tárolás localStorage-ban
 - **CSP headers** - Content Security Policy konfiguráció
 - **Rate limiting** - Abuse protection
-- **No external dependencies at runtime** - Minden lokális
 - **IndexedDB encryption ready** - Készült kibővítésre
 
 ## 📊 Performance metrikák
@@ -178,7 +193,7 @@ notizz/
 ### Bundle size (gzipped)
 - **Total**: ~488 KB (precache: 17 entries)
 - CSS: 7.69 KB
-- JS: ~127 KB (chunked: svelte, dexie, date-fns, app)
+- JS: ~127 KB (chunked: svelte, dexie, date-fns, supabase, app)
 - Service Worker: Auto-generated with Workbox
 
 ### Lighthouse Score célok
@@ -266,6 +281,7 @@ CMD ["nginx", "-g", "daemon off;"]
 ## 📚 További dokumentáció
 
 - [Design System](./design-system.md) - Teljes design specifikáció
+- [CLAUDE.md](./CLAUDE.md) - Claude Code útmutató és fejlesztői dokumentáció
 - [Project Structure](./project-structure.md) - Részletes projekt struktúra
 - [Tasks](./tasks.md) - Implementációs fázisok és állapot
 
