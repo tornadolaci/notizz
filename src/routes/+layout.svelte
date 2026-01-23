@@ -145,6 +145,10 @@
     await authStore.signOut();
     // Reload empty state
     await Promise.all([notesStore.load(), todosStore.load()]);
+    // Reset welcome modal state so it shows again on next app start
+    localStorage.removeItem(WELCOME_COMPLETED_KEY);
+    // Show welcome modal immediately after logout
+    showWelcomeModal = true;
   }
 
   onDestroy(() => {
