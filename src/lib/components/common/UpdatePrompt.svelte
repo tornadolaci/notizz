@@ -132,7 +132,9 @@
   }
 
   .button--primary:active {
-    transform: translateY(0);
+    transform: translateY(1px) scale(0.97);
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+    filter: brightness(0.9);
   }
 
   .button--secondary {
@@ -142,6 +144,11 @@
 
   .button--secondary:hover {
     background: var(--bg-secondary);
+  }
+
+  .button--secondary:active {
+    transform: scale(0.97);
+    filter: brightness(0.95);
   }
 
   @keyframes slideUp {

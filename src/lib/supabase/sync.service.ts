@@ -26,10 +26,25 @@ interface SyncQueueItem {
 const SYNC_QUEUE_KEY = 'notizz_sync_queue';
 
 /**
+ * Safely convert a date value to timestamp (handles Date objects and strings)
+ */
+function toTimestamp(date: Date | string | number): number {
+  if (date instanceof Date) {
+    return date.getTime();
+  }
+  if (typeof date === 'number') {
+    return date;
+  }
+  // String - parse it
+  return new Date(date).getTime();
+}
+
+/**
  * Merge local and remote items, keeping the newer version based on updatedAt
  * Also handles items that only exist locally or remotely
+ * Safely handles Date/string comparison for updatedAt field
  */
-function mergeByUpdatedAt<T extends { id?: string; updatedAt: Date }>(
+function mergeByUpdatedAt<T extends { id?: string; updatedAt: Date | string }>(
   localItems: T[],
   remoteItems: T[]
 ): T[] {
@@ -51,9 +66,9 @@ function mergeByUpdatedAt<T extends { id?: string; updatedAt: Date }>(
       // Only exists locally - keep it
       merged.set(local.id, local);
     } else {
-      // Exists in both - keep the newer one
-      const localTime = local.updatedAt.getTime();
-      const remoteTime = remote.updatedAt.getTime();
+      // Exists in both - keep the newer one (safely handle Date/string)
+      const localTime = toTimestamp(local.updatedAt);
+      const remoteTime = toTimestamp(remote.updatedAt);
 
       if (localTime > remoteTime) {
         // Local is newer - keep local
@@ -233,11 +248,11 @@ export async function fullSync(userId: string): Promise<void> {
     const remoteNoteIds = new Set(remoteNotes.map((n) => n.id));
     const localOnlyNotes = localNotes.filter((n) => n.id && !remoteNoteIds.has(n.id));
 
-    // Upload local-only notes to Supabase
+    // Upload local-only notes to Supabase (use upsert to avoid duplicates)
     for (const note of localOnlyNotes) {
       if (note.id) {
         try {
-          await SupabaseNotesService.create(note, userId);
+          await SupabaseNotesService.upsert(note, userId);
         } catch (err) {
           console.error('Error uploading local note:', err);
         }
@@ -254,11 +269,11 @@ export async function fullSync(userId: string): Promise<void> {
     const remoteTodoIds = new Set(remoteTodos.map((t) => t.id));
     const localOnlyTodos = localTodos.filter((t) => t.id && !remoteTodoIds.has(t.id));
 
-    // Upload local-only todos to Supabase
+    // Upload local-only todos to Supabase (use upsert to avoid duplicates)
     for (const todo of localOnlyTodos) {
       if (todo.id) {
         try {
-          await SupabaseTodosService.create(todo, userId);
+          await SupabaseTodosService.upsert(todo, userId);
         } catch (err) {
           console.error('Error uploading local todo:', err);
         }
