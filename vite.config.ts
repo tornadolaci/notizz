@@ -4,6 +4,7 @@ import { VitePWA } from 'vite-plugin-pwa';
 
 // https://vite.dev/config/
 export default defineConfig({
+  base: process.env.GITHUB_ACTIONS ? '/notizz/' : '/',
   plugins: [
     svelte(),
     VitePWA({
@@ -18,8 +19,8 @@ export default defineConfig({
         display: 'standalone',
         orientation: 'portrait',
         lang: 'hu',
-        start_url: '/',
-        scope: '/',
+        start_url: process.env.GITHUB_ACTIONS ? '/notizz/' : '/',
+        scope: process.env.GITHUB_ACTIONS ? '/notizz/' : '/',
         icons: [
           {
             src: 'icons/192x192.png',
