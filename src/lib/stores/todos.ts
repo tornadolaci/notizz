@@ -67,8 +67,8 @@ export const todosStore = {
 
   /**
    * Add a new todo
-   * When online + authenticated: save to Supabase only (realtime/polling syncs to local)
-   * When offline or guest: save to local IndexedDB
+   * When online + authenticated: save to Supabase FIRST, then to IndexedDB (prevents duplication)
+   * When offline or guest: save to local IndexedDB only
    */
   async add(todo: ITodo): Promise<void> {
     const userId = getCurrentUserId();
@@ -86,17 +86,20 @@ export const todosStore = {
         order: state.value.length > 0 ? minOrder - 1000 : minOrder
       };
 
-      // Online + authenticated: save to Supabase ONLY (avoids duplication)
+      // Online + authenticated: save to Supabase FIRST to get the canonical data
       if (userId && isOnline()) {
         try {
+          // 1. Save to Supabase first - this is the source of truth
           const savedTodo = await SupabaseTodosService.create(todoWithOrder, userId);
-          // Update local store with the saved todo from Supabase
+
+          // 2. Save to IndexedDB with the SAME data (same ID) for offline access
+          await TodosService.create(savedTodo);
+
+          // 3. Update store with the saved todo
           todosStateWritable.update(s => ({
             ...s,
             value: [...s.value, savedTodo]
           }));
-          // Also save to local IndexedDB for offline access
-          await TodosService.create(savedTodo);
         } catch {
           // Supabase failed - fall back to local storage + sync queue
           await TodosService.create(todoWithOrder);

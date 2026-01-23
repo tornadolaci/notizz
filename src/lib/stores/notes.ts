@@ -62,8 +62,8 @@ export const notesStore = {
 
   /**
    * Add a new note
-   * When online + authenticated: save to Supabase only (realtime/polling syncs to local)
-   * When offline or guest: save to local IndexedDB
+   * When online + authenticated: save to Supabase FIRST, then to IndexedDB (prevents duplication)
+   * When offline or guest: save to local IndexedDB only
    */
   async add(note: INote): Promise<void> {
     const userId = getCurrentUserId();
@@ -81,17 +81,20 @@ export const notesStore = {
         order: state.value.length > 0 ? minOrder - 1000 : minOrder
       };
 
-      // Online + authenticated: save to Supabase ONLY (avoids duplication)
+      // Online + authenticated: save to Supabase FIRST to get the canonical data
       if (userId && isOnline()) {
         try {
+          // 1. Save to Supabase first - this is the source of truth
           const savedNote = await SupabaseNotesService.create(noteWithOrder, userId);
-          // Update local store with the saved note from Supabase
+
+          // 2. Save to IndexedDB with the SAME data (same ID) for offline access
+          await NotesService.create(savedNote);
+
+          // 3. Update store with the saved note
           notesStateWritable.update(s => ({
             ...s,
             value: [...s.value, savedNote]
           }));
-          // Also save to local IndexedDB for offline access
-          await NotesService.create(savedNote);
         } catch {
           // Supabase failed - fall back to local storage + sync queue
           await NotesService.create(noteWithOrder);
