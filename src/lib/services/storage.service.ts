@@ -228,7 +228,15 @@ export class TodosService {
   static async getAll(): Promise<ITodo[]> {
     try {
       const todos = await db.todos.toArray();
-      return todos.sort((a, b) => {
+      // Ensure items[].createdAt are Date objects (may be strings from Supabase sync)
+      const normalizedTodos = todos.map(todo => ({
+        ...todo,
+        items: todo.items.map(item => ({
+          ...item,
+          createdAt: item.createdAt instanceof Date ? item.createdAt : new Date(item.createdAt as unknown as string),
+        })),
+      }));
+      return normalizedTodos.sort((a, b) => {
         return a.order - b.order;
       });
     } catch (error) {
