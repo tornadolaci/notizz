@@ -51,9 +51,18 @@ npm run test:e2e         # Run Playwright E2E tests (includes dev server)
 - **Pattern**: Services interact with Dexie DB, stores call services
 - **Storage Service**: Handles export/import JSON functionality
 
+### Supabase Layer (Cloud Sync)
+- **Location**: [src/lib/supabase/](src/lib/supabase/)
+- **Purpose**: Cloud authentication and data synchronization
+- **Client**: Supabase JS client with persistent session storage
+- **Auth**: Email/password and Google OAuth support
+- **Sync**: Offline-first with sync queue and realtime subscriptions
+- **Pattern**: Stores → Local DB → Supabase (async sync)
+
 ### Component Structure
 ```
 src/lib/components/
+├── auth/             # Authentication UI (AuthModal, WelcomeModal, LoginForm)
 ├── common/           # Reusable UI primitives (Button, Modal, FAB, etc.)
 ├── layout/           # Page structure (Header with sticky glassmorphism)
 ├── notes/            # Note-specific components (NoteCard, NoteEditor, ColorPicker)
@@ -538,3 +547,117 @@ export function hexToColorKey(hex: string): PastelColorKey {
 ```typescript
 selectedColor = hexToColorKey(note.color); // HEX → ColorKey konverzió
 ```
+
+### Supabase Auth & Sync Modul (2025-01-23)
+
+**Új modulok**:
+- [src/lib/supabase/](src/lib/supabase/) - Supabase integráció
+- [src/lib/stores/auth.ts](src/lib/stores/auth.ts) - Auth state management
+- [src/lib/components/auth/](src/lib/components/auth/) - Auth UI komponensek
+
+**Architektúra**:
+```
+src/lib/supabase/
+├── client.ts       # Supabase kliens inicializálás
+├── auth.service.ts # Auth műveletek (login, signup, logout)
+├── data.service.ts # CRUD műveletek Supabase-zel
+├── sync.service.ts # Offline sync és realtime subscriptions
+├── types.ts        # Supabase Database típusok
+└── index.ts        # Modul exportok
+```
+
+**Auth Flow**:
+1. `authStore.initialize()` - App induláskor session ellenőrzés
+2. `WelcomeModal` - Első indításkor Guest/Login választás
+3. `AuthModal` - Email/jelszó vagy Google bejelentkezés
+4. Session localStorage-ban tárolva (PWA kompatibilis)
+
+**Sync Stratégia**:
+- **Offline-first**: IndexedDB az elsődleges adatforrás
+- **Optimistic UI**: Lokális frissítés azonnal, majd Supabase sync
+- **Sync Queue**: Offline műveletek localStorage-ban tárolva
+- **Realtime**: Postgres Changes subscription más eszközökről
+
+**Realtime Sync Race Condition Javítás** - [src/lib/supabase/sync.service.ts](src/lib/supabase/sync.service.ts):
+
+**Probléma**: TODO elem kipipálásakor a változás "elveszett" - visszaugrott a régi állapotra.
+
+**Gyökér ok**: A Supabase realtime subscription túl gyorsan reagált és felülírta a lokális frissebb adatokat a szerveren még nem frissült régi adatokkal.
+
+**Megoldás**:
+```typescript
+// 1. Debounce timer (500ms) - megvárja a szerver frissítést
+const REALTIME_DEBOUNCE_MS = 500;
+let todosDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+
+// 2. Merge by updatedAt - frissebb adat nyer
+function mergeByUpdatedAt<T extends { id?: string; updatedAt: Date }>(
+  localItems: T[],
+  remoteItems: T[]
+): T[] {
+  // Lokális és távoli adatok összehasonlítása
+  // Ha lokális frissebb → lokális marad
+  // Ha távoli frissebb → távoli nyer
+}
+
+// 3. Realtime callback debounce-olva
+todosDebounceTimer = setTimeout(async () => {
+  const remoteTodos = await SupabaseTodosService.getAll(userId);
+  const localTodos = await db.todos.toArray();
+  const mergedTodos = mergeByUpdatedAt(localTodos, remoteTodos);
+  // ...
+}, REALTIME_DEBOUNCE_MS);
+```
+
+**Működés**:
+- ✅ TODO kipipálás megmarad
+- ✅ Lokális adat prioritást élvez ha frissebb
+- ✅ 500ms debounce megakadályozza a race condition-t
+- ✅ Timer cleanup unsubscribe-nál
+
+**Kritikus szabályok Supabase sync-hez**:
+- ⚠️ MINDIG debounce-old a realtime callback-eket
+- ⚠️ MINDIG hasonlítsd össze az `updatedAt` mezőket merge előtt
+- ⚠️ Lokális frissebb adat NE legyen felülírva távoli régebbivel
+- ✅ `getCurrentUserId()` lehet `null` - offline működés támogatott
+- ✅ Sync queue localStorage-ban - offline műveletek megmaradnak
+
+### TODO Items Date Conversion Fix (2025-01-23)
+
+**Probléma**: TODO listában kipipált elemek mentése után elveszik a mentett állapot. Zod validációs hiba: `items[].createdAt` string helyett Date objektumot vár.
+
+**Gyökér ok**: A Supabase-ből érkező TODO adatok `items[].createdAt` mezői JSON stringként érkeznek (pl. `"2025-01-23T10:30:00.000Z"`). Az IndexedDB-ből visszaolvasva is stringek maradnak (JSON serializáció miatt).
+
+**Megoldás** - [src/lib/supabase/data.service.ts](src/lib/supabase/data.service.ts), [src/lib/services/storage.service.ts](src/lib/services/storage.service.ts):
+
+1. **Supabase data service - `toITodo()` függvény**:
+```typescript
+const rawItems = (row.items as unknown as Array<{ ... createdAt: string | Date }>) || [];
+const items: ITodoItem[] = rawItems.map(item => ({
+  ...item,
+  createdAt: item.createdAt instanceof Date ? item.createdAt : new Date(item.createdAt),
+}));
+```
+
+2. **Storage service - `TodosService.getAll()`**:
+```typescript
+const normalizedTodos = todos.map(todo => ({
+  ...todo,
+  items: todo.items.map(item => ({
+    ...item,
+    createdAt: item.createdAt instanceof Date ? item.createdAt : new Date(item.createdAt as unknown as string),
+  })),
+}));
+```
+
+**Működés**:
+- ✅ Supabase-ből jövő stringek Date-re konvertálódnak
+- ✅ IndexedDB-ből jövő stringek Date-re konvertálódnak
+- ✅ Zod validáció sikeres
+- ✅ TODO checkbox állapota megmarad mentés után
+
+**Kritikus szabályok dátum kezeléshez**:
+- ⚠️ Supabase JSON-ből stringként érkeznek a dátumok
+- ⚠️ IndexedDB is stringként tárolja a Date objektumokat
+- ✅ `getAll()` metódusok MINDIG normalizáljanak dátumokat
+- ✅ `instanceof Date` ellenőrzés a dupla konverzió elkerüléshez
