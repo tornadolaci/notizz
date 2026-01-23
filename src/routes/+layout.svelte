@@ -14,6 +14,8 @@
     fullSync,
     subscribeToChanges,
     unsubscribeFromChanges,
+    startPolling,
+    stopPolling,
     clearLocalData,
     processSyncQueue,
     isOnline,
@@ -33,6 +35,9 @@
 
   // Real-time subscription cleanup
   let unsubscribeRealtime: (() => void) | null = null;
+
+  // Polling cleanup
+  let stopPollingFn: (() => void) | null = null;
 
   // Online status listener
   let handleOnline: (() => void) | null = null;
@@ -102,6 +107,17 @@
         }
       );
 
+      // Start polling as a fallback for realtime (every 30 seconds)
+      stopPollingFn = startPolling(
+        userId,
+        (notes) => {
+          notesStore.setNotes(notes);
+        },
+        (todos) => {
+          todosStore.setTodos(todos);
+        }
+      );
+
       // Listen for coming back online
       handleOnline = async () => {
         if (isOnline()) {
@@ -124,6 +140,13 @@
       unsubscribeRealtime = null;
     }
     unsubscribeFromChanges();
+
+    // Stop polling
+    if (stopPollingFn) {
+      stopPollingFn();
+      stopPollingFn = null;
+    }
+    stopPolling();
 
     // Remove online listener
     if (handleOnline) {

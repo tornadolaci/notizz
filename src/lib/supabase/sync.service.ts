@@ -298,6 +298,10 @@ const REALTIME_DEBOUNCE_MS = 500;
 let notesDebounceTimer: ReturnType<typeof setTimeout> | null = null;
 let todosDebounceTimer: ReturnType<typeof setTimeout> | null = null;
 
+// Polling interval for background sync (in milliseconds)
+const POLLING_INTERVAL_MS = 30000; // 30 seconds
+let pollingIntervalId: ReturnType<typeof setInterval> | null = null;
+
 /**
  * Subscribe to real-time changes
  */
@@ -426,6 +430,83 @@ export function unsubscribeFromChanges(): void {
   if (todosChannel) {
     supabase.removeChannel(todosChannel);
     todosChannel = null;
+  }
+}
+
+/**
+ * Start polling for changes from Supabase
+ * This complements real-time subscriptions for better reliability
+ */
+export function startPolling(
+  userId: string,
+  onNotesChange: (notes: INote[]) => void,
+  onTodosChange: (todos: ITodo[]) => void
+): () => void {
+  // Stop any existing polling
+  stopPolling();
+
+  async function pollForChanges() {
+    if (!isOnline()) return;
+
+    try {
+      // Fetch remote data
+      const [remoteNotes, remoteTodos] = await Promise.all([
+        SupabaseNotesService.getAll(userId),
+        SupabaseTodosService.getAll(userId),
+      ]);
+
+      // Get local data
+      const localNotes = await db.notes.toArray();
+      const localTodos = await db.todos.toArray();
+
+      // Merge notes - keep newer versions
+      const mergedNotes = mergeByUpdatedAt(localNotes, remoteNotes);
+      const mergedTodos = mergeByUpdatedAt(localTodos, remoteTodos);
+
+      // Check if there are actual changes before updating
+      const notesChanged = JSON.stringify(localNotes.map(n => ({ id: n.id, updatedAt: n.updatedAt }))) !==
+        JSON.stringify(mergedNotes.map(n => ({ id: n.id, updatedAt: n.updatedAt })));
+      const todosChanged = JSON.stringify(localTodos.map(t => ({ id: t.id, updatedAt: t.updatedAt }))) !==
+        JSON.stringify(mergedTodos.map(t => ({ id: t.id, updatedAt: t.updatedAt })));
+
+      // Update local DB and notify only if changed
+      if (notesChanged) {
+        await db.notes.clear();
+        if (mergedNotes.length > 0) {
+          await db.notes.bulkPut(mergedNotes);
+        }
+        onNotesChange(mergedNotes);
+      }
+
+      if (todosChanged) {
+        await db.todos.clear();
+        if (mergedTodos.length > 0) {
+          await db.todos.bulkPut(mergedTodos);
+        }
+        onTodosChange(mergedTodos);
+      }
+    } catch (err) {
+      console.error('Polling sync error:', err);
+    }
+  }
+
+  // Run initial poll immediately
+  pollForChanges();
+
+  // Start interval
+  pollingIntervalId = setInterval(pollForChanges, POLLING_INTERVAL_MS);
+
+  // Return stop function
+  return stopPolling;
+}
+
+/**
+ * Stop polling for changes
+ */
+export function stopPolling(): void {
+  if (pollingIntervalId) {
+    clearInterval(pollingIntervalId);
+    pollingIntervalId = null;
   }
 }
 

@@ -1,6 +1,10 @@
 import { defineConfig } from 'vite';
 import { svelte } from '@sveltejs/vite-plugin-svelte';
 import { VitePWA } from 'vite-plugin-pwa';
+import { readFileSync } from 'fs';
+
+// Read version from package.json
+const pkg = JSON.parse(readFileSync('./package.json', 'utf-8'));
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -98,6 +102,9 @@ export default defineConfig({
     alias: {
       $lib: '/src/lib'
     }
+  },
+  define: {
+    __APP_VERSION__: JSON.stringify(pkg.version)
   },
   build: {
     target: 'esnext',

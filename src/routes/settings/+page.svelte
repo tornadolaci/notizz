@@ -18,6 +18,9 @@
   let importError = $state<string | null>(null);
   let fileInput: HTMLInputElement;
 
+  // App version from vite.config.ts (reads from package.json at build time)
+  const appVersion = __APP_VERSION__;
+
   // Derived state
   const authenticated = $derived($isAuthenticated);
   const user = $derived($authUser);
@@ -255,7 +258,7 @@
       <div class="info-group">
         <p class="info-item">
           <span class="info-label">Verzió:</span>
-          <span class="info-value">1.0.1</span>
+          <span class="info-value">{appVersion}</span>
         </p>
         <p class="info-item">
           <span class="info-label">Build:</span>

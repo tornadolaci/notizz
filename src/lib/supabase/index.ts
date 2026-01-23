@@ -25,6 +25,8 @@ export {
   clearLocalData,
   subscribeToChanges,
   unsubscribeFromChanges,
+  startPolling,
+  stopPolling,
   hasPendingSyncItems,
   getPendingSyncCount,
 } from './sync.service';
