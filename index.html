@@ -60,14 +60,14 @@
           var newSearch = decoded.includes('?') ? '?' + decoded.split('?')[1] : '';
           console.log('[SPA Redirect] Decoded - path:', path, 'search:', newSearch);
 
-          // For reset-password with code, redirect to base with code for Supabase to process
-          // Supabase detectSessionInUrl will handle the code exchange automatically
+          // For reset-password with code, keep the reset-password path in hash
+          // so App.svelte can detect this is a password reset flow
           if (path.endsWith('/reset-password') || path.endsWith('/reset-password/')) {
             var basePath = path.replace(/reset-password\/?$/, '');
             // Redirect to base path with the code - Supabase will process it
-            // and fire PASSWORD_RECOVERY event
-            console.log('[SPA Redirect] Reset password detected, redirecting with params');
-            l.replace(basePath + newSearch + hash);
+            // IMPORTANT: Add #/reset-password to hash so App.svelte knows this is password reset
+            console.log('[SPA Redirect] Reset password detected, redirecting with hash routing');
+            l.replace(basePath + newSearch + '#/reset-password');
           } else {
             window.history.replaceState(null, null, path + newSearch + hash);
           }

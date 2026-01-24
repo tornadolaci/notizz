@@ -50,9 +50,18 @@
       }
     });
 
-    // If there's a code in URL, mark it so we know the next SIGNED_IN is from recovery
-    if (code) {
+    // Only mark as recovery code if the URL path indicates password reset
+    // Email confirmation redirects to '/' while password reset redirects to '/reset-password'
+    // With hash routing, check both pathname and hash for reset-password indicator
+    const isPasswordResetFlow = window.location.pathname.includes('reset-password') ||
+                                 window.location.hash.includes('reset-password');
+
+    if (code && isPasswordResetFlow) {
+      console.log('[App] Password reset code detected (URL contains reset-password)');
       sessionStorage.setItem('notizz_had_recovery_code', 'true');
+    } else if (code) {
+      console.log('[App] Auth code detected but NOT password reset (email confirmation or other)');
+      // Don't set recovery flag - this is likely email confirmation
     }
 
     return () => {
