@@ -8,15 +8,11 @@
   import { router } from 'tinro';
   import { settingsStore } from '$lib/stores/settings';
   import { authStore, isAuthenticated, authUser } from '$lib/stores/auth';
-  import { exportData, downloadJSON, readFileAsText, validateImportData, importData, type ImportStrategy } from '$lib/utils/export';
 
   // Reactive state
-  let isExporting = $state(false);
-  let isImporting = $state(false);
   let isLoggingOut = $state(false);
-  let importMessage = $state<string | null>(null);
-  let importError = $state<string | null>(null);
-  let fileInput: HTMLInputElement;
+  let message = $state<string | null>(null);
+  let error = $state<string | null>(null);
 
   // App version from vite.config.ts (reads from package.json at build time)
   const appVersion = __APP_VERSION__;
@@ -29,84 +25,6 @@
   onMount(async () => {
     await settingsStore.init();
   });
-
-  async function handleExport() {
-    try {
-      isExporting = true;
-      const data = await exportData();
-      downloadJSON(data);
-      importMessage = 'Az adatok sikeresen exportálva!';
-      setTimeout(() => (importMessage = null), 3000);
-    } catch (error) {
-      importError = error instanceof Error ? error.message : 'Az export sikertelen';
-      setTimeout(() => (importError = null), 5000);
-    } finally {
-      isExporting = false;
-    }
-  }
-
-  async function handleImport() {
-    fileInput?.click();
-  }
-
-  async function handleFileSelect(event: Event) {
-    const input = event.target as HTMLInputElement;
-    const file = input.files?.[0];
-
-    if (!file) return;
-
-    try {
-      isImporting = true;
-      importError = null;
-
-      // Read file
-      const text = await readFileAsText(file);
-
-      // Validate data
-      const data = validateImportData(text);
-
-      // Import data (merge strategy)
-      const result = await importData(data, 'merge');
-
-      if (result.success) {
-        importMessage = `Import sikeres! ${result.notesImported} jegyzet és ${result.todosImported} TODO importálva.`;
-        if (result.conflicts > 0) {
-          importMessage += ` (${result.conflicts} ütközés feloldva)`;
-        }
-
-        // Reload page after import
-        setTimeout(() => window.location.reload(), 2000);
-      } else {
-        importError = result.message;
-      }
-    } catch (error) {
-      importError = error instanceof Error ? error.message : 'Az import sikertelen';
-    } finally {
-      isImporting = false;
-      // Reset file input
-      if (input) input.value = '';
-    }
-  }
-
-  async function handleDeleteDatabase() {
-    if (confirm('FIGYELEM! Ez véglegesen törli az ÖSSZES adatodat (jegyzetek, TODO-k, beállítások)!\n\nBiztosan folytatod?')) {
-      try {
-        // Delete all data from database
-        const { db } = await import('$lib/db');
-        await db.notes.clear();
-        await db.todos.clear();
-        await db.settings.clear();
-
-        importMessage = 'Adatbázis sikeresen törölve! Az oldal újratöltődik...';
-
-        // Reload page after 2 seconds
-        setTimeout(() => window.location.reload(), 2000);
-      } catch (error) {
-        importError = error instanceof Error ? error.message : 'Az adatbázis törlése sikertelen';
-        setTimeout(() => (importError = null), 5000);
-      }
-    }
-  }
 
   function handleLogin() {
     // @ts-expect-error - global window property
@@ -125,14 +43,14 @@
           // @ts-expect-error - global window property
           await window.__notizz_logout();
         }
-        importMessage = 'Sikeres kijelentkezés!';
+        message = 'Sikeres kijelentkezés!';
         setTimeout(() => {
-          importMessage = null;
+          message = null;
           router.goto('/');
         }, 1500);
-      } catch (error) {
-        importError = 'A kijelentkezés sikertelen';
-        setTimeout(() => (importError = null), 3000);
+      } catch (err) {
+        error = 'A kijelentkezés sikertelen';
+        setTimeout(() => (error = null), 3000);
       } finally {
         isLoggingOut = false;
       }
@@ -207,50 +125,13 @@
       {/if}
     </section>
 
-    <!-- Data Management -->
-    <section class="settings-section">
-      <h2 class="section-title">Adatbázis műveletek</h2>
-
-      <div class="action-buttons">
-        <button class="action-button" onclick={handleExport} disabled={isExporting}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" />
-          </svg>
-          {isExporting ? 'Exportálás...' : 'Adatok exportálása'}
-        </button>
-
-        <button class="action-button" onclick={handleImport} disabled={isImporting}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" />
-          </svg>
-          {isImporting ? 'Importálás...' : 'Adatok importálása'}
-        </button>
-
-        <button class="action-button action-button--danger" onclick={handleDeleteDatabase}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6" />
-          </svg>
-          Adatbázis törlése
-        </button>
-      </div>
-
-      <!-- Hidden file input -->
-      <input
-        bind:this={fileInput}
-        type="file"
-        accept=".json"
-        onchange={handleFileSelect}
-        style="display: none"
-      />
-
-      <!-- Import/Export Messages -->
-      {#if importMessage}
-        <div class="message message--success">{importMessage}</div>
-      {/if}
-      {#if importError}
-        <div class="message message--error">{importError}</div>
-      {/if}
-    </section>
+    <!-- Messages -->
+    {#if message}
+      <div class="message message--success">{message}</div>
+    {/if}
+    {#if error}
+      <div class="message message--error">{error}</div>
+    {/if}
 
     <!-- App Info -->
     <section class="settings-section">
@@ -426,12 +307,6 @@
   }
 
   /* Action Buttons */
-  .action-buttons {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-3);
-  }
-
   .action-button {
     display: flex;
     align-items: center;
@@ -457,16 +332,6 @@
   .action-button:disabled {
     opacity: 0.5;
     cursor: not-allowed;
-  }
-
-  .action-button--danger {
-    border-color: var(--color-error);
-    color: var(--color-error);
-  }
-
-  .action-button--danger:hover:not(:disabled) {
-    background: var(--color-error);
-    color: white;
   }
 
   .action-button--login {
@@ -571,13 +436,4 @@
     }
   }
 
-  @media (min-width: 640px) {
-    .action-buttons {
-      flex-direction: row;
-    }
-
-    .action-button {
-      flex: 1;
-    }
-  }
 </style>
