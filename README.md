@@ -23,7 +23,6 @@ Teszteld! 👉 https://tornadolaci.github.io/notizz
 - Nincs kötelező regisztráció
 - Nincs adatgyűjtés, profilozás
 - Nem jelennek meg reklámok
-- Nincsenek felugró ablakok
 - Ráböksz -› villámgyorsan betöltődik -› használod-örülsz
 
 ## 🚀 Technológiai Stack
