@@ -26,21 +26,27 @@
 
     if (code) {
       console.log('[App] PKCE code detected in URL, exchanging for session...');
+      // Set the recovery flag BEFORE exchanging code
+      // This ensures the reset-password page knows this is a valid recovery flow
+      sessionStorage.setItem('notizz_recovery_redirect', 'true');
+
       // Exchange the code for a session
       supabase.auth.exchangeCodeForSession(code).then(({ data, error }) => {
         if (error) {
           console.error('[App] Code exchange error:', error);
+          // Clear flag on error
+          sessionStorage.removeItem('notizz_recovery_redirect');
         } else {
           console.log('[App] Code exchange successful, session:', data.session?.user?.email);
           // Clear the code from URL
           window.history.replaceState({}, '', window.location.pathname + window.location.hash);
-          // Redirect to reset-password page
+          // Redirect to reset-password page (flag will be checked there)
           router.goto('/reset-password');
         }
       });
     } else if (shouldRedirectToReset) {
-      // Clear the flag
-      sessionStorage.removeItem('notizz_recovery_redirect');
+      // DON'T clear the flag here - let reset-password page verify and clear it
+      // This ensures the security check in reset-password works correctly
 
       // Wait for Supabase to process the auth hash, then redirect to reset-password
       const checkAuthAndRedirect = async () => {
@@ -65,6 +71,8 @@
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       console.log('[App] Auth state change:', event, session?.user?.email);
       if (event === 'PASSWORD_RECOVERY') {
+        // Set flag for PASSWORD_RECOVERY event as well
+        sessionStorage.setItem('notizz_recovery_redirect', 'true');
         router.goto('/reset-password');
       }
     });

@@ -2,6 +2,9 @@
   /**
    * Reset Password Page
    * Handles password reset after clicking email link from Supabase
+   *
+   * SECURITY: This page should ONLY be accessible via the recovery flow.
+   * We use a sessionStorage flag to verify the user came from a valid recovery link.
    */
 
   import { onMount } from 'svelte';
@@ -19,31 +22,53 @@
   let showConfirmPassword = $state(false);
   let sessionReady = $state(false);
   let sessionError = $state('');
+  let isValidRecoveryFlow = $state(false);
 
   onMount(async () => {
-    // Supabase automatically handles the recovery token from URL hash
-    // We need to wait for the session to be established
+    // SECURITY CHECK: Verify this is a legitimate recovery flow
+    // The flag is set by index.html when redirecting from /reset-password with a valid code
+    const recoveryFlag = sessionStorage.getItem('notizz_recovery_redirect');
+    const isFromRecovery = recoveryFlag === 'true';
+
+    console.log('[ResetPassword] Recovery flag:', recoveryFlag, 'isFromRecovery:', isFromRecovery);
+
+    // Clear the flag immediately to prevent reuse
+    sessionStorage.removeItem('notizz_recovery_redirect');
+
+    if (!isFromRecovery) {
+      // User did not come from a valid recovery link
+      console.log('[ResetPassword] Invalid access - not from recovery flow');
+      sessionError = 'Ez az oldal csak jelszó-visszaállító linkkel érhető el. Kérj új linket az email címedre.';
+      return;
+    }
+
+    // Mark as valid recovery flow
+    isValidRecoveryFlow = true;
+
+    // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('Auth event on reset-password:', event);
+      console.log('[ResetPassword] Auth event:', event, session?.user?.email);
 
       if (event === 'PASSWORD_RECOVERY') {
-        // Session is ready for password update
+        // Explicit recovery event from Supabase
         sessionReady = true;
-      } else if (event === 'SIGNED_IN' && session) {
-        // User already signed in via recovery link
+      } else if (event === 'SIGNED_IN' && session && isValidRecoveryFlow) {
+        // User signed in via recovery code exchange
         sessionReady = true;
       }
     });
 
-    // Also check current session
+    // Check current session (for PKCE flow where code was already exchanged)
     const { data: { session } } = await supabase.auth.getSession();
-    if (session) {
+    console.log('[ResetPassword] Current session:', session?.user?.email);
+
+    if (session && isValidRecoveryFlow) {
       sessionReady = true;
     }
 
     // Set a timeout to show error if session doesn't load
     setTimeout(() => {
-      if (!sessionReady && !success) {
+      if (!sessionReady && !success && isValidRecoveryFlow) {
         sessionError = 'A jelszó-visszaállító link érvénytelen vagy lejárt. Kérj új linket.';
       }
     }, 5000);
