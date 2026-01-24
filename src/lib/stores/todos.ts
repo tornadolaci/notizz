@@ -1,11 +1,7 @@
 import { writable, derived, get } from 'svelte/store';
 import type { ITodo } from '$lib/types';
 import { TodosService } from '$lib/services';
-import {
-  SupabaseTodosService,
-  addToSyncQueue,
-  isOnline,
-} from '$lib/supabase';
+import { SupabaseTodosService, isOnline } from '$lib/supabase';
 import { getCurrentUserId } from './auth';
 
 interface TodosState {
@@ -38,6 +34,9 @@ export const completedTodos = derived(todosStateWritable, ($state) =>
 
 /**
  * Todos store with actions
+ *
+ * When authenticated: Uses Supabase directly (no IndexedDB)
+ * When guest: Uses IndexedDB only
  */
 export const todosStore = {
   // Subscribe to the main state
@@ -45,11 +44,28 @@ export const todosStore = {
 
   /**
    * Load all todos from database
+   * Authenticated: Load from Supabase
+   * Guest: Load from IndexedDB
    */
   async load(): Promise<void> {
+    const userId = getCurrentUserId();
+
     try {
       todosStateWritable.update(s => ({ ...s, loading: true, error: null }));
-      const value = await TodosService.getAll();
+
+      let value: ITodo[];
+
+      if (userId && isOnline()) {
+        // Authenticated + online: Load from Supabase
+        value = await SupabaseTodosService.getAll(userId);
+      } else if (userId && !isOnline()) {
+        // Authenticated + offline: Empty state (no offline support for auth users)
+        value = [];
+      } else {
+        // Guest mode: Load from IndexedDB
+        value = await TodosService.getAll();
+      }
+
       todosStateWritable.set({ value, loading: false, error: null });
     } catch (error) {
       const err = error instanceof Error ? error : new Error('Failed to load todos');
@@ -59,16 +75,31 @@ export const todosStore = {
   },
 
   /**
-   * Set todos directly (used by sync service)
+   * Set todos directly (used by sync service for realtime updates)
+   * Deduplicates by ID - keeps the one with newer updatedAt
    */
   setTodos(todos: ITodo[]): void {
-    todosStateWritable.set({ value: todos, loading: false, error: null });
+    // Deduplicate by ID - keep the one with newer updatedAt
+    const uniqueMap = new Map<string, ITodo>();
+    for (const todo of todos) {
+      if (todo.id) {
+        const existing = uniqueMap.get(todo.id);
+        if (!existing || new Date(todo.updatedAt).getTime() > new Date(existing.updatedAt).getTime()) {
+          uniqueMap.set(todo.id, todo);
+        }
+      }
+    }
+    todosStateWritable.set({
+      value: Array.from(uniqueMap.values()),
+      loading: false,
+      error: null
+    });
   },
 
   /**
    * Add a new todo
-   * When online + authenticated: save to Supabase FIRST, then to IndexedDB (prevents duplication)
-   * When offline or guest: save to local IndexedDB only
+   * Authenticated: Save to Supabase only
+   * Guest: Save to IndexedDB only
    */
   async add(todo: ITodo): Promise<void> {
     const userId = getCurrentUserId();
@@ -86,194 +117,206 @@ export const todosStore = {
         order: state.value.length > 0 ? minOrder - 1000 : minOrder
       };
 
-      // Online + authenticated: save to Supabase FIRST to get the canonical data
       if (userId && isOnline()) {
-        try {
-          // 1. Save to Supabase first - this is the source of truth
-          const savedTodo = await SupabaseTodosService.create(todoWithOrder, userId);
+        // Authenticated: Save to Supabase only
+        const savedTodo = await SupabaseTodosService.create(todoWithOrder, userId);
 
-          // 2. Save to IndexedDB with the SAME data (same ID) for offline access
-          await TodosService.create(savedTodo);
-
-          // 3. Update store with the saved todo
-          todosStateWritable.update(s => ({
+        // Update store with the saved todo
+        todosStateWritable.update(s => {
+          if (s.value.some(t => t.id === savedTodo.id)) {
+            return {
+              ...s,
+              value: s.value.map(t => t.id === savedTodo.id ? savedTodo : t)
+            };
+          }
+          return {
             ...s,
             value: [...s.value, savedTodo]
-          }));
-        } catch {
-          // Supabase failed - fall back to local storage + sync queue
-          await TodosService.create(todoWithOrder);
-          todosStateWritable.update(s => ({
+          };
+        });
+      } else if (userId && !isOnline()) {
+        // Authenticated + offline: Show error (no offline support)
+        throw new Error('Nincs internetkapcsolat. Kérlek próbáld újra később.');
+      } else {
+        // Guest mode: Save to IndexedDB only
+        await TodosService.create(todoWithOrder);
+        todosStateWritable.update(s => {
+          if (s.value.some(t => t.id === todoWithOrder.id)) {
+            return {
+              ...s,
+              value: s.value.map(t => t.id === todoWithOrder.id ? todoWithOrder : t)
+            };
+          }
+          return {
             ...s,
             value: [...s.value, todoWithOrder]
-          }));
-          addToSyncQueue('INSERT', 'todos', todoWithOrder.id!, todoWithOrder);
-          console.log('Todo added to sync queue (Supabase unavailable)');
-        }
-      } else {
-        // Offline or guest mode: save to local IndexedDB only
-        await TodosService.create(todoWithOrder);
-        todosStateWritable.update(s => ({
-          ...s,
-          value: [...s.value, todoWithOrder]
-        }));
-        // If authenticated but offline, add to sync queue
-        if (userId) {
-          addToSyncQueue('INSERT', 'todos', todoWithOrder.id!, todoWithOrder);
-        }
+          };
+        });
       }
     } catch (error) {
       const err = error instanceof Error ? error : new Error('Failed to add todo');
       todosStateWritable.update(s => ({ ...s, error: err }));
       console.error('Error adding todo:', error);
-      // Reload on error
-      await this.load();
+      throw error;
     }
   },
 
   /**
    * Update an existing todo
+   * Authenticated: Update in Supabase only
+   * Guest: Update in IndexedDB only
    */
   async update(id: string, updates: Partial<Omit<ITodo, 'id' | 'createdAt'>>): Promise<void> {
     const userId = getCurrentUserId();
 
     try {
-      await TodosService.update({ id, ...updates });
-      // Optimistic update
       // Only update updatedAt if it's not just an order change
       const isOnlyOrderChange = Object.keys(updates).length === 1 && 'order' in updates;
-      let updatedTodo: ITodo | undefined;
 
-      todosStateWritable.update(s => ({
-        ...s,
-        value: s.value.map(todo => {
-          if (todo.id === id) {
-            updatedTodo = { ...todo, ...updates, ...(isOnlyOrderChange ? {} : { updatedAt: new Date() }) };
-            return updatedTodo;
-          }
-          return todo;
-        })
-      }));
+      if (userId && isOnline()) {
+        // Authenticated: Update in Supabase only
+        await SupabaseTodosService.update(id, updates, userId);
 
-      // Sync to Supabase if online and authenticated
-      if (userId && updatedTodo) {
-        if (isOnline()) {
-          try {
-            await SupabaseTodosService.update(id, updates, userId);
-          } catch {
-            // Add to sync queue for later
-            addToSyncQueue('UPDATE', 'todos', id, updatedTodo);
-            console.log('Todo update added to sync queue');
-          }
-        } else {
-          // Offline - add to sync queue
-          addToSyncQueue('UPDATE', 'todos', id, updatedTodo);
-        }
+        // Optimistic update in store
+        todosStateWritable.update(s => ({
+          ...s,
+          value: s.value.map(todo => {
+            if (todo.id === id) {
+              return { ...todo, ...updates, ...(isOnlyOrderChange ? {} : { updatedAt: new Date() }) };
+            }
+            return todo;
+          })
+        }));
+      } else if (userId && !isOnline()) {
+        // Authenticated + offline: Show error
+        throw new Error('Nincs internetkapcsolat. Kérlek próbáld újra később.');
+      } else {
+        // Guest mode: Update in IndexedDB
+        await TodosService.update({ id, ...updates });
+
+        todosStateWritable.update(s => ({
+          ...s,
+          value: s.value.map(todo => {
+            if (todo.id === id) {
+              return { ...todo, ...updates, ...(isOnlyOrderChange ? {} : { updatedAt: new Date() }) };
+            }
+            return todo;
+          })
+        }));
       }
     } catch (error) {
       const err = error instanceof Error ? error : new Error('Failed to update todo');
       todosStateWritable.update(s => ({ ...s, error: err }));
       console.error('Error updating todo:', error);
-      // Reload on error
-      await this.load();
+      throw error;
     }
   },
 
   /**
    * Delete a todo
+   * Authenticated: Delete from Supabase only
+   * Guest: Delete from IndexedDB only
    */
   async remove(id: string): Promise<void> {
     const userId = getCurrentUserId();
 
     try {
-      await TodosService.delete(id);
-      // Optimistic update
-      todosStateWritable.update(s => ({
-        ...s,
-        value: s.value.filter(todo => todo.id !== id)
-      }));
+      if (userId && isOnline()) {
+        // Authenticated: Delete from Supabase only
+        await SupabaseTodosService.delete(id, userId);
 
-      // Sync to Supabase if online and authenticated
-      if (userId) {
-        if (isOnline()) {
-          try {
-            await SupabaseTodosService.delete(id, userId);
-          } catch {
-            // Add to sync queue for later
-            addToSyncQueue('DELETE', 'todos', id);
-            console.log('Todo delete added to sync queue');
-          }
-        } else {
-          // Offline - add to sync queue
-          addToSyncQueue('DELETE', 'todos', id);
-        }
+        // Optimistic update
+        todosStateWritable.update(s => ({
+          ...s,
+          value: s.value.filter(todo => todo.id !== id)
+        }));
+      } else if (userId && !isOnline()) {
+        // Authenticated + offline: Show error
+        throw new Error('Nincs internetkapcsolat. Kérlek próbáld újra później.');
+      } else {
+        // Guest mode: Delete from IndexedDB
+        await TodosService.delete(id);
+
+        todosStateWritable.update(s => ({
+          ...s,
+          value: s.value.filter(todo => todo.id !== id)
+        }));
       }
     } catch (error) {
       const err = error instanceof Error ? error : new Error('Failed to delete todo');
       todosStateWritable.update(s => ({ ...s, error: err }));
       console.error('Error deleting todo:', error);
-      // Reload on error
-      await this.load();
+      throw error;
     }
   },
 
   /**
    * Toggle a todo item's completed status
+   * Authenticated: Update in Supabase only
+   * Guest: Update in IndexedDB only
    */
   async toggleItem(todoId: string, itemId: string): Promise<void> {
     const userId = getCurrentUserId();
 
     try {
-      await TodosService.toggleItem(todoId, itemId);
+      // Get current todo to compute new state
+      const state = get(todosStateWritable);
+      const todo = state.value.find(t => t.id === todoId);
+      if (!todo) {
+        throw new Error('Todo not found');
+      }
 
-      // Optimistic update
-      let updatedTodo: ITodo | undefined;
+      // Compute updated items
+      const updatedItems = todo.items.map(item =>
+        item.id === itemId ? { ...item, completed: !item.completed } : item
+      );
+      const completedCount = updatedItems.filter(item => item.completed).length;
 
-      todosStateWritable.update(s => ({
-        ...s,
-        value: s.value.map(todo => {
-          if (todo.id === todoId) {
-            const updatedItems = todo.items.map(item =>
-              item.id === itemId ? { ...item, completed: !item.completed } : item
-            );
-            const completedCount = updatedItems.filter(item => item.completed).length;
+      const updates = {
+        items: updatedItems,
+        completedCount,
+        updatedAt: new Date()
+      };
 
-            updatedTodo = {
-              ...todo,
-              items: updatedItems,
-              completedCount,
-              updatedAt: new Date()
-            };
-            return updatedTodo;
-          }
-          return todo;
-        })
-      }));
+      if (userId && isOnline()) {
+        // Authenticated: Update in Supabase only
+        await SupabaseTodosService.update(todoId, {
+          items: updatedItems,
+          completedCount,
+        }, userId);
 
-      // Sync to Supabase if online and authenticated
-      if (userId && updatedTodo) {
-        if (isOnline()) {
-          try {
-            await SupabaseTodosService.update(todoId, {
-              items: updatedTodo.items,
-              completedCount: updatedTodo.completedCount,
-            }, userId);
-          } catch {
-            // Add to sync queue for later
-            addToSyncQueue('UPDATE', 'todos', todoId, updatedTodo);
-            console.log('Todo toggle added to sync queue');
-          }
-        } else {
-          // Offline - add to sync queue
-          addToSyncQueue('UPDATE', 'todos', todoId, updatedTodo);
-        }
+        // Optimistic update in store
+        todosStateWritable.update(s => ({
+          ...s,
+          value: s.value.map(t => {
+            if (t.id === todoId) {
+              return { ...t, ...updates };
+            }
+            return t;
+          })
+        }));
+      } else if (userId && !isOnline()) {
+        // Authenticated + offline: Show error
+        throw new Error('Nincs internetkapcsolat. Kérlek próbáld újra később.');
+      } else {
+        // Guest mode: Update in IndexedDB
+        await TodosService.toggleItem(todoId, itemId);
+
+        todosStateWritable.update(s => ({
+          ...s,
+          value: s.value.map(t => {
+            if (t.id === todoId) {
+              return { ...t, ...updates };
+            }
+            return t;
+          })
+        }));
       }
     } catch (error) {
       const err = error instanceof Error ? error : new Error('Failed to toggle todo item');
       todosStateWritable.update(s => ({ ...s, error: err }));
       console.error('Error toggling todo item:', error);
-      // Reload on error
-      await this.load();
+      throw error;
     }
   },
 

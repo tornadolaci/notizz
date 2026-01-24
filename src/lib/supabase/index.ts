@@ -19,14 +19,9 @@ export {
 } from './auth.service';
 export { SupabaseNotesService, SupabaseTodosService } from './data.service';
 export {
-  addToSyncQueue,
-  processSyncQueue,
-  fullSync,
   clearLocalData,
   subscribeToChanges,
   unsubscribeFromChanges,
   startPolling,
   stopPolling,
-  hasPendingSyncItems,
-  getPendingSyncCount,
 } from './sync.service';

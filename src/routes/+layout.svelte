@@ -7,17 +7,15 @@
   import WelcomeModal from '$lib/components/auth/WelcomeModal.svelte';
   import { settingsStore } from '$lib/stores/settings';
   import { themeStore } from '$lib/stores/theme';
-  import { authStore, isAuthenticated, isInitialized, authUser } from '$lib/stores/auth';
+  import { authStore, isInitialized, authUser } from '$lib/stores/auth';
   import { notesStore } from '$lib/stores/notes';
   import { todosStore } from '$lib/stores/todos';
   import {
-    fullSync,
     subscribeToChanges,
     unsubscribeFromChanges,
     startPolling,
     stopPolling,
     clearLocalData,
-    processSyncQueue,
     isOnline,
   } from '$lib/supabase';
 
@@ -83,17 +81,7 @@
 
   async function setupSync(userId: string) {
     try {
-      // Process any pending sync queue first
-      if (isOnline()) {
-        await processSyncQueue(userId);
-      }
-
-      // Perform full sync to get latest data
-      if (isOnline()) {
-        await fullSync(userId);
-      }
-
-      // Reload stores with synced data
+      // Load data from Supabase (stores handle this directly now)
       await Promise.all([notesStore.load(), todosStore.load()]);
 
       // Subscribe to real-time changes
@@ -121,9 +109,7 @@
       // Listen for coming back online
       handleOnline = async () => {
         if (isOnline()) {
-          console.log('Back online, syncing...');
-          await processSyncQueue(userId);
-          await fullSync(userId);
+          console.log('Back online, reloading data...');
           await Promise.all([notesStore.load(), todosStore.load()]);
         }
       };
