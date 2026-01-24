@@ -61,13 +61,11 @@
 		<!-- Logo/Brand -->
 		<div class="brand">
 			<h1 class="brand-title">Notizz!</h1>
-			<p class="brand-subtitle">Jegyzetek és teendők egy helyen</p>
-		</div>
+			</div>
 
 		<!-- Welcome message -->
 		<div class="welcome-message">
-			<h2 id="welcome-title" class="welcome-title">Üdvözlünk!</h2>
-			<p class="welcome-text">Válaszd ki, hogyan szeretnéd használni az alkalmazást:</p>
+				<p class="welcome-text">Válaszd ki, hogyan szeretnéd használni az alkalmazást:</p>
 		</div>
 
 		<!-- Options -->
