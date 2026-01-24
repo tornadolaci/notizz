@@ -4,7 +4,7 @@ Jegyzet és TODO lista kezelő. Böngészőből telepíthető Progressive Web Ap
 
 Teszteld! 👉 https://tornadolaci.github.io/notizz
 
-## ✨ Főbb jellemzők
+## ✨  Főbb jellemzők
 
 - 📱 **PWA** - Böngészőből telepíthető mobilra és desktopra oprendszertől függetlenül
 - 🔒 **Offline-first** - Telepített üzemben gyorsítótárból betöltődik netkapcsolat nélkül is
@@ -16,6 +16,15 @@ Teszteld! 👉 https://tornadolaci.github.io/notizz
 - 🎨 **8 pasztell szín** - Vizuális kategorizálás
 - 🔄 **Manuális rendezés** - Fel/le nyíl gombok a kártyákon, a sorrend beállításához
 - ♿ **Accessibility** - Teljes keyboard navigáció és screen reader támogatás
+
+## 🌴 Relax User Experience
+
+    - Nincsenek felugró ablakok
+    - Nincs kötelező regisztráció
+    - Nincs adatgyűjtés, profilozás
+    - Nem jelennek meg reklámok
+    - Nincsenek felugró ablakok
+    - Ráböksz -› villámgyorsan betöltődik -› használod-örülsz
 
 ## 🚀 Technológiai Stack
 

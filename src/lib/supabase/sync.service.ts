@@ -40,6 +40,9 @@ let todosDebounceTimer: ReturnType<typeof setTimeout> | null = null;
 const POLLING_INTERVAL_MS = 10000; // 10 seconds
 let pollingIntervalId: ReturnType<typeof setInterval> | null = null;
 
+// Track the current user ID to prevent stale callbacks after logout
+let currentSyncUserId: string | null = null;
+
 /**
  * Subscribe to real-time changes from Supabase
  * For authenticated users: directly updates the store (no IndexedDB)
@@ -49,6 +52,9 @@ export function subscribeToChanges(
   onNotesChange: (notes: INote[]) => void,
   onTodosChange: (todos: ITodo[]) => void
 ): () => void {
+  // Track the current user ID to prevent stale callbacks after logout
+  currentSyncUserId = userId;
+
   // Subscribe to notes changes
   notesChannel = supabase
     .channel('notes-changes')
@@ -66,9 +72,17 @@ export function subscribeToChanges(
           clearTimeout(notesDebounceTimer);
         }
         notesDebounceTimer = setTimeout(async () => {
+          // Check if user is still logged in with the same ID
+          if (currentSyncUserId !== userId) {
+            return; // User logged out or changed, skip update
+          }
           try {
             // Fetch fresh data from Supabase and update store directly
             const notes = await SupabaseNotesService.getAll(userId);
+            // Double-check user ID after async operation
+            if (currentSyncUserId !== userId) {
+              return; // User logged out during fetch, skip update
+            }
             onNotesChange(notes);
           } catch (err) {
             console.error('Error handling notes change:', err);
@@ -95,9 +109,17 @@ export function subscribeToChanges(
           clearTimeout(todosDebounceTimer);
         }
         todosDebounceTimer = setTimeout(async () => {
+          // Check if user is still logged in with the same ID
+          if (currentSyncUserId !== userId) {
+            return; // User logged out or changed, skip update
+          }
           try {
             // Fetch fresh data from Supabase and update store directly
             const todos = await SupabaseTodosService.getAll(userId);
+            // Double-check user ID after async operation
+            if (currentSyncUserId !== userId) {
+              return; // User logged out during fetch, skip update
+            }
             onTodosChange(todos);
           } catch (err) {
             console.error('Error handling todos change:', err);
@@ -134,6 +156,9 @@ export function subscribeToChanges(
  * Unsubscribe from real-time changes
  */
 export function unsubscribeFromChanges(): void {
+  // Clear the current user ID FIRST to prevent any pending callbacks from executing
+  currentSyncUserId = null;
+
   // Clear debounce timers
   if (notesDebounceTimer) {
     clearTimeout(notesDebounceTimer);
@@ -167,7 +192,15 @@ export function startPolling(
   // Stop any existing polling
   stopPolling();
 
+  // Track the current user ID for this polling session
+  currentSyncUserId = userId;
+
   async function pollForChanges() {
+    // Check if user is still logged in with the same ID
+    if (currentSyncUserId !== userId) {
+      return; // User logged out or changed, skip polling
+    }
+
     if (!isOnline()) return;
 
     try {
@@ -176,6 +209,11 @@ export function startPolling(
         SupabaseNotesService.getAll(userId),
         SupabaseTodosService.getAll(userId),
       ]);
+
+      // Double-check user ID after async operation
+      if (currentSyncUserId !== userId) {
+        return; // User logged out during fetch, skip update
+      }
 
       // Update stores directly
       onNotesChange(notes);
@@ -196,6 +234,9 @@ export function startPolling(
  * Stop polling for changes
  */
 export function stopPolling(): void {
+  // Clear the current user ID to prevent any pending callbacks from executing
+  currentSyncUserId = null;
+
   if (pollingIntervalId) {
     clearInterval(pollingIntervalId);
     pollingIntervalId = null;
