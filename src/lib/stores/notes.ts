@@ -71,8 +71,17 @@ export const notesStore = {
   /**
    * Set notes directly (used by sync service for realtime updates)
    * Deduplicates by ID - keeps the one with newer updatedAt
+   * IMPORTANT: Only updates if user is authenticated to prevent overwriting guest data
    */
   setNotes(notes: INote[]): void {
+    // CRITICAL: Only allow setNotes when user is authenticated
+    // This prevents sync callbacks from overwriting guest data after logout
+    const userId = getCurrentUserId();
+    if (!userId) {
+      console.log('setNotes skipped: user is not authenticated (guest mode)');
+      return;
+    }
+
     // Deduplicate by ID - keep the one with newer updatedAt
     const uniqueMap = new Map<string, INote>();
     for (const note of notes) {

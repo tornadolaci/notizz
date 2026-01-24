@@ -77,8 +77,17 @@ export const todosStore = {
   /**
    * Set todos directly (used by sync service for realtime updates)
    * Deduplicates by ID - keeps the one with newer updatedAt
+   * IMPORTANT: Only updates if user is authenticated to prevent overwriting guest data
    */
   setTodos(todos: ITodo[]): void {
+    // CRITICAL: Only allow setTodos when user is authenticated
+    // This prevents sync callbacks from overwriting guest data after logout
+    const userId = getCurrentUserId();
+    if (!userId) {
+      console.log('setTodos skipped: user is not authenticated (guest mode)');
+      return;
+    }
+
     // Deduplicate by ID - keep the one with newer updatedAt
     const uniqueMap = new Map<string, ITodo>();
     for (const todo of todos) {

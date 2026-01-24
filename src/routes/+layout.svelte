@@ -148,15 +148,26 @@
 
   // Handle logout
   async function handleLogout() {
+    // 1. First cleanup sync to stop all polling and realtime subscriptions
     cleanupSync();
-    // Note: We intentionally do NOT clear local IndexedDB data here.
-    // This preserves guest notes/todos so they remain accessible after logout.
+
+    // 2. Sign out from Supabase - this will trigger onAuthStateChange
+    //    which updates authStore to user: null
     await authStore.signOut();
-    // Reload data from IndexedDB (guest mode)
+
+    // 3. Small delay to ensure auth state is fully updated
+    //    This prevents race conditions where sync callbacks might still fire
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    // 4. Now that auth is null, load guest data from IndexedDB
+    //    Note: We intentionally do NOT clear local IndexedDB data here.
+    //    This preserves guest notes/todos so they remain accessible after logout.
     await Promise.all([notesStore.load(), todosStore.load()]);
-    // Reset welcome modal state so it shows again on next app start
+
+    // 5. Reset welcome modal state so it shows again on next app start
     localStorage.removeItem(WELCOME_COMPLETED_KEY);
-    // Show welcome modal immediately after logout
+
+    // 6. Show welcome modal immediately after logout
     showWelcomeModal = true;
   }
 
