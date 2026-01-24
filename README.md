@@ -19,12 +19,12 @@ Teszteld! 👉 https://tornadolaci.github.io/notizz
 
 ## 🌴 Relax User Experience
 
-    - Nincsenek felugró ablakok
-    - Nincs kötelező regisztráció
-    - Nincs adatgyűjtés, profilozás
-    - Nem jelennek meg reklámok
-    - Nincsenek felugró ablakok
-    - Ráböksz -› villámgyorsan betöltődik -› használod-örülsz
+- Nincsenek felugró ablakok
+- Nincs kötelező regisztráció
+- Nincs adatgyűjtés, profilozás
+- Nem jelennek meg reklámok
+- Nincsenek felugró ablakok
+- Ráböksz -› villámgyorsan betöltődik -› használod-örülsz
 
 ## 🚀 Technológiai Stack
 
