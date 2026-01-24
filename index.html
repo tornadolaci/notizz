@@ -41,7 +41,7 @@
   </head>
   <body>
     <div id="app"></div>
-    <!-- GitHub Pages SPA redirect handler + Supabase recovery handler -->
+    <!-- GitHub Pages SPA redirect handler -->
     <script>
       (function(l) {
         var path = l.pathname;
@@ -49,51 +49,27 @@
         var search = l.search;
 
         console.log('[SPA Redirect] Initial URL:', l.href);
-        console.log('[SPA Redirect] path:', path, 'search:', search, 'hash:', hash);
 
-        // First: Decode GitHub Pages 404 redirect (/?/path format)
+        // Decode GitHub Pages 404 redirect (/?/path format)
         if (search[1] === '/' ) {
           var decoded = search.slice(1).split('&').map(function(s) {
             return s.replace(/~and~/g, '&')
           }).join('?');
-          // Update path for subsequent checks
+          // Reconstruct the original URL
           path = l.pathname.slice(0, -1) + decoded.split('?')[0];
           var newSearch = decoded.includes('?') ? '?' + decoded.split('?')[1] : '';
-          console.log('[SPA Redirect] Decoded - path:', path, 'newSearch:', newSearch);
-          window.history.replaceState(null, null, path + newSearch + hash);
-          // Update search variable for subsequent checks
-          search = newSearch;
-        }
+          console.log('[SPA Redirect] Decoded - path:', path, 'search:', newSearch);
 
-        // Second: Handle Supabase password recovery redirect
-        // PKCE flow: Supabase redirects to /reset-password?code=... (code in query string)
-        // Implicit flow: Supabase redirects to /reset-password#access_token=... (token in hash)
-        if (path.endsWith('/reset-password') || path.endsWith('/reset-password/')) {
-          console.log('[SPA Redirect] Detected reset-password path');
-
-          // Get base path (e.g., /notizz/ for GitHub Pages)
-          var basePath = path.replace(/reset-password\/?$/, '');
-
-          // Check for PKCE code in query string
-          var urlParams = new URLSearchParams(search);
-          var code = urlParams.get('code');
-
-          if (code) {
-            // PKCE flow: code is in query string
-            // Store flag and redirect to base with code preserved
-            console.log('[SPA Redirect] PKCE code detected, storing flag and preserving code');
-            sessionStorage.setItem('notizz_recovery_redirect', 'true');
-            // Keep the code in query string for Supabase to process
-            l.replace(basePath + '?code=' + code + hash);
-          } else if (hash && hash.includes('access_token')) {
-            // Implicit flow: access_token in hash
-            console.log('[SPA Redirect] Access token in hash, storing flag');
-            sessionStorage.setItem('notizz_recovery_redirect', 'true');
-            l.replace(basePath + hash);
+          // For reset-password with code, redirect to base with code for Supabase to process
+          // Supabase detectSessionInUrl will handle the code exchange automatically
+          if (path.endsWith('/reset-password') || path.endsWith('/reset-password/')) {
+            var basePath = path.replace(/reset-password\/?$/, '');
+            // Redirect to base path with the code - Supabase will process it
+            // and fire PASSWORD_RECOVERY event
+            console.log('[SPA Redirect] Reset password detected, redirecting with params');
+            l.replace(basePath + newSearch + hash);
           } else {
-            // No auth data, just redirect to hash-based route
-            console.log('[SPA Redirect] No auth data, redirecting to hash route');
-            l.replace(basePath + '#/reset-password');
+            window.history.replaceState(null, null, path + newSearch + hash);
           }
         }
       }(window.location))

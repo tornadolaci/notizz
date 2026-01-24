@@ -13,69 +13,47 @@
   router.mode.hash();
 
   onMount(() => {
-    // Handle Supabase recovery redirect after auth is processed
-    // The index.html sets a sessionStorage flag when redirecting from /reset-password
-    const shouldRedirectToReset = sessionStorage.getItem('notizz_recovery_redirect');
+    console.log('[App] onMount - Current URL:', window.location.href);
 
-    console.log('[App] onMount - shouldRedirectToReset:', shouldRedirectToReset);
-    console.log('[App] Current URL:', window.location.href);
-
-    // Check for PKCE code in URL (Supabase PKCE flow)
+    // Check for PKCE code in URL - this indicates a recovery/auth flow
     const urlParams = new URLSearchParams(window.location.search);
     const code = urlParams.get('code');
 
     if (code) {
-      console.log('[App] PKCE code detected in URL, exchanging for session...');
-      // Set the recovery flag BEFORE exchanging code
-      // This ensures the reset-password page knows this is a valid recovery flow
-      sessionStorage.setItem('notizz_recovery_redirect', 'true');
-
-      // Exchange the code for a session
-      supabase.auth.exchangeCodeForSession(code).then(({ data, error }) => {
-        if (error) {
-          console.error('[App] Code exchange error:', error);
-          // Clear flag on error
-          sessionStorage.removeItem('notizz_recovery_redirect');
-        } else {
-          console.log('[App] Code exchange successful, session:', data.session?.user?.email);
-          // Clear the code from URL
-          window.history.replaceState({}, '', window.location.pathname + window.location.hash);
-          // Redirect to reset-password page (flag will be checked there)
-          router.goto('/reset-password');
-        }
-      });
-    } else if (shouldRedirectToReset) {
-      // DON'T clear the flag here - let reset-password page verify and clear it
-      // This ensures the security check in reset-password works correctly
-
-      // Wait for Supabase to process the auth hash, then redirect to reset-password
-      const checkAuthAndRedirect = async () => {
-        // Give Supabase a moment to process the hash
-        await new Promise(resolve => setTimeout(resolve, 500));
-
-        // Check if we have a session (meaning auth was successful)
-        const { data: { session } } = await supabase.auth.getSession();
-
-        console.log('[App] checkAuthAndRedirect - session:', session?.user?.email);
-
-        if (session) {
-          // Auth successful, now redirect to reset-password page
-          router.goto('/reset-password');
-        }
-      };
-
-      checkAuthAndRedirect();
+      console.log('[App] PKCE code detected, letting Supabase handle it...');
+      // Don't do anything here - Supabase's detectSessionInUrl will handle the code
+      // and fire the appropriate event
     }
 
-    // Also listen for PASSWORD_RECOVERY event
+    // Listen for auth events
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log('[App] Auth state change:', event, session?.user?.email);
+      console.log('[App] Auth state change:', event);
+      console.log('[App] Session user:', session?.user?.email);
+      console.log('[App] User app_metadata:', JSON.stringify(session?.user?.app_metadata));
+      console.log('[App] User user_metadata:', JSON.stringify(session?.user?.user_metadata));
+
       if (event === 'PASSWORD_RECOVERY') {
-        // Set flag for PASSWORD_RECOVERY event as well
+        // Explicit recovery event (implicit flow)
+        console.log('[App] PASSWORD_RECOVERY event detected!');
         sessionStorage.setItem('notizz_recovery_redirect', 'true');
         router.goto('/reset-password');
+      } else if (event === 'SIGNED_IN' && session) {
+        // For PKCE flow, check if this might be a recovery
+        // The URL had a code parameter and now we're signed in
+        const hadCode = sessionStorage.getItem('notizz_had_recovery_code');
+        if (hadCode) {
+          console.log('[App] SIGNED_IN after recovery code - treating as recovery');
+          sessionStorage.removeItem('notizz_had_recovery_code');
+          sessionStorage.setItem('notizz_recovery_redirect', 'true');
+          router.goto('/reset-password');
+        }
       }
     });
+
+    // If there's a code in URL, mark it so we know the next SIGNED_IN is from recovery
+    if (code) {
+      sessionStorage.setItem('notizz_had_recovery_code', 'true');
+    }
 
     return () => {
       subscription.unsubscribe();
