@@ -110,12 +110,22 @@ export const authStore = {
 
     const result = await signUpWithEmail(email, password);
 
-    authStateWritable.update((state) => ({
-      ...state,
-      user: result.user ?? null,
-      session: result.session ?? null,
-      loading: false,
-    }));
+    // Only set user/session if email confirmation is NOT required
+    // If needsEmailConfirmation is true, user must verify email first
+    if (result.needsEmailConfirmation) {
+      // Don't log in the user - they need to confirm their email first
+      authStateWritable.update((state) => ({
+        ...state,
+        loading: false,
+      }));
+    } else {
+      authStateWritable.update((state) => ({
+        ...state,
+        user: result.user ?? null,
+        session: result.session ?? null,
+        loading: false,
+      }));
+    }
 
     return result;
   },
