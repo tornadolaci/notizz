@@ -17,7 +17,28 @@
     // The index.html sets a sessionStorage flag when redirecting from /reset-password
     const shouldRedirectToReset = sessionStorage.getItem('notizz_recovery_redirect');
 
-    if (shouldRedirectToReset) {
+    console.log('[App] onMount - shouldRedirectToReset:', shouldRedirectToReset);
+    console.log('[App] Current URL:', window.location.href);
+
+    // Check for PKCE code in URL (Supabase PKCE flow)
+    const urlParams = new URLSearchParams(window.location.search);
+    const code = urlParams.get('code');
+
+    if (code) {
+      console.log('[App] PKCE code detected in URL, exchanging for session...');
+      // Exchange the code for a session
+      supabase.auth.exchangeCodeForSession(code).then(({ data, error }) => {
+        if (error) {
+          console.error('[App] Code exchange error:', error);
+        } else {
+          console.log('[App] Code exchange successful, session:', data.session?.user?.email);
+          // Clear the code from URL
+          window.history.replaceState({}, '', window.location.pathname + window.location.hash);
+          // Redirect to reset-password page
+          router.goto('/reset-password');
+        }
+      });
+    } else if (shouldRedirectToReset) {
       // Clear the flag
       sessionStorage.removeItem('notizz_recovery_redirect');
 
@@ -29,6 +50,8 @@
         // Check if we have a session (meaning auth was successful)
         const { data: { session } } = await supabase.auth.getSession();
 
+        console.log('[App] checkAuthAndRedirect - session:', session?.user?.email);
+
         if (session) {
           // Auth successful, now redirect to reset-password page
           router.goto('/reset-password');
@@ -39,7 +62,8 @@
     }
 
     // Also listen for PASSWORD_RECOVERY event
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('[App] Auth state change:', event, session?.user?.email);
       if (event === 'PASSWORD_RECOVERY') {
         router.goto('/reset-password');
       }

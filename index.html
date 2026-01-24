@@ -48,6 +48,9 @@
         var hash = l.hash;
         var search = l.search;
 
+        console.log('[SPA Redirect] Initial URL:', l.href);
+        console.log('[SPA Redirect] path:', path, 'search:', search, 'hash:', hash);
+
         // First: Decode GitHub Pages 404 redirect (/?/path format)
         if (search[1] === '/' ) {
           var decoded = search.slice(1).split('&').map(function(s) {
@@ -56,27 +59,40 @@
           // Update path for subsequent checks
           path = l.pathname.slice(0, -1) + decoded.split('?')[0];
           var newSearch = decoded.includes('?') ? '?' + decoded.split('?')[1] : '';
+          console.log('[SPA Redirect] Decoded - path:', path, 'newSearch:', newSearch);
           window.history.replaceState(null, null, path + newSearch + hash);
+          // Update search variable for subsequent checks
+          search = newSearch;
         }
 
         // Second: Handle Supabase password recovery redirect
-        // Supabase redirects to /reset-password with auth data in hash fragment
-        // Convert to hash routing: /#/reset-password (preserving auth hash if present)
-        // Check if this is a reset-password path (handles both /notizz/reset-password and /reset-password)
+        // PKCE flow: Supabase redirects to /reset-password?code=... (code in query string)
+        // Implicit flow: Supabase redirects to /reset-password#access_token=... (token in hash)
         if (path.endsWith('/reset-password') || path.endsWith('/reset-password/')) {
+          console.log('[SPA Redirect] Detected reset-password path');
+
           // Get base path (e.g., /notizz/ for GitHub Pages)
           var basePath = path.replace(/reset-password\/?$/, '');
 
-          // Supabase puts access_token in the hash fragment: #access_token=...&type=recovery
-          // We need to preserve this for Supabase client to process
-          if (hash && hash.includes('access_token')) {
-            // Auth data is in hash - we need to let Supabase process it first
-            // Store a flag so the app knows to redirect to reset-password after auth
+          // Check for PKCE code in query string
+          var urlParams = new URLSearchParams(search);
+          var code = urlParams.get('code');
+
+          if (code) {
+            // PKCE flow: code is in query string
+            // Store flag and redirect to base with code preserved
+            console.log('[SPA Redirect] PKCE code detected, storing flag and preserving code');
             sessionStorage.setItem('notizz_recovery_redirect', 'true');
-            // Redirect to base path with the auth hash intact
+            // Keep the code in query string for Supabase to process
+            l.replace(basePath + '?code=' + code + hash);
+          } else if (hash && hash.includes('access_token')) {
+            // Implicit flow: access_token in hash
+            console.log('[SPA Redirect] Access token in hash, storing flag');
+            sessionStorage.setItem('notizz_recovery_redirect', 'true');
             l.replace(basePath + hash);
           } else {
-            // No auth hash, just redirect to hash-based route
+            // No auth data, just redirect to hash-based route
+            console.log('[SPA Redirect] No auth data, redirecting to hash route');
             l.replace(basePath + '#/reset-password');
           }
         }
