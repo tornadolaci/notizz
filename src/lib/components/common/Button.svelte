@@ -2,6 +2,11 @@
   /**
    * Button Component
    * General purpose button with variants and ripple effect
+   *
+   * ACCESSIBILITY NOTE:
+   * - If button has visible text content, ariaLabel is optional
+   * - If button is icon-only (no text), ariaLabel is REQUIRED for screen readers
+   * - Always provide descriptive ariaLabel for icon-only buttons
    */
   interface Props {
     variant?: 'primary' | 'secondary' | 'danger' | 'ghost';
@@ -11,6 +16,7 @@
     ripple?: boolean;
     className?: string;
     onclick?: (e: MouseEvent) => void;
+    /** Accessible label for screen readers. REQUIRED for icon-only buttons. */
     ariaLabel?: string;
   }
 

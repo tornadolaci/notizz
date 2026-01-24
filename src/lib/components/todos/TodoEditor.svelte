@@ -195,7 +195,9 @@
 				{/if}
 
 				<div class="add-item">
+					<label for="new-todo-item" class="sr-only">Új teendő szövege</label>
 					<input
+						id="new-todo-item"
 						type="text"
 						class="input"
 						bind:value={newItemText}
@@ -207,6 +209,7 @@
 						class="button button--add"
 						onclick={addItem}
 						disabled={!newItemText.trim()}
+						aria-label="Teendő hozzáadása a listához"
 					>
 						Hozzáad
 					</button>
@@ -262,6 +265,18 @@
 
 	.required {
 		color: var(--color-error);
+	}
+
+	.sr-only {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		padding: 0;
+		margin: -1px;
+		overflow: hidden;
+		clip: rect(0, 0, 0, 0);
+		white-space: nowrap;
+		border-width: 0;
 	}
 
 	.input {
