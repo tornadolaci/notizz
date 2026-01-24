@@ -15,7 +15,6 @@
     unsubscribeFromChanges,
     startPolling,
     stopPolling,
-    clearLocalData,
     isOnline,
   } from '$lib/supabase';
 
@@ -150,9 +149,10 @@
   // Handle logout
   async function handleLogout() {
     cleanupSync();
-    await clearLocalData();
+    // Note: We intentionally do NOT clear local IndexedDB data here.
+    // This preserves guest notes/todos so they remain accessible after logout.
     await authStore.signOut();
-    // Reload empty state
+    // Reload data from IndexedDB (guest mode)
     await Promise.all([notesStore.load(), todosStore.load()]);
     // Reset welcome modal state so it shows again on next app start
     localStorage.removeItem(WELCOME_COMPLETED_KEY);

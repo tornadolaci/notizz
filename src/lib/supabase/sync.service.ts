@@ -37,7 +37,7 @@ let notesDebounceTimer: ReturnType<typeof setTimeout> | null = null;
 let todosDebounceTimer: ReturnType<typeof setTimeout> | null = null;
 
 // Polling interval for background sync (in milliseconds)
-const POLLING_INTERVAL_MS = 30000; // 30 seconds
+const POLLING_INTERVAL_MS = 10000; // 10 seconds
 let pollingIntervalId: ReturnType<typeof setInterval> | null = null;
 
 /**
