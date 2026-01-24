@@ -1,18 +1,19 @@
 # Notizz - Jegyzetek és TODO-k 📝✅
 
-Jegyzet és TODO lista kezelő, telepíthető Progressive Web App (PWA). Kis kódméret, gyors, biztonságos és böngészőből telepíthető bármilyen eszközre. Claude Code teszt projekt. Figyelem, hibákat még tartalmazhat!
+Jegyzet és TODO lista kezelő. Böngészőből telepíthető Progressive Web App (PWA). 
+
+Teszteld! 👉 https://tornadolaci.github.io/notizz
 
 ## ✨ Főbb jellemzők
 
-- 📱 **PWA** - Telepíthető mobilra és desktopra oprendszertől függetlenül
+- 📱 **PWA** - Böngészőből telepíthető mobilra és desktopra oprendszertől függetlenül
 - 🔒 **Offline-first** - Telepített üzemben gyorsítótárból betöltődik netkapcsolat nélkül is
-- ☁️ **Vendég mód** - Regisztráció nélkül is futtatható standalone módban
-- ☁️ **Cloud Sync** - Felhő alapú szinkronizálás több eszköz között (regisztrációval)
+- ☁️ **Vendég mód** - Regisztráció nélkül is futtatható  (csak helyben tárol adatot, nincs adatküldés)
+- ☁️ **Cloud Sync** - Felhő alapú adatbázis szinkronizálás több eszköz között (regisztrációval)
 - 🔐 **Authentication** - Email/jelszó és Google OAuth támogatás
 - 🌗 **Dark mode** - Manuális témaváltás lehetősége
-- 📊 **Feladatkövetés** - TODO listák automatikus progress bar-ral
+- 📊 **Feladatkövetés** - TODO listák progress bar-ral
 - 🎨 **8 pasztell szín** - Vizuális kategorizálás
-- 💾 **Export/Import** - Adatok mentése és visszatöltése JSON formátumban
 - 🔄 **Manuális rendezés** - Fel/le nyíl gombok a kártyákon, a sorrend beállításához
 - ♿ **Accessibility** - Teljes keyboard navigáció és screen reader támogatás
 
@@ -26,8 +27,7 @@ Jegyzet és TODO lista kezelő, telepíthető Progressive Web App (PWA). Kis kó
 
 ### Cloud & Auth
 - **Supabase 2.47+** - Backend as a Service (PostgreSQL + Auth + Realtime)
-- **Offline-first sync** - Queue-based sync mechanizmus
-- **Realtime subscriptions** - Automatikus frissítések több eszközről
+- **Realtime subscriptions** - Automatikus frissítések több eszközön való futtatáskor. Max 10 másodperc polling.
 
 ### PWA & Offline
 - **vite-plugin-pwa 0.21+** - PWA generálás és service worker
@@ -161,7 +161,7 @@ notizz/
 ## 📊 Performance metrikák
 
 ### Bundle size (gzipped)
-- **Total**: ~488 KB (precache: 17 entries)
+- **Total**: ~680 KB (precache: 18 entries)
 - CSS: 7.69 KB
 - JS: ~127 KB (chunked: svelte, dexie, date-fns, supabase, app)
 - Service Worker: Auto-generated with Workbox
