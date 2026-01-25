@@ -3,7 +3,7 @@
 	 * TodoEditor Component
 	 * Modal form for creating and editing todos with items
 	 */
-	import { todosStore } from '$lib/stores/todos';
+	import { todosStore, todosValue } from '$lib/stores/todos';
 	import type { ITodo, ITodoItem } from '$lib/types/todo';
 	import { DEFAULT_TODO_COLOR, PASTEL_COLORS, hexToColorKey, type PastelColorKey } from '$lib/constants/colors';
 	import Modal from '$lib/components/common/Modal.svelte';
@@ -47,10 +47,14 @@
 
 	// Reactive sync - update local state when store changes (for realtime/polling updates)
 	// This enables live updates while the editor is open (e.g., when shopping from multiple devices)
+	// IMPORTANT: Must use $todosValue (reactive derived store) instead of todosStore.getById()
+	// because getById() uses get() which is NOT reactive in Svelte 5 $effect
 	$effect(() => {
 		if (isOpen && todo?.id) {
 			// Only sync for existing todos (edit mode), not for new todos
-			const latestTodo = todosStore.getById(todo.id);
+			// Access $todosValue to create reactive dependency on store changes
+			const allTodos = $todosValue;
+			const latestTodo = allTodos.find(t => t.id === todo.id);
 			if (latestTodo) {
 				// Update local state with fresh data from store
 				items = [...latestTodo.items];
