@@ -45,6 +45,21 @@
 		}
 	});
 
+	// Reactive sync - update local state when store changes (for realtime/polling updates)
+	// This enables live updates while the editor is open (e.g., when shopping from multiple devices)
+	$effect(() => {
+		if (isOpen && todo?.id) {
+			// Only sync for existing todos (edit mode), not for new todos
+			const latestTodo = todosStore.getById(todo.id);
+			if (latestTodo) {
+				// Update local state with fresh data from store
+				items = [...latestTodo.items];
+				title = latestTodo.title;
+				// Don't update selectedColor - user might be changing it
+			}
+		}
+	});
+
 	function addItem() {
 		const trimmedText = newItemText.trim();
 		if (trimmedText) {
