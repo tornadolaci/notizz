@@ -64,7 +64,7 @@
 		}
 	});
 
-	function addItem() {
+	async function addItem() {
 		const trimmedText = newItemText.trim();
 		if (trimmedText) {
 			const newItem: ITodoItem = {
@@ -73,8 +73,26 @@
 				completed: false,
 				createdAt: new Date()
 			};
+
+			// 1. Lokális UI frissítés (optimistic update)
 			items = [...items, newItem];
 			newItemText = '';
+
+			// 2. Ha van mentett TODO (szerkesztés mód), azonnal DB mentés
+			if (todo?.id) {
+				try {
+					const completedCount = items.filter((item) => item.completed).length;
+					await todosStore.update(todo.id, {
+						items,
+						completedCount,
+						totalCount: items.length,
+						updatedAt: new Date()
+					});
+				} catch (error) {
+					console.error('Failed to save new item:', error);
+				}
+			}
+			// Új TODO esetén marad a régi működés (mentés gombbal)
 		}
 	}
 
@@ -102,8 +120,25 @@
 		// Új TODO esetén marad a régi működés (mentés gombbal)
 	}
 
-	function deleteItem(id: string) {
+	async function deleteItem(id: string) {
+		// 1. Lokális UI frissítés (optimistic update)
 		items = items.filter((item) => item.id !== id);
+
+		// 2. Ha van mentett TODO (szerkesztés mód), azonnal DB mentés
+		if (todo?.id) {
+			try {
+				const completedCount = items.filter((item) => item.completed).length;
+				await todosStore.update(todo.id, {
+					items,
+					completedCount,
+					totalCount: items.length,
+					updatedAt: new Date()
+				});
+			} catch (error) {
+				console.error('Failed to delete item:', error);
+			}
+		}
+		// Új TODO esetén marad a régi működés (mentés gombbal)
 	}
 
 	async function handleSubmit(e: SubmitEvent) {
