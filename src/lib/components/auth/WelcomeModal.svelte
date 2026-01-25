@@ -173,23 +173,10 @@
 		background-clip: text;
 	}
 
-	.brand-subtitle {
-		font-size: var(--text-sm);
-		color: var(--text-tertiary);
-		margin: var(--space-2) 0 0;
-	}
-
 	/* Welcome message */
 	.welcome-message {
 		text-align: center;
 		margin-bottom: var(--space-6);
-	}
-
-	.welcome-title {
-		font-size: var(--text-xl);
-		font-weight: var(--font-semibold);
-		color: var(--text-primary);
-		margin: 0 0 var(--space-2);
 	}
 
 	.welcome-text {

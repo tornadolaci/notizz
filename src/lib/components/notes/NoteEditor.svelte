@@ -99,6 +99,7 @@
 	{onClose}
 	title={note ? 'Jegyzet szerkesztése' : 'Új jegyzet'}
 	maxWidth="700px"
+	closeButtonColor="red"
 >
 	<form class="note-editor" onsubmit={handleSubmit}>
 		<div class="form-group">
@@ -138,14 +139,6 @@
 		{/if}
 
 		<div class="form-actions">
-			<button
-				type="button"
-				class="button button--secondary"
-				onclick={handleCancel}
-				disabled={isSaving}
-			>
-				Mégse
-			</button>
 			<button
 				type="submit"
 				class="button button--primary"
@@ -215,7 +208,7 @@
 	}
 
 	.textarea {
-		min-height: 120px;
+		min-height: 400px;
 		resize: vertical;
 		line-height: var(--leading-normal);
 		background: var(--textarea-bg, var(--bg-primary));
@@ -275,26 +268,17 @@
 		transform: translateY(0);
 	}
 
-	.button--secondary {
-		background: var(--bg-tertiary);
-		color: var(--text-primary);
-	}
-
-	.button--secondary:hover:not(:disabled) {
-		background: var(--bg-secondary);
-	}
-
-	.button--secondary:active:not(:disabled) {
-		transform: scale(0.98);
-	}
-
-	/* Dark mode - lighter background for secondary button */
-	:global([data-theme="dark"]) .button--secondary {
-		background: #636366;
-	}
-
 	/* Responsive */
 	@media (max-width: 640px) {
+		.textarea {
+			min-height: 60vh;
+			min-height: 60dvh;
+		}
+
+		.form-group {
+			gap: var(--space-1);
+		}
+
 		.form-actions {
 			flex-direction: column-reverse;
 		}

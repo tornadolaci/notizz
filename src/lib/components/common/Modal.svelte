@@ -12,10 +12,11 @@
 		onClose: () => void;
 		title?: string;
 		maxWidth?: string;
+		closeButtonColor?: 'blue' | 'red';
 		children: Snippet;
 	}
 
-	let { isOpen = $bindable(false), onClose, title, maxWidth = '600px', children }: Props = $props();
+	let { isOpen = $bindable(false), onClose, title, maxWidth = '600px', closeButtonColor = 'blue', children }: Props = $props();
 
 	let dialogElement: HTMLDialogElement;
 	let previousFocus: HTMLElement | null = null;
@@ -94,7 +95,7 @@
 				<h2 id="modal-title" class="modal-title">{title}</h2>
 			{/if}
 			<button
-				class="modal-close"
+				class="modal-close modal-close--{closeButtonColor}"
 				onclick={onClose}
 				aria-label="Bezárás"
 				type="button"
@@ -131,7 +132,7 @@
 		background: var(--bg-primary);
 		border-radius: 24px;
 		padding: var(--padding-modal);
-		max-height: 85vh;
+		max-height: 95vh;
 		overflow-y: auto;
 		width: 100%;
 		max-width: calc(100vw - 32px);
@@ -157,8 +158,9 @@
 	.modal-header {
 		display: flex;
 		justify-content: space-between;
-		align-items: center;
+		align-items: flex-start;
 		margin-bottom: var(--space-5);
+		position: relative;
 	}
 
 	.modal-title {
@@ -166,19 +168,38 @@
 		font-weight: var(--font-semibold);
 		color: var(--text-primary);
 		margin: 0;
+		flex: 1;
 	}
 
 	.modal-close {
 		background: none;
-		border: none;
+		border: 2px solid transparent;
 		cursor: pointer;
-		padding: var(--space-2);
+		padding: var(--space-1);
 		color: var(--text-secondary);
 		transition: all 200ms ease;
-		border-radius: 8px;
+		border-radius: 6px;
 		display: flex;
 		align-items: center;
 		justify-content: center;
+		position: absolute;
+		top: 0;
+		right: 0;
+		width: 28px;
+		height: 28px;
+	}
+
+	.modal-close svg {
+		width: 16px;
+		height: 16px;
+	}
+
+	.modal-close--blue {
+		border-color: var(--color-info);
+	}
+
+	.modal-close--red {
+		border-color: #FF3B30;
 	}
 
 	.modal-close:hover {
@@ -212,8 +233,10 @@
 	/* Responsive */
 	@media (max-width: 640px) {
 		.modal-content {
-			max-width: calc(100vw - 24px) !important;
-			padding: var(--space-4);
+			max-width: calc(100vw - 16px) !important;
+			max-height: calc(100vh - 16px) !important;
+			max-height: calc(100dvh - 16px) !important;
+			padding: var(--space-3) var(--space-4);
 			border-radius: 16px;
 		}
 
@@ -222,7 +245,7 @@
 		}
 
 		.modal-header {
-			margin-bottom: var(--space-4);
+			margin-bottom: var(--space-3);
 		}
 	}
 </style>

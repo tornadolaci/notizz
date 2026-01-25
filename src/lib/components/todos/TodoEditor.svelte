@@ -209,26 +209,29 @@
 <Modal
 	bind:isOpen
 	{onClose}
-	title={todo ? 'Teendő szerkesztése' : 'Új teendő'}
+	title={todo ? '' : 'Új teendő'}
 	maxWidth="700px"
+	closeButtonColor={todo ? 'red' : 'blue'}
 >
 	<form class="todo-editor" onsubmit={handleSubmit}>
-		<div class="form-group">
-			<label for="todo-title" class="form-label">
-				Cím <span class="required">*</span>
-			</label>
-			<!-- svelte-ignore a11y_autofocus -->
-			<input
-				id="todo-title"
-				type="text"
-				class="input"
-				bind:value={title}
-				placeholder="Add meg a teendő címét..."
-				required
-				maxlength="100"
-				autofocus
-			/>
-		</div>
+		{#if !todo}
+			<div class="form-group">
+				<label for="todo-title" class="form-label">
+					Cím <span class="required">*</span>
+				</label>
+				<!-- svelte-ignore a11y_autofocus -->
+				<input
+					id="todo-title"
+					type="text"
+					class="input"
+					bind:value={title}
+					placeholder="Add meg a teendő címét..."
+					required
+					maxlength="100"
+					autofocus
+				/>
+			</div>
+		{/if}
 
 		<div class="form-group" role="group" aria-labelledby="todo-items-label">
 			<div id="todo-items-label" class="form-label">
@@ -276,25 +279,25 @@
 				<div id="todo-color-label" class="form-label">Szín</div>
 				<ColorPicker {selectedColor} onSelect={handleColorSelect} />
 			</div>
-		{/if}
 
-		<div class="form-actions">
-			<button
-				type="button"
-				class="button button--secondary"
-				onclick={handleCancel}
-				disabled={isSaving}
-			>
-				Mégse
-			</button>
-			<button
-				type="submit"
-				class="button button--primary"
-				disabled={isSaving || !title.trim() || items.length === 0}
-			>
-				{isSaving ? 'Mentés...' : todo ? 'Mentés' : 'Létrehozás'}
-			</button>
-		</div>
+			<div class="form-actions">
+				<button
+					type="button"
+					class="button button--secondary"
+					onclick={handleCancel}
+					disabled={isSaving}
+				>
+					Mégse
+				</button>
+				<button
+					type="submit"
+					class="button button--primary"
+					disabled={isSaving || !title.trim() || items.length === 0}
+				>
+					{isSaving ? 'Mentés...' : 'Létrehozás'}
+				</button>
+			</div>
+		{/if}
 	</form>
 </Modal>
 
@@ -376,14 +379,43 @@
 		background: var(--items-list-bg, var(--bg-secondary));
 		border: 1px solid var(--border-light);
 		border-radius: 12px;
-		max-height: 300px;
+		max-height: 500px;
 		overflow-y: auto;
+		scrollbar-width: thin;
+		scrollbar-color: rgba(0, 0, 0, 0.3) transparent;
+	}
+
+	.items-list::-webkit-scrollbar {
+		display: block;
+		width: 8px;
+	}
+
+	.items-list::-webkit-scrollbar-track {
+		background: transparent;
+	}
+
+	.items-list::-webkit-scrollbar-thumb {
+		background-color: rgba(0, 0, 0, 0.3);
+		border-radius: 4px;
+	}
+
+	.items-list::-webkit-scrollbar-thumb:hover {
+		background-color: rgba(0, 0, 0, 0.5);
 	}
 
 	/* Dark mode - dark green background with darker border */
 	:global([data-theme="dark"]) .items-list {
 		background: #293F3F;
 		border: 1px solid rgba(255, 255, 255, 0.3);
+		scrollbar-color: rgba(255, 255, 255, 0.4) transparent;
+	}
+
+	:global([data-theme="dark"]) .items-list::-webkit-scrollbar-thumb {
+		background-color: rgba(255, 255, 255, 0.4);
+	}
+
+	:global([data-theme="dark"]) .items-list::-webkit-scrollbar-thumb:hover {
+		background-color: rgba(255, 255, 255, 0.6);
 	}
 
 	.add-item {
@@ -469,6 +501,15 @@
 
 	/* Responsive */
 	@media (max-width: 640px) {
+		.items-list {
+			max-height: 70vh !important;
+			max-height: 70dvh !important;
+		}
+
+		.form-group {
+			gap: var(--space-1);
+		}
+
 		.form-actions {
 			flex-direction: column-reverse;
 		}
