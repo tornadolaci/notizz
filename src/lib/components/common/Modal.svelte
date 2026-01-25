@@ -120,6 +120,14 @@
 		max-height: 100vh;
 		width: 100%;
 		overflow-x: hidden;
+
+		/* Position modal at top center of screen */
+		/* Toast notifications appear above in top layer with higher z-index */
+		position: fixed;
+		top: var(--space-6);
+		left: 0;
+		right: 0;
+		margin: 0 auto;
 	}
 
 	.modal::backdrop {
@@ -132,7 +140,8 @@
 		background: var(--bg-primary);
 		border-radius: 24px;
 		padding: var(--padding-modal);
-		max-height: 95vh;
+		max-height: calc(100vh - var(--space-8) - var(--space-6));
+		max-height: calc(100dvh - var(--space-8) - var(--space-6));
 		overflow-y: auto;
 		width: 100%;
 		max-width: calc(100vw - 32px);
@@ -232,10 +241,14 @@
 
 	/* Responsive */
 	@media (max-width: 640px) {
+		.modal {
+			top: var(--space-4);
+		}
+
 		.modal-content {
 			max-width: calc(100vw - 16px) !important;
-			max-height: calc(100vh - 16px) !important;
-			max-height: calc(100dvh - 16px) !important;
+			max-height: calc(100vh - var(--space-6) - var(--space-4)) !important;
+			max-height: calc(100dvh - var(--space-6) - var(--space-4)) !important;
 			padding: var(--space-3) var(--space-4);
 			border-radius: 16px;
 		}

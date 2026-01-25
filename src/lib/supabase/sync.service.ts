@@ -13,9 +13,70 @@ import { db } from '../db/schema';
 import { SupabaseNotesService, SupabaseTodosService } from './data.service';
 import type { INote, ITodo } from '../types';
 import type { RealtimeChannel } from '@supabase/supabase-js';
+import NotificationService from '../services/notification.service';
 
 // Re-export isOnline for convenience
 export { isOnline };
+
+// Callback for in-app toast notifications
+type ToastCallback = (message: string) => void;
+let toastCallback: ToastCallback | null = null;
+
+/**
+ * Register a callback for in-app toast notifications
+ */
+export function registerToastCallback(callback: ToastCallback): void {
+	toastCallback = callback;
+}
+
+/**
+ * Unregister toast callback
+ */
+export function unregisterToastCallback(): void {
+	toastCallback = null;
+}
+
+/**
+ * Show notification for content change
+ */
+function showContentChangeNotification(type: 'note' | 'todo', title: string): void {
+	// Show native notification with sound
+	NotificationService.showNotification({
+		type,
+		title,
+		message: `${type === 'note' ? 'Jegyzet' : 'TODO'}: ${title}`,
+	});
+
+	// Show in-app toast
+	if (toastCallback) {
+		const message = `Tartalom frissítés érkezett! ${type === 'note' ? 'Jegyzet' : 'TODO'}: ${title}`;
+		toastCallback(message);
+	}
+}
+
+/**
+ * Deep comparison helper to detect actual content changes
+ */
+function hasContentChanged<T extends INote | ITodo>(oldItems: T[], newItems: T[]): T[] {
+	const changedItems: T[] = [];
+
+	for (const newItem of newItems) {
+		const oldItem = oldItems.find((item) => item.id === newItem.id);
+
+		// New item added
+		if (!oldItem) {
+			changedItems.push(newItem);
+			continue;
+		}
+
+		// Check if updatedAt changed (indicates modification)
+		if (newItem.updatedAt.getTime() !== oldItem.updatedAt.getTime()) {
+			changedItems.push(newItem);
+		}
+	}
+
+	return changedItems;
+}
 
 /**
  * Clear all local data (for logout - clears guest data)
@@ -42,6 +103,10 @@ let pollingIntervalId: ReturnType<typeof setInterval> | null = null;
 
 // Track the current user ID to prevent stale callbacks after logout
 let currentSyncUserId: string | null = null;
+
+// Store previous state for change detection
+let previousNotes: INote[] = [];
+let previousTodos: ITodo[] = [];
 
 /**
  * Subscribe to real-time changes from Supabase
@@ -83,7 +148,16 @@ export function subscribeToChanges(
             if (currentSyncUserId !== userId) {
               return; // User logged out during fetch, skip update
             }
+
+            // Detect changes and show notifications
+            const changedNotes = hasContentChanged(previousNotes, notes);
+            for (const note of changedNotes) {
+              showContentChangeNotification('note', note.title || 'Névtelen jegyzet');
+            }
+
+            // Update store and save previous state
             onNotesChange(notes);
+            previousNotes = notes;
           } catch (err) {
             console.error('Error handling notes change:', err);
           }
@@ -120,7 +194,16 @@ export function subscribeToChanges(
             if (currentSyncUserId !== userId) {
               return; // User logged out during fetch, skip update
             }
+
+            // Detect changes and show notifications
+            const changedTodos = hasContentChanged(previousTodos, todos);
+            for (const todo of changedTodos) {
+              showContentChangeNotification('todo', todo.title || 'Névtelen TODO');
+            }
+
+            // Update store and save previous state
             onTodosChange(todos);
+            previousTodos = todos;
           } catch (err) {
             console.error('Error handling todos change:', err);
           }
@@ -158,6 +241,10 @@ export function subscribeToChanges(
 export function unsubscribeFromChanges(): void {
   // Clear the current user ID FIRST to prevent any pending callbacks from executing
   currentSyncUserId = null;
+
+  // Clear previous state
+  previousNotes = [];
+  previousTodos = [];
 
   // Clear debounce timers
   if (notesDebounceTimer) {
@@ -215,9 +302,25 @@ export function startPolling(
         return; // User logged out during fetch, skip update
       }
 
+      // Detect changes and show notifications for notes
+      const changedNotes = hasContentChanged(previousNotes, notes);
+      for (const note of changedNotes) {
+        showContentChangeNotification('note', note.title || 'Névtelen jegyzet');
+      }
+
+      // Detect changes and show notifications for todos
+      const changedTodos = hasContentChanged(previousTodos, todos);
+      for (const todo of changedTodos) {
+        showContentChangeNotification('todo', todo.title || 'Névtelen TODO');
+      }
+
       // Update stores directly
       onNotesChange(notes);
       onTodosChange(todos);
+
+      // Save previous state for next comparison
+      previousNotes = notes;
+      previousTodos = todos;
     } catch (err) {
       console.error('Polling sync error:', err);
     }
@@ -236,6 +339,10 @@ export function startPolling(
 export function stopPolling(): void {
   // Clear the current user ID to prevent any pending callbacks from executing
   currentSyncUserId = null;
+
+  // Clear previous state
+  previousNotes = [];
+  previousTodos = [];
 
   if (pollingIntervalId) {
     clearInterval(pollingIntervalId);

@@ -50,6 +50,7 @@ npm run test:e2e         # Run Playwright E2E tests (includes dev server)
 - **Purpose**: Business logic and DB operations (CRUD operations)
 - **Pattern**: Services interact with Dexie DB, stores call services
 - **Storage Service**: Handles export/import JSON functionality
+- **Notification Service**: Web Notifications API for browser/PWA notifications with sound
 
 ### Supabase Layer (Cloud Sync)
 - **Location**: [src/lib/supabase/](src/lib/supabase/)
@@ -661,3 +662,117 @@ const normalizedTodos = todos.map(todo => ({
 - ⚠️ IndexedDB is stringként tárolja a Date objektumokat
 - ✅ `getAll()` metódusok MINDIG normalizáljanak dátumokat
 - ✅ `instanceof Date` ellenőrzés a dupla konverzió elkerüléshez
+
+### Sync Notification System (2025-01-25)
+
+**Cél**: Értesítés a felhasználónak, amikor polling/realtime sync során új tartalom érkezik.
+
+**Új modulok**:
+- [src/lib/services/notification.service.ts](src/lib/services/notification.service.ts) - Web Notifications API wrapper
+- [src/lib/components/common/Toast.svelte](src/lib/components/common/Toast.svelte) - In-app narancssárga toast értesítés
+
+**Architektúra**:
+```
+Sync Service
+├── Change detection (updatedAt összehasonlítás)
+├── NotificationService.showNotification() - Native browser/PWA notification + hang
+└── Toast callback - In-app narancssárga banner (3 sec auto-hide)
+```
+
+**Notification Service - [src/lib/services/notification.service.ts](src/lib/services/notification.service.ts)**:
+```typescript
+// Initialize on app startup
+await NotificationService.initialize();
+
+// Request permission (bejelentkezéskor / vendég mód választáskor)
+await NotificationService.requestPermission();
+
+// Show notification with sound
+await NotificationService.showNotification({
+  type: 'note' | 'todo',
+  title: 'Jegyzet címe',
+  message: 'Jegyzet: Jegyzet címe'
+});
+```
+
+**Features**:
+- ✅ **Native notification**: Browser/PWA notification ikával, címmel, üzenettel
+- ✅ **Hangjelzés**: Beépített beep hang (800Hz, 150ms), natív rendszer hang PWA-ban
+- ✅ **Auto-close**: 5 másodperc után automatikus bezárás
+- ✅ **Cross-platform**: Chrome, Safari, iOS Safari, Android Chrome támogatás
+
+**Toast Component - [src/lib/components/common/Toast.svelte](src/lib/components/common/Toast.svelte)**:
+```svelte
+<Toast bind:visible={toastVisible} message={toastMessage} />
+```
+
+**Features**:
+- ✅ **Narancssárga szöveg** (#ff9500) - figyelem felkeltő, nem zavaró
+- ✅ **Glassmorphism** - blur(20px) háttér, semi-transparent
+- ✅ **Auto-hide**: 5 másodperc után automatikus elrejtés
+- ✅ **Slide-in animáció**: Cubic-bezier bounce effekt
+- ✅ **Fixed position**: Header alatt középen, minden képernyőméreten látható
+- ✅ **Native `<dialog>` elem**: Top layer támogatás - MINDEN modal ablak felett megjelenik
+
+**Implementáció**:
+- **Dialog element**: A Toast natív `<dialog>` elemet használ, így a böngésző "top layer"-ben jelenik meg
+- **Transparent backdrop**: A dialog backdrop teljesen átlátszó, nincs blur/dimming effekt
+- **Z-index maximum**: `2147483647` (32-bit integer max) biztosítja a legfelső pozíciót
+- **Critical fix**: Előzőleg sima `<div>` volt, amely nem tudott a modal dialog-ok fölé kerülni
+
+**Sync Service Módosítások - [src/lib/supabase/sync.service.ts](src/lib/supabase/sync.service.ts)**:
+
+**1. Toast callback regisztráció**:
+```typescript
+// Main page komponens
+registerToastCallback((message: string) => {
+  toastMessage = message;
+  toastVisible = true;
+});
+
+// Cleanup on unmount
+unregisterToastCallback();
+```
+
+**2. Change detection**:
+```typescript
+function hasContentChanged<T extends { id: string; updatedAt: Date }>(
+  oldItems: T[],
+  newItems: T[]
+): T[] {
+  // Compare updatedAt timestamps to detect actual changes
+  // Returns array of changed/new items
+}
+```
+
+**3. Notification trigger**:
+- **Realtime subscription**: Debounce (500ms) utáni értesítés
+- **Polling (10s interval)**: Minden polling ciklusban értesítés ha változott
+- **Previous state tracking**: `previousNotes` és `previousTodos` globális változókban
+
+**Permission Flow**:
+1. **WelcomeModal** - Vendég mód / Bejelentkezés választáskor permission kérés
+2. **AuthModal** - Sikeres login/register után permission kérés
+3. **Main page** - `NotificationService.initialize()` az app indulásakor
+
+**Működés**:
+- ✅ Polling során változás detektálás `updatedAt` alapján
+- ✅ Realtime subscription változáskor értesítés
+- ✅ Dupla értesítés: Native browser notification + Toast
+- ✅ Hangjelzés minden értesítésnél
+- ✅ Címek megjelenítése: "Jegyzet: <cím>" vagy "TODO: <cím>"
+- ✅ Üres cím esetén: "Névtelen jegyzet" / "Névtelen TODO"
+
+**Platform Support**:
+- ✅ **Desktop Chrome**: Native notification + hang
+- ✅ **Desktop Safari**: Native notification + hang (permission kérés után)
+- ✅ **iOS Safari (PWA)**: Native notification + natív rendszer hang
+- ✅ **Android Chrome (PWA)**: Native notification + natív rendszer hang
+- ⚠️ **iOS Safari (böngésző)**: Csak toast (Web Notifications API nem támogatott böngészőben)
+
+**Kritikus szabályok**:
+- ⚠️ MINDIG kérj permission-t bejelentkezéskor
+- ⚠️ Toast callback MINDIG regisztráld a main page-en és cleanup unmount-nál
+- ⚠️ Previous state tracking szükséges a dupla értesítés elkerülésére
+- ✅ `hasContentChanged()` csak `updatedAt` mezőt hasonlít össze
+- ✅ Permission denied esetén graceful fallback (csak toast, hang nélkül)

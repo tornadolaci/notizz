@@ -8,9 +8,12 @@
   import NoteEditor from '$lib/components/notes/NoteEditor.svelte';
   import TodoEditor from '$lib/components/todos/TodoEditor.svelte';
   import EmptyState from '$lib/components/shared/EmptyState.svelte';
+  import Toast from '$lib/components/common/Toast.svelte';
   import { notesStore } from '$lib/stores/notes';
   import { todosStore } from '$lib/stores/todos';
   import type { INote, ITodo } from '$lib/types';
+  import { registerToastCallback, unregisterToastCallback } from '$lib/supabase/sync.service';
+  import NotificationService from '$lib/services/notification.service';
 
   // Editor state
   let isNoteEditorOpen = $state(false);
@@ -20,8 +23,21 @@
   let editingTodo = $state<ITodo | null>(null);
   let typePickerScrollPosition = 0;
 
+  // Toast notification state
+  let toastVisible = $state(false);
+  let toastMessage = $state('');
+
   // Load data on mount
   onMount(async () => {
+    // Initialize notification service
+    await NotificationService.initialize();
+
+    // Register toast callback
+    registerToastCallback((message: string) => {
+      toastMessage = message;
+      toastVisible = true;
+    });
+
     await Promise.all([
       notesStore.load(),
       todosStore.load()
@@ -81,6 +97,9 @@
 
     // Cleanup on unmount
     return () => {
+      // Unregister toast callback
+      unregisterToastCallback();
+
       // Ensure body styles are cleaned up
       document.body.style.removeProperty('overflow');
       document.body.style.removeProperty('position');
@@ -237,6 +256,9 @@
 </script>
 
 <Header />
+
+<!-- Toast notification for content changes -->
+<Toast bind:visible={toastVisible} message={toastMessage} />
 
 <main class="container">
   {#if items.length > 0}

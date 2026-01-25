@@ -5,6 +5,7 @@
 	 */
 	import { authStore } from '$lib/stores/auth';
 	import type { AuthResult } from '$lib/supabase';
+	import NotificationService from '$lib/services/notification.service';
 
 	interface Props {
 		isOpen: boolean;
@@ -140,6 +141,8 @@
 				} else if (result.needsEmailConfirmation) {
 					successMessage = 'Regisztráció sikeres! Kérjük, erősítsd meg az email címedet.';
 				} else {
+					// Request notification permission after successful login/register
+					await NotificationService.requestPermission();
 					onSuccess?.();
 					onClose();
 				}

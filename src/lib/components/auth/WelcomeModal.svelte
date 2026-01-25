@@ -4,6 +4,8 @@
 	 * First-time user choice: Guest mode vs Login/Register
 	 */
 
+	import NotificationService from '$lib/services/notification.service';
+
 	interface Props {
 		isOpen: boolean;
 		onGuestMode: () => void;
@@ -42,11 +44,15 @@
 		}
 	});
 
-	function handleGuestClick() {
+	async function handleGuestClick() {
+		// Request notification permission
+		await NotificationService.requestPermission();
 		onGuestMode();
 	}
 
-	function handleLoginClick() {
+	async function handleLoginClick() {
+		// Request notification permission
+		await NotificationService.requestPermission();
 		onLogin();
 	}
 </script>
