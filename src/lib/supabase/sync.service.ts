@@ -38,8 +38,17 @@ export function unregisterToastCallback(): void {
 
 /**
  * Show notification for content change
+ * Returns true if notification was shown, false if it was already notified
  */
-function showContentChangeNotification(type: 'note' | 'todo', title: string): void {
+function showContentChangeNotification(type: 'note' | 'todo', id: string, title: string, updatedAt: Date): boolean {
+	// Check if we already notified about this specific update
+	if (wasAlreadyNotified(type, id, updatedAt)) {
+		return false;
+	}
+
+	// Mark as notified BEFORE showing notification to prevent race conditions
+	markAsNotified(type, id, updatedAt);
+
 	// Show native notification with sound
 	NotificationService.showNotification({
 		type,
@@ -52,6 +61,8 @@ function showContentChangeNotification(type: 'note' | 'todo', title: string): vo
 		const message = `Tartalom frissítés érkezett! ${type === 'note' ? 'Jegyzet' : 'TODO'}: ${title}`;
 		toastCallback(message);
 	}
+
+	return true;
 }
 
 /**
@@ -108,6 +119,70 @@ let currentSyncUserId: string | null = null;
 let previousNotes: INote[] = [];
 let previousTodos: ITodo[] = [];
 
+// Track notified items to prevent duplicate notifications across app restarts
+// Key format: "note_<id>_<updatedAt>" or "todo_<id>_<updatedAt>"
+const NOTIFIED_ITEMS_KEY = 'notizz_notified_items';
+const MAX_NOTIFIED_ITEMS = 100; // Prevent localStorage bloat
+
+function getNotifiedItems(): Set<string> {
+  try {
+    const stored = localStorage.getItem(NOTIFIED_ITEMS_KEY);
+    return stored ? new Set(JSON.parse(stored)) : new Set();
+  } catch {
+    return new Set();
+  }
+}
+
+function addNotifiedItem(key: string): void {
+  try {
+    const items = getNotifiedItems();
+    items.add(key);
+    // Keep only the most recent items to prevent bloat
+    const itemsArray = Array.from(items);
+    if (itemsArray.length > MAX_NOTIFIED_ITEMS) {
+      const trimmed = itemsArray.slice(-MAX_NOTIFIED_ITEMS);
+      localStorage.setItem(NOTIFIED_ITEMS_KEY, JSON.stringify(trimmed));
+    } else {
+      localStorage.setItem(NOTIFIED_ITEMS_KEY, JSON.stringify(itemsArray));
+    }
+  } catch {
+    // Ignore localStorage errors
+  }
+}
+
+function wasAlreadyNotified(type: 'note' | 'todo', id: string, updatedAt: Date): boolean {
+  const key = `${type}_${id}_${updatedAt.getTime()}`;
+  return getNotifiedItems().has(key);
+}
+
+function markAsNotified(type: 'note' | 'todo', id: string, updatedAt: Date): void {
+  const key = `${type}_${id}_${updatedAt.getTime()}`;
+  addNotifiedItem(key);
+}
+
+/**
+ * Initialize previous state with current data
+ * This MUST be called after initial data load but BEFORE starting sync
+ * to prevent false "new content" notifications on app startup
+ */
+export function initializePreviousState(notes: INote[], todos: ITodo[]): void {
+  previousNotes = [...notes];
+  previousTodos = [...todos];
+
+  // Also mark all current items as "already notified" to prevent
+  // false notifications on app restart
+  for (const note of notes) {
+    if (note.id) {
+      markAsNotified('note', note.id, note.updatedAt);
+    }
+  }
+  for (const todo of todos) {
+    if (todo.id) {
+      markAsNotified('todo', todo.id, todo.updatedAt);
+    }
+  }
+}
+
 /**
  * Subscribe to real-time changes from Supabase
  * For authenticated users: directly updates the store (no IndexedDB)
@@ -152,7 +227,9 @@ export function subscribeToChanges(
             // Detect changes and show notifications
             const changedNotes = hasContentChanged(previousNotes, notes);
             for (const note of changedNotes) {
-              showContentChangeNotification('note', note.title || 'Névtelen jegyzet');
+              if (note.id) {
+                showContentChangeNotification('note', note.id, note.title || 'Névtelen jegyzet', note.updatedAt);
+              }
             }
 
             // Update store and save previous state
@@ -198,7 +275,9 @@ export function subscribeToChanges(
             // Detect changes and show notifications
             const changedTodos = hasContentChanged(previousTodos, todos);
             for (const todo of changedTodos) {
-              showContentChangeNotification('todo', todo.title || 'Névtelen TODO');
+              if (todo.id) {
+                showContentChangeNotification('todo', todo.id, todo.title || 'Névtelen TODO', todo.updatedAt);
+              }
             }
 
             // Update store and save previous state
@@ -305,13 +384,17 @@ export function startPolling(
       // Detect changes and show notifications for notes
       const changedNotes = hasContentChanged(previousNotes, notes);
       for (const note of changedNotes) {
-        showContentChangeNotification('note', note.title || 'Névtelen jegyzet');
+        if (note.id) {
+          showContentChangeNotification('note', note.id, note.title || 'Névtelen jegyzet', note.updatedAt);
+        }
       }
 
       // Detect changes and show notifications for todos
       const changedTodos = hasContentChanged(previousTodos, todos);
       for (const todo of changedTodos) {
-        showContentChangeNotification('todo', todo.title || 'Névtelen TODO');
+        if (todo.id) {
+          showContentChangeNotification('todo', todo.id, todo.title || 'Névtelen TODO', todo.updatedAt);
+        }
       }
 
       // Update stores directly

@@ -24,4 +24,5 @@ export {
   unsubscribeFromChanges,
   startPolling,
   stopPolling,
+  initializePreviousState,
 } from './sync.service';

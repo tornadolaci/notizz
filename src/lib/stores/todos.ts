@@ -335,5 +335,13 @@ export const todosStore = {
   getById(id: string): ITodo | undefined {
     const state = get(todosStateWritable);
     return state.value.find(todo => todo.id === id);
+  },
+
+  /**
+   * Get all todos (synchronous getter for current state)
+   */
+  getTodos(): ITodo[] {
+    const state = get(todosStateWritable);
+    return state.value;
   }
 };

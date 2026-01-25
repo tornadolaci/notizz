@@ -16,6 +16,7 @@
     startPolling,
     stopPolling,
     isOnline,
+    initializePreviousState,
   } from '$lib/supabase';
 
   let { children } = $props();
@@ -82,6 +83,12 @@
     try {
       // Load data from Supabase (stores handle this directly now)
       await Promise.all([notesStore.load(), todosStore.load()]);
+
+      // Initialize previous state with loaded data BEFORE starting sync
+      // This prevents false "new content" notifications on app startup
+      const currentNotes = notesStore.getNotes();
+      const currentTodos = todosStore.getTodos();
+      initializePreviousState(currentNotes, currentTodos);
 
       // Subscribe to real-time changes
       unsubscribeRealtime = subscribeToChanges(

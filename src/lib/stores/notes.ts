@@ -259,5 +259,13 @@ export const notesStore = {
   getById(id: string): INote | undefined {
     const state = get(notesStateWritable);
     return state.value.find(note => note.id === id);
+  },
+
+  /**
+   * Get all notes (synchronous getter for current state)
+   */
+  getNotes(): INote[] {
+    const state = get(notesStateWritable);
+    return state.value;
   }
 };
