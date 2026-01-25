@@ -27,8 +27,8 @@ A projekt átfogó biztonsági vizsgálata befejeződött. Az alábbiakban rész
 **Hely**: [src/lib/supabase/client.ts:10-11](src/lib/supabase/client.ts#L10-L11)
 
 ```typescript
-const SUPABASE_URL = 'https://fjrgvrzkucffbwumjcwf.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...';
+const SUPABASE_URL = 'https://[PROJECT_ID].supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbG....[REDACTED]';
 ```
 
 **Probléma**:
