@@ -34,7 +34,7 @@
 </script>
 
 <!-- Use native dialog element to appear in top layer above other modals -->
-<dialog bind:this={dialogElement} class="toast-dialog" role="alert" aria-live="polite">
+<dialog bind:this={dialogElement} class="toast-dialog" aria-live="polite">
 	<div class="toast">
 		<p class="toast__message">{message}</p>
 	</div>
