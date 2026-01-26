@@ -40,15 +40,39 @@
   --text-disabled: #C7C7CC;
   --border-light: rgba(0, 0, 0, 0.08);
   --border-medium: rgba(0, 0, 0, 0.12);
-  
-  /* Sötét téma */
-  --dark-bg-primary: #1C1C1E;
-  --dark-bg-secondary: #2C2C2E;
-  --dark-bg-tertiary: #3A3A3C;
-  --dark-text-primary: #FFFFFF;
-  --dark-text-secondary: #EBEBF5;
-  --dark-text-tertiary: #ABABBB;
-  --dark-border: rgba(255, 255, 255, 0.1);
+
+  /* AMOLED Sötét téma - Premium Glow */
+  --amoled-bg: #07080D;
+  --amoled-bg-2: #0B1020;
+  --amoled-surface-1: #111421;
+  --amoled-surface-2: #151A2A;
+  --amoled-surface-3: #1B2134;
+  --amoled-border: #2A2F40;
+  --amoled-divider: #1E2230;
+  --amoled-text-primary: #F2F3F7;
+  --amoled-text-secondary: #C9CAD3;
+  --amoled-text-tertiary: #8F90A0;
+  --amoled-text-disabled: #5C5D6A;
+
+  /* Dark kategória színek (pasztell dark tints) */
+  --dark-lavender: #2A2442;
+  --dark-peach: #3A261D;
+  --dark-mint: #163336;
+  --dark-sky: #152B3A;
+  --dark-rose: #3A1E2B;
+  --dark-lemon: #3A3516;
+  --dark-sage: #1E3228;
+  --dark-coral: #3A201A;
+
+  /* Glow színek (bright accents) */
+  --glow-lavender: #B4AAFF;
+  --glow-peach: #FFB478;
+  --glow-mint: #78FFDC;
+  --glow-sky: #78C8FF;
+  --glow-rose: #FF78A0;
+  --glow-lemon: #FFF5AA;
+  --glow-sage: #96DCB4;
+  --glow-coral: #FF8C78;
 }
 ```
 
@@ -216,8 +240,9 @@
   padding: var(--padding-card);
   position: relative;
   transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1);
-  
-  /* iOS-szerű árnyék - Mérsékelt */
+  overflow: hidden; /* Aura overlay clip */
+
+  /* iOS-szerű árnyék - Mérsékelt (világos mód) */
   box-shadow:
     0 1px 3px rgba(0, 0, 0, 0.06),
     0 4px 12px rgba(0, 0, 0, 0.08),
@@ -231,18 +256,84 @@
       0 8px 20px rgba(0, 0, 0, 0.12),
       0 16px 32px rgba(0, 0, 0, 0.14);
   }
-  
+
   &:active {
     transform: scale(0.98);
   }
 }
 
-/* Sürgős kártya */
-.card--urgent {
-  border: 2px solid var(--color-urgent);
-  box-shadow: 
-    0 0 0 1px var(--color-urgent),
-    0 4px 12px rgba(255, 107, 107, 0.2);
+/* Delete button pozícionálás */
+.card__delete {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--color-info);
+  color: white;
+  z-index: 2;
+  opacity: 0; /* Desktop hover */
+  transition: all 200ms ease;
+}
+
+.card:hover .card__delete {
+  opacity: 1;
+}
+
+/* Touch devices - always visible */
+@media (hover: none), (pointer: coarse) {
+  .card__delete {
+    opacity: 1;
+  }
+}
+
+/* Dark mode - AMOLED Premium Glow */
+[data-theme="dark"] .card {
+  background: var(--amoled-surface-1) !important;
+  border: 1px solid var(--amoled-border);
+  color: var(--amoled-text-primary);
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.55),
+    0 10px 30px rgba(0, 0, 0, 0.55);
+}
+
+/* Aura overlay - kategória alapú glow */
+[data-theme="dark"] .card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 1;
+  background: radial-gradient(
+    circle at 15% 10%,
+    var(--card-tint, rgba(255, 255, 255, 0.10)) 0%,
+    transparent 55%
+  );
+  z-index: 0;
+  border-radius: 20px;
+}
+
+/* Content above aura */
+[data-theme="dark"] .card > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Delete button dark mode fix */
+[data-theme="dark"] .card__delete {
+  position: absolute;
+  z-index: 2;
+}
+
+/* Hover glow dark mode */
+[data-theme="dark"] .card:hover {
+  transform: translateY(-2px) scale(1.01);
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.55),
+    0 16px 45px rgba(0, 0, 0, 0.65),
+    0 0 0 1px rgba(255, 255, 255, 0.06),
+    0 0 28px var(--card-glow, rgba(255, 255, 255, 0.10));
 }
 
 /* Glass effect a modálokhoz */
@@ -552,7 +643,7 @@
 
 .progress-bar {
   flex: 1;
-  height: 6px;
+  height: 6px; /* Világos mód: vékony */
   background: var(--bg-tertiary);
   border-radius: 3px;
   overflow: hidden;
@@ -568,6 +659,31 @@
 .progress-text {
   min-width: 50px;
   text-align: right;
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+}
+
+/* Dark mode - modernebb megjelenés */
+[data-theme="dark"] .progress-bar {
+  height: 12px; /* Vastagabb */
+  background: rgba(0, 0, 0, 0.08);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="dark"] .progress-fill {
+  background: #007AFF; /* Egyszínű kék */
+  box-shadow: 0 1px 4px rgba(0, 122, 255, 0.3);
+}
+
+[data-theme="dark"] .progress-text {
+  font-size: var(--text-base); /* Nagyobb */
+  font-weight: var(--font-semibold); /* Félkövér */
+  color: #007AFF; /* Kék szöveg */
+}
+
+/* Világos módban marad szürke */
+.progress-text {
+  color: var(--text-tertiary);
 }
 ```
 
@@ -653,41 +769,284 @@
 
 ---
 
-## 🌗 Dark Mode
+## 🌗 Dark Mode - AMOLED Premium Glow
 
-### Dark Theme Overrides
+### Filozófia
+A sötét mód nem egyszerű színinverzió, hanem egy **prémium élmény** AMOLED kijelzőkre optimalizálva:
+- **Mély fekete háttér** (#07080D) - valódi AMOLED energia-megtakarítás
+- **Rétegzett surface rendszer** - különböző mélységű felületek
+- **Kategória-alapú aura effekt** - finom radial gradient glow
+- **Prémium glow a hover-nél** - kategória színekkel
+- **Automatikus rendszer detektálás** - app induláskor
+
+### AMOLED Háttér + Surface Rendszer
 ```css
-[data-theme="dark"] {
-  /* Háttér színek */
-  --bg-primary: var(--dark-bg-primary);
-  --bg-secondary: var(--dark-bg-secondary);
-  --bg-tertiary: var(--dark-bg-tertiary);
+:root {
+  /* AMOLED háttér - mély fekete */
+  --amoled-bg: #07080D;
+  --amoled-bg-2: #0B1020;
 
-  /* Szöveg színek */
-  --text-primary: var(--dark-text-primary);
-  --text-secondary: var(--dark-text-secondary);
-  --text-tertiary: var(--dark-text-tertiary);
+  /* Surface rétegek - progresszív világosodás */
+  --amoled-surface-1: #111421; /* card base */
+  --amoled-surface-2: #151A2A; /* elevated surfaces */
+  --amoled-surface-3: #1B2134; /* modal / active */
 
-  /* Határok */
-  --border-light: var(--dark-border);
-  --border-medium: var(--dark-border);
+  /* Border / divider */
+  --amoled-border: #2A2F40;
+  --amoled-divider: #1E2230;
 
-  /* Kártya háttérszín sötét módban */
-  --card-bg-dark: #1C1C1E;
-
-  /* Panel színek halványítva */
-  .card {
-    opacity: 0.95;
-    background: var(--card-bg-dark) !important;
-  }
-
-  /* Glass effect sötétben */
-  .card--glass {
-    background: rgba(30, 30, 30, 0.8);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-  }
+  /* Text colors - optimalizált olvashatóság */
+  --amoled-text-primary: #F2F3F7;
+  --amoled-text-secondary: #C9CAD3;
+  --amoled-text-tertiary: #8F90A0;
+  --amoled-text-disabled: #5C5D6A;
 }
 ```
+
+### Dark Theme Global Overrides
+```css
+[data-theme="dark"] {
+  /* Háttér színek - AMOLED rendszer */
+  --bg-primary: var(--amoled-bg);
+  --bg-secondary: var(--amoled-bg);
+  --bg-tertiary: rgba(255, 255, 255, 0.06);
+
+  /* Szöveg színek - AMOLED optimalizált */
+  --text-primary: var(--amoled-text-primary);
+  --text-secondary: var(--amoled-text-secondary);
+  --text-tertiary: var(--amoled-text-tertiary);
+
+  /* Határok - subtilis vonalak */
+  --border-light: var(--amoled-border);
+  --border-medium: var(--amoled-border);
+}
+
+/* Body háttér gradient */
+[data-theme="dark"] body {
+  background: linear-gradient(180deg, var(--amoled-bg), var(--amoled-bg-2));
+}
+```
+
+### Kategória Színek Dark Mode-ban
+```css
+:root {
+  /* Dark kategória színek - sötét pasztell tónusok */
+  --dark-lavender: #2A2442;
+  --dark-peach: #3A261D;
+  --dark-mint: #163336;
+  --dark-sky: #152B3A;
+  --dark-rose: #3A1E2B;
+  --dark-lemon: #3A3516;
+  --dark-sage: #1E3228;
+  --dark-coral: #3A201A;
+
+  /* Glow színek - világos, neon-szerű kiemelések */
+  --glow-lavender: #B4AAFF;
+  --glow-peach: #FFB478;
+  --glow-mint: #78FFDC;
+  --glow-sky: #78C8FF;
+  --glow-rose: #FF78A0;
+  --glow-lemon: #FFF5AA;
+  --glow-sage: #96DCB4;
+  --glow-coral: #FF8C78;
+}
+```
+
+### Card Component - AMOLED Premium Glow
+```css
+/* Alap kártya dark mode-ban */
+[data-theme="dark"] .card {
+  background: var(--amoled-surface-1) !important;
+  border: 1px solid var(--amoled-border);
+  color: var(--amoled-text-primary);
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.55),
+    0 10px 30px rgba(0, 0, 0, 0.55);
+}
+
+/* Aura overlay effect - kategória alapú radial gradient */
+[data-theme="dark"] .card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 1;
+  background: radial-gradient(
+    circle at 15% 10%,
+    var(--card-tint, rgba(255, 255, 255, 0.10)) 0%,
+    transparent 55%
+  );
+  z-index: 0;
+  border-radius: 20px;
+}
+
+/* Tartalom az aura overlay fölött */
+[data-theme="dark"] .card > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Hover glow effect - kategória színnel */
+[data-theme="dark"] .card:hover {
+  transform: translateY(-2px) scale(1.01);
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.55),
+    0 16px 45px rgba(0, 0, 0, 0.65),
+    0 0 0 1px rgba(255, 255, 255, 0.06),
+    0 0 28px var(--card-glow, rgba(255, 255, 255, 0.10));
+}
+
+/* Absolute pozicionált elemek (pl. delete button) megtartása */
+[data-theme="dark"] .card__delete {
+  position: absolute;
+  z-index: 2;
+}
+```
+
+### Kategória Hozzárendelés - Dynamic CSS Variables
+```css
+/* NoteCard.svelte / TodoCard.svelte - példa */
+<article
+  class="card"
+  style:--card-tint={getDarkTint(note.color)}
+  style:--card-glow={getGlowColor(note.color)}
+>
+```
+
+### Progress Bar - Dark Mode
+```css
+[data-theme="dark"] .progress-bar {
+  background: var(--amoled-surface-2);
+}
+
+[data-theme="dark"] .progress-fill {
+  background: #007AFF; /* Egyszínű kék */
+  box-shadow: 0 1px 4px rgba(0, 122, 255, 0.3);
+}
+
+/* Progress text - nagyobb, félkövér */
+[data-theme="dark"] .progress-text {
+  font-size: var(--text-base);
+  font-weight: var(--font-semibold);
+  color: var(--text-tertiary);
+}
+```
+
+### Checkbox - Dark Mode with Glow
+```css
+[data-theme="dark"] .checkbox {
+  border-color: var(--amoled-border);
+  background: var(--amoled-surface-2);
+}
+
+[data-theme="dark"] .checkbox--checked {
+  background: var(--color-success);
+  border-color: var(--color-success);
+  box-shadow: 0 0 12px #34C759; /* Zöld glow */
+}
+```
+
+### FAB - Dark Mode Premium Gradient
+```css
+[data-theme="dark"] .fab {
+  background: linear-gradient(135deg, #78C8FF 0%, #B4AAFF 100%);
+  box-shadow:
+    0 10px 28px #000000,
+    0 0 24px #78C8FF;
+}
+```
+
+### Header - Dark Mode Glassmorphism
+```css
+[data-theme="dark"] .header {
+  background: rgba(28, 28, 30, 0.7);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+/* Header subtitle - fehér szöveg dark mode-ban */
+[data-theme="dark"] .header__subtitle {
+  color: #FFFFFF;
+}
+```
+
+### Modal - Dark Mode
+```css
+[data-theme="dark"] .modal-backdrop {
+  background: #000000;
+}
+
+[data-theme="dark"] .modal-content {
+  background: var(--amoled-surface-3);
+  border: 1px solid var(--amoled-border);
+  color: var(--amoled-text-primary);
+}
+```
+
+### Editor Components - Dark Mode Aura
+```css
+/* TodoEditor - items-list aura effect */
+[data-theme="dark"] .items-list {
+  background: var(--amoled-surface-1) !important;
+  border: 1px solid var(--amoled-border);
+}
+
+[data-theme="dark"] .items-list::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    circle at 15% 10%,
+    var(--card-tint, rgba(255, 255, 255, 0.10)) 0%,
+    transparent 55%
+  );
+  z-index: 0;
+  border-radius: 12px;
+}
+
+/* NoteEditor - textarea gradient stack */
+[data-theme="dark"] .textarea {
+  background: var(--amoled-surface-1);
+  background-image: radial-gradient(
+    circle at 15% 10%,
+    var(--card-tint, rgba(255, 255, 255, 0.10)) 0%,
+    transparent 55%
+  ),
+  radial-gradient(
+    circle at 100% 100%,
+    var(--amoled-surface-1) 0%,
+    var(--amoled-surface-1) 100%
+  );
+}
+```
+
+### Theme Detection & Toggle
+```typescript
+// theme.ts - automatikus rendszer detektálás
+function initTheme(): void {
+  const systemPref = detectSystemTheme(); // 'dark' | 'light'
+  clearSessionTheme(); // Minden indításkor friss detektálás
+  applyTheme(systemPref); // System preference alkalmazása
+}
+
+// Session toggle - sessionStorage-ban tárolva
+async function toggleTheme(): Promise<void> {
+  const current = get(currentThemeWritable);
+  const newTheme = current === 'light' ? 'dark' : 'light';
+  setSessionTheme(newTheme); // Session-only, nem persistent
+  applyTheme(newTheme);
+}
+```
+
+### Dark Mode Best Practices
+1. **Használd a CSS változókat** - `--amoled-*` prefix az AMOLED tokenekhez
+2. **Kategória dinamikus színek** - `getDarkTint()` és `getGlowColor()` helper függvények
+3. **Z-index layering** - aura overlay (0), content (1), fixed elemek (2+)
+4. **Absolute positioning megtartása** - explicit override szükséges az aura overlay után
+5. **Scrollbar styling** - `rgba(255, 255, 255, 0.4)` dark mode-ban
+6. **Border kontrasztok** - `rgba(255, 255, 255, 0.3)` inputoknál, `var(--amoled-border)` kártyáknál
 
 ---
 
@@ -830,6 +1189,7 @@ interface VariantProp {
 
 ## 📝 Implementation Notes
 
+### General Guidelines
 1. **Mobile First**: Minden komponens először mobilra optimalizálva
 2. **Touch Friendly**: Min. 44x44px touch target
 3. **Smooth Animations**: 60 FPS cél minden animációnál
@@ -838,6 +1198,39 @@ interface VariantProp {
 6. **ARIA Labels**: Minden interaktív elemhez
 7. **Keyboard Navigation**: Tab order, focus trap modálokban
 8. **Color Contrast**: WCAG AAA szintű kontraszt arány
+
+### Dark Mode Implementation Checklist
+1. **Theme Detection**:
+   - App induláskor automatikus rendszer detektálás
+   - `initTheme()` törli a sessionStorage-t és alkalmazza a system preference-t
+   - Toggle button sessionStorage-ba ment (nem persistent)
+
+2. **CSS Architecture**:
+   - AMOLED tokenek a `:root`-ban definiálva
+   - `[data-theme="dark"]` szelektorral override-olva
+   - Dark kategória színek és glow színek elkülönítve
+
+3. **Card Components**:
+   - `::before` pseudo-element az aura overlay-hez
+   - Radial gradient `circle at 15% 10%` pozícióval
+   - Z-index layering: overlay (0), content (1), fixed elemek (2+)
+   - Absolute positioned elemek explicit override-ja szükséges
+
+4. **Dynamic Colors**:
+   - `getDarkTint(hexColor)` - dark kategória szín visszaadása
+   - `getGlowColor(hexColor)` - glow szín visszaadása
+   - CSS változók injektálása: `style:--card-tint={cardTint}`
+
+5. **Editor Components**:
+   - TodoEditor: `.items-list::before` aura overlay
+   - NoteEditor: `.textarea` background-image gradient stack
+   - Content z-index: 1 az overlay fölött
+
+6. **Common Pitfalls**:
+   - ⚠️ `position: relative` az aura overlay miatt - explicit `position: absolute` override szükséges
+   - ⚠️ Scrollbar styling dark mode-ban: `rgba(255, 255, 255, 0.4)`
+   - ⚠️ Border kontrasztok: inputoknál világosabb, kártyáknál `--amoled-border`
+   - ⚠️ Delete button z-index: 2 (overlay és content fölött)
 
 ---
 
