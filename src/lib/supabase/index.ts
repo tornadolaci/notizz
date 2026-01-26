@@ -25,4 +25,5 @@ export {
   startPolling,
   stopPolling,
   initializePreviousState,
+  registerLocalModification,
 } from './sync.service';

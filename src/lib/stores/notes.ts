@@ -1,7 +1,7 @@
 import { writable, derived, get } from 'svelte/store';
 import type { INote } from '$lib/types';
 import { NotesService } from '$lib/services';
-import { SupabaseNotesService, isOnline } from '$lib/supabase';
+import { SupabaseNotesService, isOnline, registerLocalModification } from '$lib/supabase';
 import { getCurrentUserId } from './auth';
 
 interface NotesState {
@@ -121,6 +121,10 @@ export const notesStore = {
       };
 
       if (userId && isOnline()) {
+        // Register as local modification BEFORE Supabase call to prevent self-notification
+        // (realtime subscription might fire before we get the response)
+        registerLocalModification('note', noteWithOrder.id!, noteWithOrder.updatedAt);
+
         // Authenticated: Save to Supabase only
         const savedNote = await SupabaseNotesService.create(noteWithOrder, userId);
 
@@ -177,6 +181,15 @@ export const notesStore = {
       const isOnlyOrderChange = Object.keys(updates).length === 1 && 'order' in updates;
 
       if (userId && isOnline()) {
+        // Calculate updatedAt for registration
+        const newUpdatedAt = isOnlyOrderChange ? undefined : new Date();
+
+        // Register as local modification BEFORE Supabase call to prevent self-notification
+        // (realtime subscription might fire before we get the response)
+        if (!isOnlyOrderChange) {
+          registerLocalModification('note', id, newUpdatedAt!);
+        }
+
         // Authenticated: Update in Supabase only
         await SupabaseNotesService.update(id, updates, userId);
 
@@ -185,7 +198,7 @@ export const notesStore = {
           ...s,
           value: s.value.map(note => {
             if (note.id === id) {
-              return { ...note, ...updates, ...(isOnlyOrderChange ? {} : { updatedAt: new Date() }) };
+              return { ...note, ...updates, ...(isOnlyOrderChange ? {} : { updatedAt: newUpdatedAt! }) };
             }
             return note;
           })

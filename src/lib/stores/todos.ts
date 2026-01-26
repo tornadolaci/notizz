@@ -1,7 +1,7 @@
 import { writable, derived, get } from 'svelte/store';
 import type { ITodo } from '$lib/types';
 import { TodosService } from '$lib/services';
-import { SupabaseTodosService, isOnline } from '$lib/supabase';
+import { SupabaseTodosService, isOnline, registerLocalModification } from '$lib/supabase';
 import { getCurrentUserId } from './auth';
 
 interface TodosState {
@@ -127,6 +127,10 @@ export const todosStore = {
       };
 
       if (userId && isOnline()) {
+        // Register as local modification BEFORE Supabase call to prevent self-notification
+        // (realtime subscription might fire before we get the response)
+        registerLocalModification('todo', todoWithOrder.id!, todoWithOrder.updatedAt);
+
         // Authenticated: Save to Supabase only
         const savedTodo = await SupabaseTodosService.create(todoWithOrder, userId);
 
@@ -183,6 +187,15 @@ export const todosStore = {
       const isOnlyOrderChange = Object.keys(updates).length === 1 && 'order' in updates;
 
       if (userId && isOnline()) {
+        // Calculate updatedAt for registration
+        const newUpdatedAt = isOnlyOrderChange ? undefined : new Date();
+
+        // Register as local modification BEFORE Supabase call to prevent self-notification
+        // (realtime subscription might fire before we get the response)
+        if (!isOnlyOrderChange) {
+          registerLocalModification('todo', id, newUpdatedAt!);
+        }
+
         // Authenticated: Update in Supabase only
         await SupabaseTodosService.update(id, updates, userId);
 
@@ -191,7 +204,7 @@ export const todosStore = {
           ...s,
           value: s.value.map(todo => {
             if (todo.id === id) {
-              return { ...todo, ...updates, ...(isOnlyOrderChange ? {} : { updatedAt: new Date() }) };
+              return { ...todo, ...updates, ...(isOnlyOrderChange ? {} : { updatedAt: newUpdatedAt! }) };
             }
             return todo;
           })
@@ -288,6 +301,10 @@ export const todosStore = {
       };
 
       if (userId && isOnline()) {
+        // Register as local modification BEFORE Supabase call to prevent self-notification
+        // (realtime subscription might fire before we get the response)
+        registerLocalModification('todo', todoId, updates.updatedAt);
+
         // Authenticated: Update in Supabase only
         await SupabaseTodosService.update(todoId, {
           items: updatedItems,

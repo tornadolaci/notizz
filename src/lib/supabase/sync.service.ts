@@ -38,9 +38,14 @@ export function unregisterToastCallback(): void {
 
 /**
  * Show notification for content change
- * Returns true if notification was shown, false if it was already notified
+ * Returns true if notification was shown, false if it was already notified or is a local modification
  */
 function showContentChangeNotification(type: 'note' | 'todo', id: string, title: string, updatedAt: Date): boolean {
+	// Skip notification for locally made changes (user's own modifications)
+	if (isLocalModification(type, id, updatedAt)) {
+		return false;
+	}
+
 	// Check if we already notified about this specific update
 	if (wasAlreadyNotified(type, id, updatedAt)) {
 		return false;
@@ -123,6 +128,61 @@ let previousTodos: ITodo[] = [];
 // Key format: "note_<id>_<updatedAt>" or "todo_<id>_<updatedAt>"
 const NOTIFIED_ITEMS_KEY = 'notizz_notified_items';
 const MAX_NOTIFIED_ITEMS = 100; // Prevent localStorage bloat
+
+// Track locally modified items to prevent self-notifications
+// Key format: "note_<id>" or "todo_<id>"
+// Value: timestamp when modified - any changes within TTL window are considered local
+const LOCAL_MODIFICATION_TTL_MS = 15000; // 15 seconds window
+const localModifications = new Map<string, number>(); // key -> timestamp when modified
+
+/**
+ * Register a local modification to prevent self-notification
+ * Called by stores when user makes a change
+ * Note: We track by id only, not by updatedAt, because Supabase may return
+ * a different timestamp than what the client sent
+ */
+export function registerLocalModification(type: 'note' | 'todo', id: string, _updatedAt: Date): void {
+  const key = `${type}_${id}`;
+  localModifications.set(key, Date.now());
+
+  // Clean up old entries
+  cleanupLocalModifications();
+}
+
+/**
+ * Check if a modification was made locally (by this client) within the TTL window
+ * This prevents self-notifications when changes come back via realtime/polling
+ */
+function isLocalModification(type: 'note' | 'todo', id: string, _updatedAt: Date): boolean {
+  const key = `${type}_${id}`;
+  const modifiedAt = localModifications.get(key);
+
+  if (!modifiedAt) return false;
+
+  const now = Date.now();
+
+  // Check if modification is within the TTL window
+  if (now - modifiedAt > LOCAL_MODIFICATION_TTL_MS) {
+    // Expired - clean up and return false
+    localModifications.delete(key);
+    return false;
+  }
+
+  // Within TTL window - this is likely our own modification coming back
+  return true;
+}
+
+/**
+ * Clean up expired local modification entries
+ */
+function cleanupLocalModifications(): void {
+  const now = Date.now();
+  for (const [key, modifiedAt] of localModifications.entries()) {
+    if (now - modifiedAt > LOCAL_MODIFICATION_TTL_MS) {
+      localModifications.delete(key);
+    }
+  }
+}
 
 function getNotifiedItems(): Set<string> {
   try {
