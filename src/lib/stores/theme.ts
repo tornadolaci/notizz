@@ -68,12 +68,12 @@ function applyTheme(theme: 'light' | 'dark'): void {
 
 /**
  * Initialize theme
- * Always starts in light mode, regardless of system or session preferences
+ * Always follows system preference on app startup
  */
 function initTheme(): void {
   if (typeof window === 'undefined') return;
 
-  // Detect system preference (for future toggles)
+  // Detect system preference
   const systemPref = detectSystemTheme();
   systemPreferenceWritable.set(systemPref);
 
@@ -89,11 +89,11 @@ function initTheme(): void {
     }
   });
 
-  // Clear any previous session theme to ensure fresh start
+  // Clear any previous session theme to ensure fresh start with system preference
   clearSessionTheme();
 
-  // Always apply light theme on app startup
-  applyTheme('light');
+  // Apply system theme on app startup
+  applyTheme(systemPref);
 }
 
 /**

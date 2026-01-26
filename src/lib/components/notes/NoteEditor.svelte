@@ -5,7 +5,7 @@
 	 */
 	import { notesStore } from '$lib/stores/notes';
 	import type { INote } from '$lib/types/note';
-	import { DEFAULT_NOTE_COLOR, PASTEL_COLORS, hexToColorKey, type PastelColorKey } from '$lib/constants/colors';
+	import { DEFAULT_NOTE_COLOR, PASTEL_COLORS, hexToColorKey, getDarkTint, getGlowColor, type PastelColorKey } from '$lib/constants/colors';
 	import Modal from '$lib/components/common/Modal.svelte';
 	import ColorPicker from './ColorPicker.svelte';
 	import { generateId } from '$lib/utils/uuid';
@@ -23,6 +23,10 @@
 	let content = $state('');
 	let selectedColor = $state<PastelColorKey>(DEFAULT_NOTE_COLOR);
 	let isSaving = $state(false);
+
+	// Dark mode dynamic colors for aura effect
+	const cardTint = $derived(note?.color ? getDarkTint(note.color) : null);
+	const cardGlow = $derived(note?.color ? getGlowColor(note.color) : null);
 
 	// Populate form when editing existing note
 	$effect(() => {
@@ -128,6 +132,8 @@
 				placeholder="Írd ide a jegyzet tartalmát..."
 				rows="6"
 				style:--textarea-bg={note?.color}
+				style:--card-tint={cardTint}
+				style:--card-glow={cardGlow}
 			></textarea>
 		</div>
 
@@ -212,11 +218,23 @@
 		resize: vertical;
 		line-height: var(--leading-normal);
 		background: var(--textarea-bg, var(--bg-primary));
+		position: relative;
 	}
 
-	/* Dark mode - always use default background and darker borders */
+	/* Dark mode - use AMOLED surface with aura effect */
 	:global([data-theme="dark"]) .textarea {
-		background: var(--bg-primary);
+		background: var(--amoled-surface-1);
+		/* Aura gradient overlay effect */
+		background-image: radial-gradient(
+			circle at 15% 10%,
+			var(--card-tint, rgba(255, 255, 255, 0.10)) 0%,
+			transparent 55%
+		),
+		radial-gradient(
+			circle at 100% 100%,
+			var(--amoled-surface-1) 0%,
+			var(--amoled-surface-1) 100%
+		);
 	}
 
 	:global([data-theme="dark"]) .input,

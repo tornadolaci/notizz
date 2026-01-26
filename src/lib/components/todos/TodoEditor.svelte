@@ -5,7 +5,7 @@
 	 */
 	import { todosStore, todosValue } from '$lib/stores/todos';
 	import type { ITodo, ITodoItem } from '$lib/types/todo';
-	import { DEFAULT_TODO_COLOR, PASTEL_COLORS, hexToColorKey, type PastelColorKey } from '$lib/constants/colors';
+	import { DEFAULT_TODO_COLOR, PASTEL_COLORS, hexToColorKey, getDarkTint, getGlowColor, type PastelColorKey } from '$lib/constants/colors';
 	import Modal from '$lib/components/common/Modal.svelte';
 	import ColorPicker from '$lib/components/notes/ColorPicker.svelte';
 	import TodoItem from './TodoItem.svelte';
@@ -27,6 +27,10 @@
 
 	// New item input
 	let newItemText = $state('');
+
+	// Dark mode dynamic colors for aura effect
+	const cardTint = $derived(todo?.color ? getDarkTint(todo.color) : null);
+	const cardGlow = $derived(todo?.color ? getGlowColor(todo.color) : null);
 
 	// Populate form when editing existing todo
 	$effect(() => {
@@ -239,7 +243,12 @@
 			</div>
 			<div class="todo-items">
 				{#if items.length > 0}
-					<div class="items-list" style:--items-list-bg={todo?.color}>
+					<div
+						class="items-list"
+						style:--items-list-bg={todo?.color}
+						style:--card-tint={cardTint}
+						style:--card-glow={cardGlow}
+					>
 						{#each items as item (item.id)}
 							<TodoItem
 								{item}
@@ -383,6 +392,7 @@
 		overflow-y: auto;
 		scrollbar-width: thin;
 		scrollbar-color: rgba(0, 0, 0, 0.3) transparent;
+		position: relative;
 	}
 
 	.items-list::-webkit-scrollbar {
@@ -403,11 +413,33 @@
 		background-color: rgba(0, 0, 0, 0.5);
 	}
 
-	/* Dark mode - use AMOLED surface instead of category color */
+	/* Dark mode - use AMOLED surface with aura effect */
 	:global([data-theme="dark"]) .items-list {
-		background: var(--bg-secondary) !important;
+		background: var(--amoled-surface-1) !important;
 		border: 1px solid var(--amoled-border);
 		scrollbar-color: rgba(255, 255, 255, 0.4) transparent;
+	}
+
+	/* Aura overlay effect - same as cards on main page */
+	:global([data-theme="dark"]) .items-list::before {
+		content: "";
+		position: absolute;
+		inset: 0;
+		pointer-events: none;
+		opacity: 1;
+		background: radial-gradient(
+			circle at 15% 10%,
+			var(--card-tint, rgba(255, 255, 255, 0.10)) 0%,
+			transparent 55%
+		);
+		z-index: 0;
+		border-radius: 12px;
+	}
+
+	/* Ensure content is above the aura overlay */
+	:global([data-theme="dark"]) .items-list > * {
+		position: relative;
+		z-index: 1;
 	}
 
 	:global([data-theme="dark"]) .items-list::-webkit-scrollbar-thumb {
