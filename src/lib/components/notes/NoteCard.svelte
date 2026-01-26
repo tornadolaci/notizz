@@ -391,6 +391,12 @@
     z-index: 1;
   }
 
+  /* Keep delete button positioned absolutely in dark mode */
+  :global([data-theme="dark"]) .card__delete {
+    position: absolute;
+    z-index: 2;
+  }
+
   /* Hover glow effect */
   :global([data-theme="dark"]) .card:hover {
     transform: translateY(-2px) scale(1.01);
