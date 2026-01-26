@@ -2,6 +2,7 @@
   import type { INote } from '$lib/types';
   import { formatDistanceToNow } from 'date-fns';
   import { hu } from 'date-fns/locale';
+  import { getDarkTint, getGlowColor } from '$lib/constants/colors';
 
   interface Props {
     note: INote;
@@ -15,6 +16,10 @@
   }
 
   let { note, index = 0, onEdit, onDelete, onMoveUp, onMoveDown, isFirst = false, isLast = false }: Props = $props();
+
+  // Dark mode dynamic colors
+  const cardTint = $derived(getDarkTint(note.color));
+  const cardGlow = $derived(getGlowColor(note.color));
 
   const timeAgo = $derived(() => {
     return formatDistanceToNow(note.updatedAt, {
@@ -62,6 +67,8 @@
 <article
   class="card"
   style:--card-color={note.color}
+  style:--card-tint={cardTint}
+  style:--card-glow={cardGlow}
   style:--index={index}
   onclick={handleClick}
   onkeydown={handleKeydown}
@@ -353,26 +360,64 @@
     }
   }
 
-  /* Dark mode adjustments */
+  /* Dark mode adjustments - AMOLED Premium Glow */
   :global([data-theme="dark"]) .card {
-    opacity: 0.95;
-    background: #293F3F !important;
+    background: var(--amoled-surface-1) !important;
+    border: 1px solid var(--amoled-border);
+    color: var(--amoled-text-primary);
+    box-shadow:
+      0 1px 2px rgba(0, 0, 0, 0.55),
+      0 10px 30px rgba(0, 0, 0, 0.55);
   }
 
+  /* Aura overlay effect */
+  :global([data-theme="dark"]) .card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 1;
+    background: radial-gradient(
+      circle at 15% 10%,
+      var(--card-tint, rgba(255, 255, 255, 0.10)) 0%,
+      transparent 55%
+    );
+    z-index: 0;
+  }
+
+  /* Ensure content is above the aura overlay */
+  :global([data-theme="dark"]) .card > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Hover glow effect */
+  :global([data-theme="dark"]) .card:hover {
+    transform: translateY(-2px) scale(1.01);
+    box-shadow:
+      0 1px 2px rgba(0, 0, 0, 0.55),
+      0 16px 45px rgba(0, 0, 0, 0.65),
+      0 0 0 1px rgba(255, 255, 255, 0.06),
+      0 0 28px var(--card-glow, rgba(255, 255, 255, 0.10));
+  }
+
+  /* Glass button dark mode */
   :global([data-theme="dark"]) .card__nav-btn {
-    background: rgba(50, 50, 50, 0.9);
-    border-color: rgba(255, 255, 255, 0.1);
-    color: rgba(255, 255, 255, 0.9);
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    color: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
   }
 
   :global([data-theme="dark"]) .card__nav-btn:hover {
-    background: rgba(70, 70, 70, 1);
-    color: var(--color-info);
+    background: rgba(255, 255, 255, 0.10);
+    box-shadow: 0 0 18px rgba(120, 200, 255, 0.18);
   }
 
   @media (hover: none), (pointer: coarse) {
     :global([data-theme="dark"]) .card__nav-btn {
-      background: rgba(50, 50, 50, 0.85);
+      background: rgba(255, 255, 255, 0.06);
     }
   }
 </style>

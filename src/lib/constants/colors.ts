@@ -39,3 +39,44 @@ export function hexToColorKey(hex: string): PastelColorKey {
 	const entry = Object.entries(PASTEL_COLORS).find(([_, value]) => value.toUpperCase() === upperHex);
 	return entry ? (entry[0] as PastelColorKey) : DEFAULT_COLOR;
 }
+
+/**
+ * Dark mode color mapping - tint and glow variants for AMOLED theme
+ */
+export const DARK_TINT_COLORS: Record<PastelColorKey, string> = {
+	lavender: '#2A2442',
+	peach: '#3A261D',
+	mint: '#163336',
+	sky: '#152B3A',
+	rose: '#3A1E2B',
+	lemon: '#3A3516',
+	sage: '#1E3228',
+	coral: '#3A201A'
+};
+
+export const GLOW_COLORS: Record<PastelColorKey, string> = {
+	lavender: '#B4AAFF',
+	peach: '#FFB478',
+	mint: '#78FFDC',
+	sky: '#78C8FF',
+	rose: '#FF78A0',
+	lemon: '#FFF5AA',
+	sage: '#96DCB4',
+	coral: '#FF8C78'
+};
+
+/**
+ * Get dark mode tint color for a given hex color
+ */
+export function getDarkTint(hex: string): string {
+	const colorKey = hexToColorKey(hex);
+	return DARK_TINT_COLORS[colorKey];
+}
+
+/**
+ * Get glow color for a given hex color
+ */
+export function getGlowColor(hex: string): string {
+	const colorKey = hexToColorKey(hex);
+	return GLOW_COLORS[colorKey];
+}

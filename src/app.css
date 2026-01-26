@@ -79,20 +79,64 @@
   --gap-list-items: 8px;
   --gap-form-fields: 16px;
   --margin-section: 32px;
+
+  /* AMOLED Dark Mode Tokens */
+  --amoled-bg: #07080D;
+  --amoled-bg-2: #0B1020;
+
+  /* Surface layers */
+  --amoled-surface-1: #111421;
+  --amoled-surface-2: #151A2A;
+  --amoled-surface-3: #1B2134;
+
+  /* Borders & dividers */
+  --amoled-border: #2A2F40;
+  --amoled-divider: #1E2230;
+
+  /* Text colors */
+  --amoled-text-primary: #F2F3F7;
+  --amoled-text-secondary: #C9CAD3;
+  --amoled-text-tertiary: #8F90A0;
+  --amoled-text-disabled: #5C5D6A;
+
+  /* Dark category colors - subtle tints */
+  --dark-lavender: #2A2442;
+  --dark-peach: #3A261D;
+  --dark-mint: #163336;
+  --dark-sky: #152B3A;
+  --dark-rose: #3A1E2B;
+  --dark-lemon: #3A3516;
+  --dark-sage: #1E3228;
+  --dark-coral: #3A201A;
+
+  /* Glow colors - bright accents */
+  --glow-lavender: #B4AAFF;
+  --glow-peach: #FFB478;
+  --glow-mint: #78FFDC;
+  --glow-sky: #78C8FF;
+  --glow-rose: #FF78A0;
+  --glow-lemon: #FFF5AA;
+  --glow-sage: #96DCB4;
+  --glow-coral: #FF8C78;
 }
 
 /* --------------------------------------------------------------------------
    Dark Theme
    -------------------------------------------------------------------------- */
 [data-theme="dark"] {
-  --bg-primary: #293F3F;
-  --bg-secondary: #1B1A1A;
-  --bg-tertiary: #3A3A3C;
-  --text-primary: #FFFFFF;
-  --text-secondary: #EBEBF5;
-  --text-tertiary: #ABABBB;
-  --border-light: rgba(255, 255, 255, 0.1);
-  --border-medium: rgba(255, 255, 255, 0.1);
+  --bg-primary: var(--amoled-bg);
+  --bg-secondary: var(--amoled-bg);
+  --bg-tertiary: rgba(255, 255, 255, 0.06);
+  --text-primary: var(--amoled-text-primary);
+  --text-secondary: var(--amoled-text-secondary);
+  --text-tertiary: var(--amoled-text-tertiary);
+  --border-light: var(--amoled-border);
+  --border-medium: var(--amoled-border);
+}
+
+/* AMOLED Background Gradient */
+[data-theme="dark"] body {
+  background: linear-gradient(180deg, var(--amoled-bg), var(--amoled-bg-2));
 }
 
 /* --------------------------------------------------------------------------

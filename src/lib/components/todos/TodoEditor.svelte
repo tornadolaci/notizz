@@ -403,10 +403,10 @@
 		background-color: rgba(0, 0, 0, 0.5);
 	}
 
-	/* Dark mode - dark green background with darker border */
+	/* Dark mode - use AMOLED surface instead of category color */
 	:global([data-theme="dark"]) .items-list {
-		background: #293F3F;
-		border: 1px solid rgba(255, 255, 255, 0.3);
+		background: var(--bg-secondary) !important;
+		border: 1px solid var(--amoled-border);
 		scrollbar-color: rgba(255, 255, 255, 0.4) transparent;
 	}
 

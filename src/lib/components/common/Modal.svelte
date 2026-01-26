@@ -234,9 +234,19 @@
 		-webkit-overflow-scrolling: touch;
 	}
 
-	/* Dark mode support */
+	/* Dark mode support - AMOLED Glass */
+	:global([data-theme="dark"]) .modal::backdrop {
+		background: rgba(0, 0, 0, 0.60);
+		backdrop-filter: blur(6px);
+		-webkit-backdrop-filter: blur(6px);
+	}
+
 	:global([data-theme="dark"]) .modal-content {
-		background: #293F3F;
+		background: rgba(20, 24, 38, 0.92);
+		border: 1px solid rgba(255, 255, 255, 0.10);
+		color: var(--amoled-text-primary);
+		backdrop-filter: blur(20px);
+		-webkit-backdrop-filter: blur(20px);
 	}
 
 	/* Responsive */

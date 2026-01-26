@@ -101,4 +101,21 @@
       outline: none;
     }
   }
+
+  /* Dark mode - AMOLED Premium Glow */
+  :global([data-theme="dark"]) .fab {
+    background: linear-gradient(135deg, #78C8FF 0%, #B4AAFF 100%);
+    box-shadow:
+      0 10px 28px rgba(0, 0, 0, 0.60),
+      0 0 0 1px rgba(255, 255, 255, 0.08),
+      0 0 30px rgba(120, 200, 255, 0.25);
+  }
+
+  :global([data-theme="dark"]) .fab:hover {
+    transform: rotate(90deg) scale(1.08);
+    box-shadow:
+      0 12px 32px rgba(0, 0, 0, 0.70),
+      0 0 0 1px rgba(255, 255, 255, 0.10),
+      0 0 40px rgba(120, 200, 255, 0.35);
+  }
 </style>

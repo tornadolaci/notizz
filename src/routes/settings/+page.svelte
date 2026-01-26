@@ -231,7 +231,11 @@
   }
 
   :global([data-theme="dark"]) .settings-section {
-    background: #293F3F;
+    background: var(--amoled-surface-1);
+    border: 1px solid var(--amoled-border);
+    box-shadow:
+      0 1px 2px rgba(0, 0, 0, 0.55),
+      0 10px 30px rgba(0, 0, 0, 0.55);
   }
 
   .section-title {

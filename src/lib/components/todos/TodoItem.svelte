@@ -200,9 +200,20 @@
 		outline-offset: 2px;
 	}
 
-	/* Dark mode */
+	/* Dark mode - AMOLED style */
 	:global([data-theme="dark"]) .todo-item:hover {
 		background: rgba(255, 255, 255, 0.05);
+	}
+
+	:global([data-theme="dark"]) .checkbox {
+		border-color: rgba(255, 255, 255, 0.18);
+		background: rgba(255, 255, 255, 0.02);
+	}
+
+	:global([data-theme="dark"]) .checkbox.checked {
+		background: var(--color-success);
+		border-color: var(--color-success);
+		box-shadow: 0 0 0 4px rgba(52, 199, 89, 0.15);
 	}
 
 	/* Touch devices - always show delete button */
