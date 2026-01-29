@@ -137,7 +137,9 @@
 	}
 
 	.modal-content {
-		background: var(--bg-primary);
+		background: rgba(255, 255, 255, 0.80);
+		backdrop-filter: blur(20px);
+		-webkit-backdrop-filter: blur(20px);
 		border-radius: 28px;
 		padding: var(--padding-modal);
 		max-height: calc(100vh - var(--space-8) - var(--space-6));

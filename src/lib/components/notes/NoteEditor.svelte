@@ -125,16 +125,20 @@
 
 		<div class="form-group">
 			<label for="note-content" class="form-label">Tartalom</label>
-			<textarea
-				id="note-content"
-				class="textarea"
-				bind:value={content}
-				placeholder="Írd ide a jegyzet tartalmát..."
-				rows="6"
+			<div
+				class="textarea-wrapper"
 				style:--textarea-bg={note?.color}
 				style:--card-tint={cardTint}
 				style:--card-glow={cardGlow}
-			></textarea>
+			>
+				<textarea
+					id="note-content"
+					class="textarea"
+					bind:value={content}
+					placeholder="Írd ide a jegyzet tartalmát..."
+					rows="6"
+				></textarea>
+			</div>
 		</div>
 
 		{#if !note}
@@ -184,8 +188,7 @@
 		color: var(--color-error);
 	}
 
-	.input,
-	.textarea {
+	.input {
 		width: 100%;
 		padding: var(--padding-input);
 		border: none;
@@ -199,8 +202,7 @@
 		max-width: 100%;
 	}
 
-	.input:focus,
-	.textarea:focus {
+	.input:focus {
 		outline: none;
 		border-color: var(--color-info);
 		box-shadow:
@@ -214,31 +216,76 @@
 	}
 
 	.textarea {
+		padding: var(--padding-input);
+		font-size: var(--text-base);
+		font-family: var(--font-system);
+		color: var(--text-primary);
+		transition: all 200ms ease;
+		box-sizing: border-box;
+		max-width: 100%;
+	}
+
+	.textarea-wrapper {
+		position: relative;
+		background: linear-gradient(145deg, var(--textarea-bg, #F7F8FC) 0%, #FFFFFF 85%);
+		border: none;
+		border-radius: 20px;
+		box-shadow:
+			0 4px 12px rgba(0, 0, 0, 0.04),
+			0 12px 30px rgba(0, 0, 0, 0.06);
+		overflow: hidden;
+	}
+
+	/* Light mode - inner aura effect */
+	.textarea-wrapper::before {
+		content: "";
+		position: absolute;
+		inset: 0;
+		pointer-events: none;
+		opacity: 0.3;
+		background: radial-gradient(
+			circle at 15% 10%,
+			var(--textarea-bg, rgba(247, 248, 252, 0.5)) 0%,
+			#FFFFFF 60%
+		);
+		z-index: 0;
+		border-radius: 20px;
+	}
+
+	.textarea {
+		width: 100%;
 		min-height: 400px;
 		resize: vertical;
 		line-height: var(--leading-normal);
-		background: var(--textarea-bg, var(--bg-primary));
+		background: transparent;
+		border: none;
 		position: relative;
+		z-index: 1;
+	}
+
+	.textarea:focus {
+		outline: none;
+		box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
 	}
 
 	/* Dark mode - use AMOLED surface with aura effect */
-	:global([data-theme="dark"]) .textarea {
+	:global([data-theme="dark"]) .textarea-wrapper {
 		background: var(--amoled-surface-1);
-		/* Aura gradient overlay effect */
-		background-image: radial-gradient(
+		box-shadow: none;
+		border: 1px solid var(--amoled-border);
+	}
+
+	/* Dark mode - aura overlay effect */
+	:global([data-theme="dark"]) .textarea-wrapper::before {
+		opacity: 1;
+		background: radial-gradient(
 			circle at 15% 10%,
 			var(--card-tint, rgba(255, 255, 255, 0.10)) 0%,
 			transparent 55%
-		),
-		radial-gradient(
-			circle at 100% 100%,
-			var(--amoled-surface-1) 0%,
-			var(--amoled-surface-1) 100%
 		);
 	}
 
-	:global([data-theme="dark"]) .input,
-	:global([data-theme="dark"]) .textarea {
+	:global([data-theme="dark"]) .input {
 		border: 1px solid rgba(255, 255, 255, 0.3);
 	}
 

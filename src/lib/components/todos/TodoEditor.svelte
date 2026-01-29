@@ -239,7 +239,11 @@
 
 		<div class="form-group" role="group" aria-labelledby="todo-items-label">
 			<div id="todo-items-label" class="form-label">
-				Teendők <span class="required">*</span>
+				{#if todo}
+					Feladatok: {todo.title}
+				{:else}
+					Teendők <span class="required">*</span>
+				{/if}
 			</div>
 			<div class="todo-items">
 				{#if items.length > 0}
@@ -385,14 +389,39 @@
 		flex-direction: column;
 		gap: var(--space-1);
 		padding: var(--space-3);
-		background: var(--items-list-bg, var(--bg-secondary));
-		border: 1px solid var(--border-light);
-		border-radius: 12px;
+		background: linear-gradient(145deg, var(--items-list-bg, #F7F8FC) 0%, #FFFFFF 85%);
+		border: none;
+		border-radius: 20px;
+		box-shadow:
+			0 4px 12px rgba(0, 0, 0, 0.04),
+			0 12px 30px rgba(0, 0, 0, 0.06);
 		max-height: 500px;
 		overflow-y: auto;
 		scrollbar-width: thin;
 		scrollbar-color: rgba(0, 0, 0, 0.3) transparent;
 		position: relative;
+	}
+
+	/* Light mode - inner aura effect */
+	.items-list::before {
+		content: "";
+		position: absolute;
+		inset: 0;
+		pointer-events: none;
+		opacity: 0.3;
+		background: radial-gradient(
+			circle at 15% 10%,
+			var(--items-list-bg, rgba(247, 248, 252, 0.5)) 0%,
+			#FFFFFF 60%
+		);
+		z-index: 0;
+		border-radius: 20px;
+	}
+
+	/* Ensure content is above the aura overlay */
+	.items-list > * {
+		position: relative;
+		z-index: 1;
 	}
 
 	.items-list::-webkit-scrollbar {
@@ -417,29 +446,19 @@
 	:global([data-theme="dark"]) .items-list {
 		background: var(--amoled-surface-1) !important;
 		border: 1px solid var(--amoled-border);
+		box-shadow: none;
 		scrollbar-color: rgba(255, 255, 255, 0.4) transparent;
 	}
 
-	/* Aura overlay effect - same as cards on main page */
+	/* Dark mode - aura overlay effect (same as cards on main page) */
 	:global([data-theme="dark"]) .items-list::before {
-		content: "";
-		position: absolute;
-		inset: 0;
-		pointer-events: none;
 		opacity: 1;
 		background: radial-gradient(
 			circle at 15% 10%,
 			var(--card-tint, rgba(255, 255, 255, 0.10)) 0%,
 			transparent 55%
 		);
-		z-index: 0;
-		border-radius: 12px;
-	}
-
-	/* Ensure content is above the aura overlay */
-	:global([data-theme="dark"]) .items-list > * {
-		position: relative;
-		z-index: 1;
+		border-radius: 20px;
 	}
 
 	:global([data-theme="dark"]) .items-list::-webkit-scrollbar-thumb {
