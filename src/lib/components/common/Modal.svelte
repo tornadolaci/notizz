@@ -142,6 +142,7 @@
 		-webkit-backdrop-filter: blur(20px);
 		border-radius: 28px;
 		padding: var(--padding-modal);
+		padding-top: 60px; /* Extra top padding for close button clearance */
 		max-height: calc(100vh - var(--space-8) - var(--space-6));
 		max-height: calc(100dvh - var(--space-8) - var(--space-6));
 		overflow-y: auto;
@@ -153,6 +154,7 @@
 		box-shadow:
 			0 10px 40px rgba(0, 0, 0, 0.2),
 			0 24px 80px rgba(0, 0, 0, 0.1);
+		position: relative; /* Position context for close button */
 	}
 
 	@keyframes modalSlideIn {
@@ -171,7 +173,8 @@
 		justify-content: space-between;
 		align-items: flex-start;
 		margin-bottom: var(--space-5);
-		position: relative;
+		position: static; /* Changed from relative to prevent button from moving with scroll */
+		padding-right: 52px; /* Space for close button (44px width + 8px margin) */
 	}
 
 	.modal-title {
@@ -193,12 +196,13 @@
 		align-items: center;
 		justify-content: center;
 		position: absolute;
-		top: 0;
-		right: 0;
+		top: 12px; /* Fixed position from top of modal-content */
+		right: 12px; /* Fixed position from right of modal-content */
 		width: 44px;
 		height: 44px;
 		outline: 2px solid #5DA9FF;
 		border: none;
+		z-index: 10; /* Above scrolling content */
 	}
 
 	.modal-close svg {
@@ -263,6 +267,7 @@
 			max-height: calc(100vh - var(--space-6) - var(--space-4)) !important;
 			max-height: calc(100dvh - var(--space-6) - var(--space-4)) !important;
 			padding: var(--space-3) var(--space-4);
+			padding-top: 56px; /* Extra top padding for close button on mobile */
 			border-radius: 16px;
 		}
 
