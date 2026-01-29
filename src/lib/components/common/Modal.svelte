@@ -138,7 +138,7 @@
 
 	.modal-content {
 		background: var(--bg-primary);
-		border-radius: 24px;
+		border-radius: 28px;
 		padding: var(--padding-modal);
 		max-height: calc(100vh - var(--space-8) - var(--space-6));
 		max-height: calc(100dvh - var(--space-8) - var(--space-6));
@@ -181,34 +181,35 @@
 	}
 
 	.modal-close {
-		background: none;
-		border: 2px solid transparent;
+		background: #FFFFFF;
 		cursor: pointer;
 		padding: var(--space-1);
-		color: var(--text-secondary);
+		color: #5A5E70;
 		transition: all 200ms ease;
-		border-radius: 6px;
+		border-radius: 16px;
 		display: flex;
 		align-items: center;
 		justify-content: center;
 		position: absolute;
 		top: 0;
 		right: 0;
-		width: 28px;
-		height: 28px;
+		width: 44px;
+		height: 44px;
+		outline: 2px solid #5DA9FF;
+		border: none;
 	}
 
 	.modal-close svg {
-		width: 16px;
-		height: 16px;
+		width: 20px;
+		height: 20px;
 	}
 
 	.modal-close--blue {
-		border-color: var(--color-info);
+		outline-color: #5DA9FF;
 	}
 
 	.modal-close--red {
-		border-color: #FF3B30;
+		outline-color: #FF3B30;
 	}
 
 	.modal-close:hover {

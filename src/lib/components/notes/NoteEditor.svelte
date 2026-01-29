@@ -188,11 +188,11 @@
 	.textarea {
 		width: 100%;
 		padding: var(--padding-input);
-		border: 1px solid var(--border-light);
-		border-radius: 12px;
+		border: none;
+		border-radius: 16px;
 		font-size: var(--text-base);
 		font-family: var(--font-system);
-		background: var(--bg-primary);
+		background: #F7F8FC;
 		color: var(--text-primary);
 		transition: all 200ms ease;
 		box-sizing: border-box;
@@ -210,7 +210,7 @@
 
 	.input::placeholder,
 	.textarea::placeholder {
-		color: var(--text-tertiary);
+		color: #A3A6B6;
 	}
 
 	.textarea {

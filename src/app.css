@@ -18,14 +18,24 @@
 
   /* System Colors - Világos téma */
   --bg-primary: #FFFFFF;
-  --bg-secondary: #F7F7F9;
-  --bg-tertiary: #EFEFF4;
-  --text-primary: #000000;
-  --text-secondary: #3C3C43;
-  --text-tertiary: #8E8E93;
-  --text-disabled: #C7C7CC;
-  --border-light: rgba(0, 0, 0, 0.08);
-  --border-medium: rgba(0, 0, 0, 0.12);
+  --bg-secondary: #F6F7FB;
+  --bg-tertiary: #ECEEF4;
+
+  /* Surface layers - Soft Premium Light */
+  --surface-1: #FFFFFF;
+  --surface-2: #F7F8FC;
+  --surface-3: #EEF0F6;
+
+  /* Text colors - Soft Premium Light */
+  --text-primary: #1B1C22;
+  --text-secondary: #4B4E5E;
+  --text-tertiary: #8C8FA1;
+  --text-disabled: #C6C8D2;
+
+  /* Borders & Dividers - Soft Premium Light */
+  --border-light: #E2E4ED;
+  --border-medium: #D2D5E2;
+  --divider: #E6E8F0;
 
   /* Semantic Colors */
   --color-success: #34C759;
@@ -173,7 +183,7 @@ body {
   font-size: var(--text-base);
   line-height: var(--leading-normal);
   color: var(--text-primary);
-  background: var(--bg-secondary);
+  background: linear-gradient(180deg, #F9FAFD 0%, #F3F4F9 100%);
   min-height: 100vh;
   min-height: 100dvh;
   width: 100%;

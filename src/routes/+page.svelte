@@ -418,7 +418,7 @@
 
   .type-picker {
     background: var(--bg-primary);
-    border-radius: 24px;
+    border-radius: 28px;
     padding: var(--padding-modal);
     width: 100%;
     max-width: min(400px, calc(100vw - 32px));
@@ -462,7 +462,7 @@
     padding: var(--space-6);
     background: var(--bg-secondary);
     border: 2px solid transparent;
-    border-radius: 16px;
+    border-radius: 20px;
     cursor: pointer;
     transition: all 200ms ease;
     color: var(--text-primary);

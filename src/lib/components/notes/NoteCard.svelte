@@ -149,9 +149,9 @@
     box-sizing: border-box;
     overflow: hidden;
 
-    /* Appearance */
-    background: var(--card-color);
-    border-radius: 20px;
+    /* Appearance - Soft Premium Light gradient */
+    background: linear-gradient(145deg, var(--card-color) 0%, #FFFFFF 85%);
+    border-radius: 24px;
     cursor: pointer;
 
     /* Animation */
@@ -159,11 +159,32 @@
     animation: slideUp 400ms ease both;
     animation-delay: calc(var(--index) * 50ms);
 
-    /* Shadow - Mérsékelt árnyékok */
+    /* Shadow - Soft floating effect */
     box-shadow:
-      0 1px 3px rgba(0, 0, 0, 0.06),
-      0 4px 12px rgba(0, 0, 0, 0.08),
-      0 8px 20px rgba(0, 0, 0, 0.10);
+      0 4px 12px rgba(0, 0, 0, 0.04),
+      0 12px 30px rgba(0, 0, 0, 0.06);
+  }
+
+  /* Inner aura effect - világos módban is */
+  .card::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(
+      circle at 15% 10%,
+      var(--card-color) 0%,
+      #FFFFFF 60%
+    );
+    opacity: 0.3;
+    z-index: 0;
+    border-radius: 24px;
+    pointer-events: none;
+  }
+
+  /* Ensure content is above the aura overlay */
+  .card > * {
+    position: relative;
+    z-index: 1;
   }
 
   @media (max-width: 375px) {
@@ -175,6 +196,9 @@
 
   .card:hover {
     transform: translateY(-2px) scale(1.01);
+    box-shadow:
+      0 6px 16px rgba(0, 0, 0, 0.06),
+      0 16px 40px rgba(0, 0, 0, 0.08);
   }
 
   .card:active {
@@ -193,7 +217,8 @@
     width: 32px;
     height: 32px;
     border-radius: 50%;
-    background: var(--color-info);
+    background: #2F80ED;
+    box-shadow: 0 6px 14px rgba(47, 128, 237, 0.2);
     border: none;
     cursor: pointer;
     display: flex;
@@ -210,9 +235,9 @@
   }
 
   .card__delete:hover {
-    background: #0051D5;
+    background: #2F80ED;
     transform: scale(1.1);
-    box-shadow: 0 4px 12px rgba(0, 122, 255, 0.5);
+    box-shadow: 0 8px 20px rgba(47, 128, 237, 0.35);
   }
 
   .card__delete:active {
@@ -368,6 +393,11 @@
     box-shadow:
       0 1px 2px rgba(0, 0, 0, 0.55),
       0 10px 30px rgba(0, 0, 0, 0.55);
+  }
+
+  /* Remove light mode aura in dark mode */
+  :global([data-theme="dark"]) .card::after {
+    display: none;
   }
 
   /* Aura overlay effect */

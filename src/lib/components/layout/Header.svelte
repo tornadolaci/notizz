@@ -58,7 +58,7 @@
 
 <style>
   .header {
-    background: rgba(255, 255, 255, 0.7);
+    background: linear-gradient(180deg, #FFFFFF 0%, #F4F6FB 100%);
     border-bottom: 1px solid var(--border-light);
     padding: var(--space-4);
     position: fixed;
@@ -69,10 +69,8 @@
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     width: 100%;
-    /* Finom árnyék a sticky fejlécre */
-    box-shadow:
-      0 1px 2px rgba(0, 0, 0, 0.04),
-      0 2px 8px rgba(0, 0, 0, 0.06);
+    /* Soft Premium Light árnyék */
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
   }
 
   /* Dark mode glass effect */
@@ -103,7 +101,7 @@
     font-weight: var(--font-bold);
     color: var(--text-primary);
     margin: 0;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(90deg, #7F7FD5, #5DA9FF);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -111,7 +109,7 @@
 
   .header__subtitle {
     font-size: var(--text-base);
-    color: var(--text-tertiary);
+    color: #8C8FA1;
     margin: 0;
   }
 

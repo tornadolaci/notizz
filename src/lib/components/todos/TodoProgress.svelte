@@ -30,20 +30,18 @@
 
   .progress-bar {
     flex: 1;
-    height: 12px;
-    background: #F5F5F7;
-    border-radius: 6px;
+    height: 8px;
+    background: #E6E8F0;
+    border-radius: 999px;
     overflow: visible;
-    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.08);
-    padding: 2px;
+    padding: 0;
   }
 
   .progress-fill {
     height: 100%;
-    background: #007AFF;
-    border-radius: 4px;
+    background: linear-gradient(90deg, #5DA9FF 0%, #2F80ED 100%);
+    border-radius: 999px;
     transition: width 300ms cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 1px 4px rgba(0, 122, 255, 0.3);
   }
 
   .progress-text {
@@ -52,7 +50,7 @@
     font-variant-numeric: tabular-nums;
     font-weight: var(--font-semibold);
     font-size: var(--text-base);
-    color: #007AFF;
+    color: #2F80ED;
   }
 
   @media (max-width: 768px) {

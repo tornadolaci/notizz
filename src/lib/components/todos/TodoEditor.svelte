@@ -348,11 +348,11 @@
 	.input {
 		width: 100%;
 		padding: var(--padding-input);
-		border: 1px solid var(--border-light);
-		border-radius: 12px;
+		border: none;
+		border-radius: 16px;
 		font-size: var(--text-base);
 		font-family: var(--font-system);
-		background: var(--bg-primary);
+		background: #F7F8FC;
 		color: var(--text-primary);
 		transition: all 200ms ease;
 	}
@@ -371,7 +371,7 @@
 	}
 
 	.input::placeholder {
-		color: var(--text-tertiary);
+		color: #A3A6B6;
 	}
 
 	.todo-items {
@@ -518,13 +518,16 @@
 	}
 
 	.button--add {
-		background: var(--color-info);
-		color: white;
+		background: linear-gradient(135deg, #5DA9FF, #2F80ED);
+		color: #FFFFFF;
 		padding: var(--padding-input);
+		border-radius: 20px;
+		font-size: 18px;
+		font-weight: 600;
 	}
 
 	.button--add:hover:not(:disabled) {
-		background: #0056cc;
+		box-shadow: 0 6px 20px rgba(47, 128, 237, 0.3);
 	}
 
 	.button--add:active:not(:disabled) {
