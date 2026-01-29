@@ -418,12 +418,6 @@
 		border-radius: 20px;
 	}
 
-	/* Ensure content is above the aura overlay */
-	.items-list > * {
-		position: relative;
-		z-index: 1;
-	}
-
 	.items-list::-webkit-scrollbar {
 		display: block;
 		width: 8px;
