@@ -30,11 +30,13 @@
 
   .progress-bar {
     flex: 1;
-    height: 8px;
+    height: 10px;
     background: #E6E8F0;
     border-radius: 999px;
     overflow: visible;
-    padding: 0;
+    padding: 2px;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.08),
+                0 1px 2px rgba(255, 255, 255, 0.8);
   }
 
   .progress-fill {
@@ -42,6 +44,8 @@
     background: linear-gradient(90deg, #5DA9FF 0%, #2F80ED 100%);
     border-radius: 999px;
     transition: width 300ms cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 1px 3px rgba(47, 128, 237, 0.3),
+                inset 0 1px 1px rgba(255, 255, 255, 0.3);
   }
 
   .progress-text {
@@ -68,12 +72,14 @@
   /* Dark mode adjustments */
   :global([data-theme="dark"]) .progress-bar {
     background: rgba(255, 255, 255, 0.08);
-    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3),
+                0 1px 2px rgba(255, 255, 255, 0.05);
   }
 
   :global([data-theme="dark"]) .progress-fill {
     background: #007AFF;
-    box-shadow: 0 1px 4px rgba(0, 122, 255, 0.4);
+    box-shadow: 0 1px 4px rgba(0, 122, 255, 0.5),
+                inset 0 1px 1px rgba(255, 255, 255, 0.2);
   }
 
   :global([data-theme="dark"]) .progress-text {
