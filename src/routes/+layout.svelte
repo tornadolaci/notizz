@@ -17,6 +17,8 @@
     stopPolling,
     isOnline,
     initializePreviousState,
+    registerSyncStatusCallback,
+    unregisterSyncStatusCallback,
   } from '$lib/supabase';
 
   let { children } = $props();
@@ -27,6 +29,9 @@
   // Welcome modal state (first time user)
   let showWelcomeModal = $state(false);
   let appInitialized = $state(false);
+
+  // Sync status for Header icon color
+  let syncActive = $state(false);
 
   // LocalStorage key for tracking if user has made initial choice
   const WELCOME_COMPLETED_KEY = 'notizz_welcome_completed';
@@ -61,6 +66,11 @@
     if (!welcomeCompleted && !isLoggedIn) {
       showWelcomeModal = true;
     }
+
+    // Register sync status callback for Header icon
+    registerSyncStatusCallback((active) => {
+      syncActive = active;
+    });
 
     appInitialized = true;
   });
@@ -180,6 +190,7 @@
 
   onDestroy(() => {
     cleanupSync();
+    unregisterSyncStatusCallback();
   });
 
   // Handle welcome modal choices
@@ -203,6 +214,8 @@
     window.__notizz_logout = handleLogout;
     // @ts-expect-error - global window property
     window.__notizz_showAuth = () => { showAuthModal = true; };
+    // @ts-expect-error - global window property
+    window.__notizz_getSyncActive = () => syncActive;
   }
 </script>
 

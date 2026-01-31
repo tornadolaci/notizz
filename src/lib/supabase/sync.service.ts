@@ -18,6 +18,15 @@ import NotificationService from '../services/notification.service';
 // Re-export isOnline for convenience
 export { isOnline };
 
+// === SYNC STATUS TRACKING ===
+// Tracks whether the database sync is currently active
+let syncActive = false;
+let lastSuccessfulSync: Date | null = null;
+
+// Callback for notifying components about sync status changes
+type SyncStatusCallback = (active: boolean) => void;
+let syncStatusCallback: SyncStatusCallback | null = null;
+
 // Callback for in-app toast notifications
 type ToastCallback = (message: string) => void;
 let toastCallback: ToastCallback | null = null;
@@ -34,6 +43,40 @@ export function registerToastCallback(callback: ToastCallback): void {
  */
 export function unregisterToastCallback(): void {
 	toastCallback = null;
+}
+
+/**
+ * Register a callback to be notified when sync status changes
+ */
+export function registerSyncStatusCallback(callback: SyncStatusCallback): void {
+	syncStatusCallback = callback;
+}
+
+/**
+ * Unregister the sync status callback
+ */
+export function unregisterSyncStatusCallback(): void {
+	syncStatusCallback = null;
+}
+
+/**
+ * Get current sync status
+ */
+export function getSyncStatus(): { active: boolean; lastSync: Date | null } {
+	return { active: syncActive, lastSync: lastSuccessfulSync };
+}
+
+/**
+ * Internal: Update sync status and notify callback
+ */
+function updateSyncStatus(active: boolean): void {
+	syncActive = active;
+	if (active) {
+		lastSuccessfulSync = new Date();
+	}
+	if (syncStatusCallback) {
+		syncStatusCallback(active);
+	}
 }
 
 /**
@@ -378,6 +421,9 @@ export function subscribeToChanges(
  * Unsubscribe from real-time changes
  */
 export function unsubscribeFromChanges(): void {
+  // Reset sync status
+  updateSyncStatus(false);
+
   // Clear the current user ID FIRST to prevent any pending callbacks from executing
   currentSyncUserId = null;
 
@@ -427,7 +473,10 @@ export function startPolling(
       return; // User logged out or changed, skip polling
     }
 
-    if (!isOnline()) return;
+    if (!isOnline()) {
+      updateSyncStatus(false);
+      return;
+    }
 
     try {
       // Fetch fresh data from Supabase
@@ -440,6 +489,9 @@ export function startPolling(
       if (currentSyncUserId !== userId) {
         return; // User logged out during fetch, skip update
       }
+
+      // === Sikeres sync ===
+      updateSyncStatus(true);
 
       // Detect changes and show notifications for notes
       const changedNotes = hasContentChanged(previousNotes, notes);
@@ -466,11 +518,17 @@ export function startPolling(
       previousTodos = todos;
     } catch (err) {
       console.error('Polling sync error:', err);
+      updateSyncStatus(false);
     }
   }
 
-  // Start interval (no immediate poll to avoid race condition with initial load)
-  pollingIntervalId = setInterval(pollForChanges, POLLING_INTERVAL_MS);
+  // Run immediate poll for instant feedback, then start interval
+  pollForChanges().finally(() => {
+    // Only start interval if polling wasn't stopped during the first poll
+    if (currentSyncUserId === userId) {
+      pollingIntervalId = setInterval(pollForChanges, POLLING_INTERVAL_MS);
+    }
+  });
 
   // Return stop function
   return stopPolling;
@@ -480,6 +538,9 @@ export function startPolling(
  * Stop polling for changes
  */
 export function stopPolling(): void {
+  // Reset sync status immediately
+  updateSyncStatus(false);
+
   // Clear the current user ID to prevent any pending callbacks from executing
   currentSyncUserId = null;
 

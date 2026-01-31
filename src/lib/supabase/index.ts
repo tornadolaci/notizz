@@ -26,4 +26,7 @@ export {
   stopPolling,
   initializePreviousState,
   registerLocalModification,
+  registerSyncStatusCallback,
+  unregisterSyncStatusCallback,
+  getSyncStatus,
 } from './sync.service';

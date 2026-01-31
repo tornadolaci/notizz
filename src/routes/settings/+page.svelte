@@ -152,6 +152,11 @@
           </p>
         {/if}
       </div>
+      <div class="creator-link">
+        <a href="https://www.panora.hu" target="_blank" rel="noopener noreferrer">
+          👉 created by panora.hu szoftverbázis
+        </a>
+      </div>
     </section>
   </div>
 </div>
@@ -404,6 +409,24 @@
 
   .info-value--active {
     color: var(--color-success);
+  }
+
+  .creator-link {
+    margin-top: var(--space-5);
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--border-light);
+    text-align: center;
+  }
+
+  .creator-link a {
+    color: #007AFF;
+    font-size: var(--text-sm);
+    text-decoration: none;
+    transition: opacity 200ms ease;
+  }
+
+  .creator-link a:hover {
+    opacity: 0.7;
   }
 
   @keyframes slideUp {
