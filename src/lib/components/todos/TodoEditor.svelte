@@ -215,7 +215,7 @@
 	{onClose}
 	title={todo ? '' : 'Új teendő'}
 	maxWidth="700px"
-	closeButtonColor={todo ? 'red' : 'blue'}
+	closeButtonColor="red"
 >
 	<form class="todo-editor" onsubmit={handleSubmit}>
 		{#if !todo}
@@ -361,8 +361,10 @@
 		transition: all 200ms ease;
 	}
 
-	/* Dark mode - darker borders for inputs */
+	/* Dark mode - darker background and borders for inputs */
 	:global([data-theme="dark"]) .input {
+		background: #151A2A; /* --surface-2 from design tokens */
+		color: #F2F3F7; /* --text-primary from design tokens */
 		border: 1px solid rgba(255, 255, 255, 0.3);
 	}
 

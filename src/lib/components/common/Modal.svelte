@@ -200,7 +200,7 @@
 		right: 12px; /* Fixed position from right of modal-content */
 		width: 44px;
 		height: 44px;
-		outline: 2px solid #5DA9FF;
+		outline: 2px solid #FF3B30; /* Always red */
 		border: none;
 		z-index: 10; /* Above scrolling content */
 	}
@@ -210,12 +210,10 @@
 		height: 20px;
 	}
 
-	.modal-close--blue {
-		outline-color: #5DA9FF;
-	}
-
+	/* Remove blue/red variants - always use red */
+	.modal-close--blue,
 	.modal-close--red {
-		outline-color: #FF3B30;
+		outline-color: #FF3B30; /* Always red */
 	}
 
 	.modal-close:hover {
@@ -228,7 +226,7 @@
 	}
 
 	.modal-close:focus-visible {
-		outline: 2px solid var(--color-info);
+		outline: 2px solid #FF3B30; /* Always red, even on focus */
 		outline-offset: 2px;
 	}
 
@@ -254,6 +252,19 @@
 		color: var(--amoled-text-primary);
 		backdrop-filter: blur(20px);
 		-webkit-backdrop-filter: blur(20px);
+	}
+
+	/* Dark mode - close button with dark surface + red glow (always) */
+	:global([data-theme="dark"]) .modal-close {
+		background: #151A2A; /* Dark surface */
+		color: #F2F3F7; /* Light text/icon color */
+		outline-color: #FF3B30; /* Always red outline in dark mode */
+		box-shadow: 0 0 12px rgba(255, 59, 48, 0.4); /* Red glow effect */
+	}
+
+	:global([data-theme="dark"]) .modal-close:hover {
+		background: #1B2134; /* Lighter dark surface on hover */
+		color: #FFFFFF;
 	}
 
 	/* Responsive */
