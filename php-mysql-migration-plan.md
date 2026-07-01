@@ -325,7 +325,9 @@ AddType application/manifest+json .webmanifest
 
 ### 6.3 Share Target ellenőrzés
 
-A manifest `share_target` POST-tal a `/app/notizz/share-target` útvonalra mutat (a scope-on belül kell lennie!). GitHub Pages-en ezt a service worker kezelte; az új tárhelyen a fenti SPA-fallback biztosítja, hogy SW-cache-miss esetén se 404/405 legyen. **Tesztelendő** Android Chrome-mal telepítés után.
+A share target 2026-07-01-én end-to-end javítva lett (külön session): a manifest **GET**-re váltott (nem kell POST-kezelés a szerveren), a `main.ts` a `/share-target` path-ot hash-útvonalra írja át, és az oldal a hash query-ből olvassa a paramétereket.
+
+**4. fázis teendő:** a `main.ts`-beli átírás pontos egyezést néz (`pathname === '/share-target'`) — a base path váltás után ez `'/app/notizz/share-target'` lesz, ezért `import.meta.env.BASE_URL + 'share-target'`-re kell igazítani; a manifest `share_target.action` úgyszintén a scope-on belüli útvonalra. **Tesztelendő** Android Chrome-mal telepítés után.
 
 ### 6.4 Deploy pipeline
 
