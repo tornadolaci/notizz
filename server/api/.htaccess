@@ -1,0 +1,18 @@
+# Notizz API — route everything to the front controller
+RewriteEngine On
+
+# Preserve the Authorization header (Apache strips it by default)
+RewriteCond %{HTTP:Authorization} .
+RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+# Everything except existing files goes to index.php
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^ index.php [L,QSA]
+
+# Never serve PHP sources from src/
+RewriteRule ^src/ - [F,L]
+
+# No caching of API responses
+<IfModule mod_headers.c>
+  Header set Cache-Control "no-store"
+</IfModule>

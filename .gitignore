@@ -46,3 +46,7 @@ playwright/.cache/
 .turbo
 .vercel
 .netlify
+
+# Backend (PHP API) - local secrets and artifacts, never commit
+server/config.php
+server/mail.log
