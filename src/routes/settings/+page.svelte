@@ -26,14 +26,6 @@
     await settingsStore.init();
   });
 
-  function handleLogin() {
-    // @ts-expect-error - global window property
-    if (typeof window !== 'undefined' && window.__notizz_showAuth) {
-      // @ts-expect-error - global window property
-      window.__notizz_showAuth();
-    }
-  }
-
   async function handleLogout() {
     if (confirm('Biztosan ki szeretnél jelentkezni?')) {
       try {
@@ -99,29 +91,6 @@
           </svg>
           {isLoggingOut ? 'Kijelentkezés...' : 'Kijelentkezés'}
         </button>
-      {:else}
-        <div class="account-info account-info--guest">
-          <div class="user-avatar user-avatar--guest">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" />
-            </svg>
-          </div>
-          <div class="user-details">
-            <p class="user-email">Vendég mód</p>
-            <p class="user-status">Az adatok csak ezen az eszközön érhetők el</p>
-          </div>
-        </div>
-
-        <button class="action-button action-button--login" onclick={handleLogin}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3" />
-          </svg>
-          Bejelentkezés / Regisztráció
-        </button>
-
-        <p class="sync-info">
-          Jelentkezz be, hogy szinkronizáld az adataidat több eszköz között!
-        </p>
       {/if}
     </section>
 
@@ -261,10 +230,6 @@
     margin-bottom: var(--space-4);
   }
 
-  .account-info--guest {
-    background: rgba(0, 122, 255, 0.08);
-  }
-
   .user-avatar {
     width: 48px;
     height: 48px;
@@ -277,11 +242,6 @@
     font-size: var(--text-lg);
     font-weight: var(--font-semibold);
     flex-shrink: 0;
-  }
-
-  .user-avatar--guest {
-    background: var(--bg-tertiary);
-    color: var(--text-secondary);
   }
 
   .user-details {
@@ -303,16 +263,6 @@
     font-size: var(--text-sm);
     color: var(--text-tertiary);
     margin: var(--space-1) 0 0;
-  }
-
-  .sync-info {
-    font-size: var(--text-sm);
-    color: var(--text-secondary);
-    text-align: center;
-    margin-top: var(--space-3);
-    padding: var(--space-3);
-    background: rgba(0, 122, 255, 0.05);
-    border-radius: 8px;
   }
 
   /* Action Buttons */
@@ -341,17 +291,6 @@
   .action-button:disabled {
     opacity: 0.5;
     cursor: not-allowed;
-  }
-
-  .action-button--login {
-    border-color: var(--color-info);
-    color: var(--color-info);
-    background: rgba(0, 122, 255, 0.05);
-  }
-
-  .action-button--login:hover:not(:disabled) {
-    background: var(--color-info);
-    color: white;
   }
 
   .action-button--logout {

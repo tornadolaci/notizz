@@ -1,12 +1,14 @@
 /**
  * Settings Store
- * Manages application settings with Svelte stores
+ * Manages application settings with Svelte stores.
+ * Persisted in localStorage - settings are device-level preferences
+ * (theme, font size), not user data.
  */
 
 import { writable, derived } from 'svelte/store';
 import type { ISettings } from '../types';
 import { DEFAULT_SETTINGS } from '../types';
-import { db } from '../db';
+import { LocalStorageService } from '../services';
 
 /**
  * Internal writable stores
@@ -16,21 +18,20 @@ const isLoadingWritable = writable<boolean>(true);
 const errorWritable = writable<string | null>(null);
 
 /**
- * Initialize settings from database
+ * Initialize settings from localStorage
  */
 async function initSettings(): Promise<void> {
   try {
     isLoadingWritable.set(true);
     errorWritable.set(null);
 
-    // Try to load settings from database
-    const stored = await db.settings.get('user-settings');
+    const stored = LocalStorageService.getSettings();
 
     if (stored) {
-      settingsWritable.set(stored);
+      settingsWritable.set({ ...DEFAULT_SETTINGS, ...stored });
     } else {
       // Initialize with default settings
-      await db.settings.add(DEFAULT_SETTINGS);
+      LocalStorageService.saveSettings(DEFAULT_SETTINGS);
       settingsWritable.set(DEFAULT_SETTINGS);
     }
   } catch (err) {
@@ -58,10 +59,7 @@ async function updateSettings(updates: Partial<Omit<ISettings, 'id'>>): Promise<
       ...updates,
     };
 
-    // Update in database
-    await db.settings.put(updatedSettings);
-
-    // Update local state
+    LocalStorageService.saveSettings(updatedSettings);
     settingsWritable.set(updatedSettings);
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Failed to update settings';
@@ -78,7 +76,7 @@ async function resetSettings(): Promise<void> {
   try {
     errorWritable.set(null);
 
-    await db.settings.put(DEFAULT_SETTINGS);
+    LocalStorageService.saveSettings(DEFAULT_SETTINGS);
     settingsWritable.set(DEFAULT_SETTINGS);
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Failed to reset settings';

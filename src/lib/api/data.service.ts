@@ -1,8 +1,7 @@
 /**
  * API Data Service
  * CRUD operations for notes and todos against the PHP backend.
- * Same interface as the previous Supabase data service, but the user is
- * derived from the Bearer token - no userId parameter needed.
+ * The user is derived from the Bearer token - no userId parameter needed.
  */
 
 import { apiFetch, isOnline } from './client';

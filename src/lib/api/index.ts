@@ -1,6 +1,6 @@
 /**
  * API Module Index
- * Exports all backend API related modules (replaces the Supabase module)
+ * Exports all backend API related modules
  */
 
 export {

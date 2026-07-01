@@ -1,6 +1,5 @@
 import { writable, derived, get } from 'svelte/store';
 import type { ITodo } from '$lib/types';
-import { TodosService } from '$lib/services';
 import { ApiTodosService, isOnline, registerLocalModification } from '$lib/api';
 import { getCurrentUserId } from './auth';
 
@@ -9,6 +8,9 @@ interface TodosState {
   loading: boolean;
   error: Error | null;
 }
+
+const OFFLINE_ERROR = 'Nincs internetkapcsolat. Kérlek próbáld újra később.';
+const UNAUTHENTICATED_ERROR = 'Nincs bejelentkezett felhasználó.';
 
 /**
  * Internal writable store
@@ -33,19 +35,29 @@ export const completedTodos = derived(todosStateWritable, ($state) =>
 );
 
 /**
+ * Ensure the user is authenticated and online before a write operation
+ */
+function requireOnlineUser(): void {
+  if (!getCurrentUserId()) {
+    throw new Error(UNAUTHENTICATED_ERROR);
+  }
+  if (!isOnline()) {
+    throw new Error(OFFLINE_ERROR);
+  }
+}
+
+/**
  * Todos store with actions
  *
- * When authenticated: Uses Supabase directly (no IndexedDB)
- * When guest: Uses IndexedDB only
+ * Auth-only: all data lives on the server, accessed via the API.
+ * Offline: reads yield an empty list, writes fail with a Hungarian error.
  */
 export const todosStore = {
   // Subscribe to the main state
   subscribe: todosStateWritable.subscribe,
 
   /**
-   * Load all todos from database
-   * Authenticated: Load from Supabase
-   * Guest: Load from IndexedDB
+   * Load all todos from the API
    */
   async load(): Promise<void> {
     const userId = getCurrentUserId();
@@ -53,18 +65,8 @@ export const todosStore = {
     try {
       todosStateWritable.update(s => ({ ...s, loading: true, error: null }));
 
-      let value: ITodo[];
-
-      if (userId && isOnline()) {
-        // Authenticated + online: Load from the API
-        value = await ApiTodosService.getAll();
-      } else if (userId && !isOnline()) {
-        // Authenticated + offline: Empty state (no offline support for auth users)
-        value = [];
-      } else {
-        // Guest mode: Load from IndexedDB
-        value = await TodosService.getAll();
-      }
+      // Not authenticated or offline: nothing to load (the auth gate handles the UI)
+      const value = userId && isOnline() ? await ApiTodosService.getAll() : [];
 
       todosStateWritable.set({ value, loading: false, error: null });
     } catch (error) {
@@ -75,16 +77,14 @@ export const todosStore = {
   },
 
   /**
-   * Set todos directly (used by sync service for realtime updates)
+   * Set todos directly (used by the sync service for polling updates)
    * Deduplicates by ID - keeps the one with newer updatedAt
-   * IMPORTANT: Only updates if user is authenticated to prevent overwriting guest data
+   * IMPORTANT: Only updates if user is authenticated to prevent
+   * stale sync callbacks from firing after logout
    */
   setTodos(todos: ITodo[]): void {
-    // CRITICAL: Only allow setTodos when user is authenticated
-    // This prevents sync callbacks from overwriting guest data after logout
     const userId = getCurrentUserId();
     if (!userId) {
-      console.log('setTodos skipped: user is not authenticated (guest mode)');
       return;
     }
 
@@ -107,13 +107,11 @@ export const todosStore = {
 
   /**
    * Add a new todo
-   * Authenticated: Save to Supabase only
-   * Guest: Save to IndexedDB only
    */
   async add(todo: ITodo): Promise<void> {
-    const userId = getCurrentUserId();
-
     try {
+      requireOnlineUser();
+
       // Calculate order to place new todo at the top
       const state = get(todosStateWritable);
       const minOrder = state.value.length > 0
@@ -126,46 +124,25 @@ export const todosStore = {
         order: state.value.length > 0 ? minOrder - 1000 : minOrder
       };
 
-      if (userId && isOnline()) {
-        // Register as local modification BEFORE the API call to prevent self-notification
-        // (polling might fire before we get the response)
-        registerLocalModification('todo', todoWithOrder.id!, todoWithOrder.updatedAt);
+      // Register as local modification BEFORE the API call to prevent self-notification
+      // (polling might fire before we get the response)
+      registerLocalModification('todo', todoWithOrder.id!, todoWithOrder.updatedAt);
 
-        // Authenticated: Save via the API
-        const savedTodo = await ApiTodosService.create(todoWithOrder);
+      const savedTodo = await ApiTodosService.create(todoWithOrder);
 
-        // Update store with the saved todo
-        todosStateWritable.update(s => {
-          if (s.value.some(t => t.id === savedTodo.id)) {
-            return {
-              ...s,
-              value: s.value.map(t => t.id === savedTodo.id ? savedTodo : t)
-            };
-          }
+      // Update store with the saved todo
+      todosStateWritable.update(s => {
+        if (s.value.some(t => t.id === savedTodo.id)) {
           return {
             ...s,
-            value: [...s.value, savedTodo]
+            value: s.value.map(t => t.id === savedTodo.id ? savedTodo : t)
           };
-        });
-      } else if (userId && !isOnline()) {
-        // Authenticated + offline: Show error (no offline support)
-        throw new Error('Nincs internetkapcsolat. Kérlek próbáld újra később.');
-      } else {
-        // Guest mode: Save to IndexedDB only
-        await TodosService.create(todoWithOrder);
-        todosStateWritable.update(s => {
-          if (s.value.some(t => t.id === todoWithOrder.id)) {
-            return {
-              ...s,
-              value: s.value.map(t => t.id === todoWithOrder.id ? todoWithOrder : t)
-            };
-          }
-          return {
-            ...s,
-            value: [...s.value, todoWithOrder]
-          };
-        });
-      }
+        }
+        return {
+          ...s,
+          value: [...s.value, savedTodo]
+        };
+      });
     } catch (error) {
       const err = error instanceof Error ? error : new Error('Failed to add todo');
       todosStateWritable.update(s => ({ ...s, error: err }));
@@ -176,56 +153,33 @@ export const todosStore = {
 
   /**
    * Update an existing todo
-   * Authenticated: Update in Supabase only
-   * Guest: Update in IndexedDB only
    */
   async update(id: string, updates: Partial<Omit<ITodo, 'id' | 'createdAt'>>): Promise<void> {
-    const userId = getCurrentUserId();
-
     try {
+      requireOnlineUser();
+
       // Only update updatedAt if it's not just an order change
       const isOnlyOrderChange = Object.keys(updates).length === 1 && 'order' in updates;
+      const newUpdatedAt = isOnlyOrderChange ? undefined : new Date();
 
-      if (userId && isOnline()) {
-        // Calculate updatedAt for registration
-        const newUpdatedAt = isOnlyOrderChange ? undefined : new Date();
-
-        // Register as local modification BEFORE the API call to prevent self-notification
-        // (polling might fire before we get the response)
-        if (!isOnlyOrderChange) {
-          registerLocalModification('todo', id, newUpdatedAt!);
-        }
-
-        // Authenticated: Update via the API
-        await ApiTodosService.update(id, updates);
-
-        // Optimistic update in store
-        todosStateWritable.update(s => ({
-          ...s,
-          value: s.value.map(todo => {
-            if (todo.id === id) {
-              return { ...todo, ...updates, ...(isOnlyOrderChange ? {} : { updatedAt: newUpdatedAt! }) };
-            }
-            return todo;
-          })
-        }));
-      } else if (userId && !isOnline()) {
-        // Authenticated + offline: Show error
-        throw new Error('Nincs internetkapcsolat. Kérlek próbáld újra később.');
-      } else {
-        // Guest mode: Update in IndexedDB
-        await TodosService.update({ id, ...updates });
-
-        todosStateWritable.update(s => ({
-          ...s,
-          value: s.value.map(todo => {
-            if (todo.id === id) {
-              return { ...todo, ...updates, ...(isOnlyOrderChange ? {} : { updatedAt: new Date() }) };
-            }
-            return todo;
-          })
-        }));
+      // Register as local modification BEFORE the API call to prevent self-notification
+      // (polling might fire before we get the response)
+      if (!isOnlyOrderChange) {
+        registerLocalModification('todo', id, newUpdatedAt!);
       }
+
+      await ApiTodosService.update(id, updates);
+
+      // Optimistic update in store
+      todosStateWritable.update(s => ({
+        ...s,
+        value: s.value.map(todo => {
+          if (todo.id === id) {
+            return { ...todo, ...updates, ...(isOnlyOrderChange ? {} : { updatedAt: newUpdatedAt! }) };
+          }
+          return todo;
+        })
+      }));
     } catch (error) {
       const err = error instanceof Error ? error : new Error('Failed to update todo');
       todosStateWritable.update(s => ({ ...s, error: err }));
@@ -236,34 +190,18 @@ export const todosStore = {
 
   /**
    * Delete a todo
-   * Authenticated: Delete from Supabase only
-   * Guest: Delete from IndexedDB only
    */
   async remove(id: string): Promise<void> {
-    const userId = getCurrentUserId();
-
     try {
-      if (userId && isOnline()) {
-        // Authenticated: Delete via the API
-        await ApiTodosService.delete(id);
+      requireOnlineUser();
 
-        // Optimistic update
-        todosStateWritable.update(s => ({
-          ...s,
-          value: s.value.filter(todo => todo.id !== id)
-        }));
-      } else if (userId && !isOnline()) {
-        // Authenticated + offline: Show error
-        throw new Error('Nincs internetkapcsolat. Kérlek próbáld újra później.');
-      } else {
-        // Guest mode: Delete from IndexedDB
-        await TodosService.delete(id);
+      await ApiTodosService.delete(id);
 
-        todosStateWritable.update(s => ({
-          ...s,
-          value: s.value.filter(todo => todo.id !== id)
-        }));
-      }
+      // Optimistic update
+      todosStateWritable.update(s => ({
+        ...s,
+        value: s.value.filter(todo => todo.id !== id)
+      }));
     } catch (error) {
       const err = error instanceof Error ? error : new Error('Failed to delete todo');
       todosStateWritable.update(s => ({ ...s, error: err }));
@@ -274,13 +212,11 @@ export const todosStore = {
 
   /**
    * Toggle a todo item's completed status
-   * Authenticated: Update in Supabase only
-   * Guest: Update in IndexedDB only
    */
   async toggleItem(todoId: string, itemId: string): Promise<void> {
-    const userId = getCurrentUserId();
-
     try {
+      requireOnlineUser();
+
       // Get current todo to compute new state
       const state = get(todosStateWritable);
       const todo = state.value.find(t => t.id === todoId);
@@ -300,46 +236,27 @@ export const todosStore = {
         updatedAt: new Date()
       };
 
-      if (userId && isOnline()) {
-        // Register as local modification BEFORE the API call to prevent self-notification
-        // (polling might fire before we get the response)
-        registerLocalModification('todo', todoId, updates.updatedAt);
+      // Register as local modification BEFORE the API call to prevent self-notification
+      // (polling might fire before we get the response)
+      registerLocalModification('todo', todoId, updates.updatedAt);
 
-        // Authenticated: Update via the API
-        // updatedAt is sent too, so other devices' change detection picks up the toggle
-        await ApiTodosService.update(todoId, {
-          items: updatedItems,
-          completedCount,
-          updatedAt: updates.updatedAt,
-        });
+      // updatedAt is sent too, so other devices' change detection picks up the toggle
+      await ApiTodosService.update(todoId, {
+        items: updatedItems,
+        completedCount,
+        updatedAt: updates.updatedAt,
+      });
 
-        // Optimistic update in store
-        todosStateWritable.update(s => ({
-          ...s,
-          value: s.value.map(t => {
-            if (t.id === todoId) {
-              return { ...t, ...updates };
-            }
-            return t;
-          })
-        }));
-      } else if (userId && !isOnline()) {
-        // Authenticated + offline: Show error
-        throw new Error('Nincs internetkapcsolat. Kérlek próbáld újra később.');
-      } else {
-        // Guest mode: Update in IndexedDB
-        await TodosService.toggleItem(todoId, itemId);
-
-        todosStateWritable.update(s => ({
-          ...s,
-          value: s.value.map(t => {
-            if (t.id === todoId) {
-              return { ...t, ...updates };
-            }
-            return t;
-          })
-        }));
-      }
+      // Optimistic update in store
+      todosStateWritable.update(s => ({
+        ...s,
+        value: s.value.map(t => {
+          if (t.id === todoId) {
+            return { ...t, ...updates };
+          }
+          return t;
+        })
+      }));
     } catch (error) {
       const err = error instanceof Error ? error : new Error('Failed to toggle todo item');
       todosStateWritable.update(s => ({ ...s, error: err }));

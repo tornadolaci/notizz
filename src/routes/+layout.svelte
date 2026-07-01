@@ -1,13 +1,15 @@
 <script lang="ts">
   import '../app.css';
   import { onMount, onDestroy } from 'svelte';
+  import { router } from 'tinro';
   import UpdatePrompt from '$lib/components/common/UpdatePrompt.svelte';
   import OfflineIndicator from '$lib/components/common/OfflineIndicator.svelte';
   import AuthModal from '$lib/components/auth/AuthModal.svelte';
-  import WelcomeModal from '$lib/components/auth/WelcomeModal.svelte';
+  import AuthGate from '$lib/components/auth/AuthGate.svelte';
+  import LoadingSpinner from '$lib/components/common/LoadingSpinner.svelte';
   import { settingsStore } from '$lib/stores/settings';
   import { themeStore } from '$lib/stores/theme';
-  import { authStore, isInitialized, authUser } from '$lib/stores/auth';
+  import { authStore, isInitialized, authUser, isAuthenticated } from '$lib/stores/auth';
   import { notesStore } from '$lib/stores/notes';
   import { todosStore } from '$lib/stores/todos';
   import {
@@ -23,16 +25,13 @@
 
   // Auth modal state
   let showAuthModal = $state(false);
-
-  // Welcome modal state (first time user)
-  let showWelcomeModal = $state(false);
   let appInitialized = $state(false);
 
   // Sync status for Header icon color
   let syncActive = $state(false);
 
-  // LocalStorage key for tracking if user has made initial choice
-  const WELCOME_COMPLETED_KEY = 'notizz_welcome_completed';
+  // Routes reachable without authentication (email links land here)
+  const isPublicRoute = $derived($router.path === '/reset-password');
 
   // Polling cleanup
   let stopPollingFn: (() => void) | null = null;
@@ -48,19 +47,8 @@
     // Set fixed font size to 18px
     document.documentElement.style.setProperty('--text-base', '18px');
 
-    // Initialize auth state
+    // Initialize auth state (validates the stored token against the backend)
     await authStore.initialize();
-
-    // Check if this is the first time user (after auth is initialized)
-    const welcomeCompleted = localStorage.getItem(WELCOME_COMPLETED_KEY);
-    const isLoggedIn = authStore.isAuthenticated();
-
-    // Show welcome modal only if:
-    // 1. User hasn't completed the welcome flow
-    // 2. User is not already logged in
-    if (!welcomeCompleted && !isLoggedIn) {
-      showWelcomeModal = true;
-    }
 
     // Register sync status callback for Header icon
     registerSyncStatusCallback((active) => {
@@ -70,16 +58,23 @@
     appInitialized = true;
   });
 
+  // The user id sync is currently running for (plain variable on purpose:
+  // it must not be an effect dependency). Makes the effect idempotent -
+  // store re-notifications with the same user must not restart the sync.
+  let syncUserId: string | null = null;
+
   // React to auth state changes
   $effect(() => {
     const user = $authUser;
     const initialized = $isInitialized;
 
-    if (initialized && user) {
+    if (initialized && user && user.id !== syncUserId) {
       // User is logged in - setup sync
+      syncUserId = user.id;
       setupSync(user.id);
-    } else if (initialized && !user) {
+    } else if (initialized && !user && syncUserId) {
       // User is logged out - cleanup
+      syncUserId = null;
       cleanupSync();
     }
   });
@@ -142,26 +137,12 @@
 
   // Handle logout
   async function handleLogout() {
-    // 1. First cleanup sync to stop all polling and realtime subscriptions
+    // 1. First cleanup sync to stop all polling
     cleanupSync();
 
-    // 2. Sign out via the API - revokes the token and clears the auth store
+    // 2. Sign out via the API - revokes the token and clears the auth store;
+    //    the auth gate takes over automatically
     await authStore.signOut();
-
-    // 3. Small delay to ensure auth state is fully updated
-    //    This prevents race conditions where sync callbacks might still fire
-    await new Promise(resolve => setTimeout(resolve, 100));
-
-    // 4. Now that auth is null, load guest data from IndexedDB
-    //    Note: We intentionally do NOT clear local IndexedDB data here.
-    //    This preserves guest notes/todos so they remain accessible after logout.
-    await Promise.all([notesStore.load(), todosStore.load()]);
-
-    // 5. Reset welcome modal state so it shows again on next app start
-    localStorage.removeItem(WELCOME_COMPLETED_KEY);
-
-    // 6. Show welcome modal immediately after logout
-    showWelcomeModal = true;
   }
 
   onDestroy(() => {
@@ -169,42 +150,28 @@
     unregisterSyncStatusCallback();
   });
 
-  // Handle welcome modal choices
-  function handleGuestMode() {
-    // Mark welcome as completed
-    localStorage.setItem(WELCOME_COMPLETED_KEY, 'true');
-    showWelcomeModal = false;
-  }
-
-  function handleWelcomeLogin() {
-    // Mark welcome as completed (will be confirmed after successful login)
-    localStorage.setItem(WELCOME_COMPLETED_KEY, 'true');
-    showWelcomeModal = false;
-    showAuthModal = true;
-  }
-
-  // Expose logout handler globally for settings page
+  // Expose handlers globally for the settings page and Header
   // @ts-expect-error - global window property
   if (typeof window !== 'undefined') {
     // @ts-expect-error - global window property
     window.__notizz_logout = handleLogout;
-    // @ts-expect-error - global window property
-    window.__notizz_showAuth = () => { showAuthModal = true; };
     // @ts-expect-error - global window property
     window.__notizz_getSyncActive = () => syncActive;
   }
 </script>
 
 <div class="app-container page-enter">
-  {@render children()}
+  {#if !appInitialized}
+    <div class="init-loading">
+      <LoadingSpinner />
+    </div>
+  {:else if $isAuthenticated || isPublicRoute}
+    {@render children()}
+  {:else}
+    <!-- Auth gate: the app is login-only -->
+    <AuthGate onLogin={() => { showAuthModal = true; }} />
+  {/if}
 </div>
-
-<!-- Welcome Modal (first time user) -->
-<WelcomeModal
-  bind:isOpen={showWelcomeModal}
-  onGuestMode={handleGuestMode}
-  onLogin={handleWelcomeLogin}
-/>
 
 <!-- Auth Modal -->
 <AuthModal
@@ -225,5 +192,13 @@
     background: var(--bg-secondary);
     overflow-x: hidden;
     overflow-y: visible;
+  }
+
+  .init-loading {
+    min-height: 100vh;
+    min-height: 100dvh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 </style>

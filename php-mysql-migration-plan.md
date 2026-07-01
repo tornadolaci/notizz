@@ -384,13 +384,15 @@ Az origin megváltozik (`tornadolaci.github.io` → `nomadnet.hu`, scope: `/app/
 - [x] Vite dev proxy (`/api` → localhost:8080)
 - [x] **Kapu teljesítve:** böngészős E2E a PHP API-val (login → session persist reload után → jegyzet létrehozás UTF-8 tartalommal → TODO létrehozás + item pipálás DB-ben ellenőrizve → polling aktív); `npm run build` + `type-check` + `lint` (0 error) + `test:unit` (13/13) zöld
 
-### 3. fázis — Vendég mód kivezetése
-- [ ] Auth-gate a layoutban, WelcomeModal átalakítás, logout-flow
-- [ ] Guest ágak törlése a store-okból
-- [ ] Dexie + IndexedDB kód végleges törlése (tiszta indulás — nincs átmentő logika), settings → localStorage-only
-- [ ] Export/import átírás API-alapúra
-- [ ] `@supabase/supabase-js`, `dexie` dependency törlés
-- **Kapu:** grep-tiszta (supabase/dexie nulla találat), type-check zöld, bundle méret csökkent
+### 3. fázis — Vendég mód kivezetése ✅ KÉSZ (2026-07-01)
+- [x] Auth-gate a layoutban: teljes oldalas AuthGate komponens (a WelcomeModal törölve), `/reset-password` publikus útvonal marad
+- [x] Guest ágak törlése a store-okból (notes, todos); settings → localStorage-only
+- [x] Dexie + IndexedDB kód végleges törlése: `src/lib/db/`, `src/lib/supabase/`, `storage.service.ts` törölve
+- [x] Export/import: a jelenlegi UI-ban nem létezett ilyen funkció — nincs teendő (a régi terv-feltételezés téves volt)
+- [x] `@supabase/supabase-js`, `dexie`, `fake-indexeddb` dependency törlés; `.env` supabase kulcsok törölve
+- [x] Új unit tesztek az API kliensre (11 teszt); régi IndexedDB tesztek törölve
+- [x] **Bónusz bugfix:** polling-szivárgás javítva — kijelentkezés után egy in-flight első poll a régi kódban örökre élő intervalt hagyott hátra (generáció-számláló a sync service-ben + idempotens auth-effect a layoutban); böngészőben igazolva, hogy logout után nulla kérés megy a szerverre
+- [x] **Kapu teljesítve:** grep-tiszta (supabase/dexie/guest nulla találat az src-ben), type-check + lint (0 error) + 11/11 unit teszt + build zöld; precache 541 KiB → 382 KiB (−159 KiB); böngészős E2E: gate → login → adatok → logout → gate
 
 ### 4. fázis — Hosting
 - [ ] vite.config: base `/`, workbox API-kizárás

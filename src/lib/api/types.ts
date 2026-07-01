@@ -1,6 +1,6 @@
 /**
  * API Types
- * User and session types for the PHP backend (replaces Supabase User/Session)
+ * User and session types for the PHP backend
  */
 
 export interface IUser {

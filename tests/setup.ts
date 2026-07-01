@@ -1,6 +1,5 @@
 /**
  * Vitest Test Setup
- * Provides fake IndexedDB for Dexie.js testing
  */
 
-import 'fake-indexeddb/auto';
+// No global setup needed - the API client tests mock fetch per-test.

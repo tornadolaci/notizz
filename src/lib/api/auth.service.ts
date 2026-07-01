@@ -1,7 +1,6 @@
 /**
  * Authentication Service
  * Handles all authentication operations with the PHP backend.
- * Keeps the AuthResult shape of the previous Supabase implementation.
  */
 
 import { apiFetch, ApiError, getToken, setToken, clearToken } from './client';

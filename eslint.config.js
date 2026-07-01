@@ -15,6 +15,7 @@ export default [
       '.svelte-kit/',
       'playwright-report/',
       'dev-dist/',
+      '.claude/',
       'tests/**/*.ts',
       'vite.config.ts',
       'vitest.config.ts',

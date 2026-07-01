@@ -120,7 +120,6 @@ export default defineConfig({
       output: {
         manualChunks: {
           'svelte-vendor': ['svelte'],
-          'db-vendor': ['dexie'],
           'date-vendor': ['date-fns']
         }
       }

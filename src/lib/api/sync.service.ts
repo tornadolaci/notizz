@@ -1,11 +1,8 @@
 /**
  * Sync Service
- * Polling-based synchronization for authenticated users.
- *
- * The previous Supabase realtime subscription is gone - the 10s polling
- * (which was already the reliability fallback) is now the sole sync
- * mechanism. Change detection, notifications and sync status tracking
- * are unchanged.
+ * Polling-based synchronization for authenticated users: fetches fresh
+ * data every 10 seconds, detects changes by updatedAt and triggers
+ * notifications and sync status updates.
  */
 
 import { isOnline } from './client';
@@ -142,6 +139,12 @@ let pollingIntervalId: ReturnType<typeof setInterval> | null = null;
 // Track the current user ID to prevent stale callbacks after logout
 let currentSyncUserId: string | null = null;
 
+// Generation counter: every startPolling/stopPolling invalidates older
+// polling sessions. A userId comparison alone is not enough - after a
+// logout + re-login of the SAME user, an in-flight first poll of the old
+// session would pass the userId guard and install a leaked interval.
+let pollingGeneration = 0;
+
 // Store previous state for change detection
 let previousNotes: INote[] = [];
 let previousTodos: ITodo[] = [];
@@ -274,16 +277,26 @@ export function startPolling(
   onNotesChange: (notes: INote[]) => void,
   onTodosChange: (todos: ITodo[]) => void
 ): () => void {
-  // Stop any existing polling
+  // Stop any existing polling (also bumps the generation)
   stopPolling();
 
-  // Track the current user ID for this polling session
+  // Track this polling session
+  const generation = ++pollingGeneration;
   currentSyncUserId = userId;
+  let intervalId: ReturnType<typeof setInterval> | null = null;
+
+  function isStale(): boolean {
+    return generation !== pollingGeneration || currentSyncUserId !== userId;
+  }
 
   async function pollForChanges() {
-    // Check if user is still logged in with the same ID
-    if (currentSyncUserId !== userId) {
-      return; // User logged out or changed, skip polling
+    // A newer session started or the user logged out: self-destruct
+    if (isStale()) {
+      if (intervalId) {
+        clearInterval(intervalId);
+        intervalId = null;
+      }
+      return;
     }
 
     if (!isOnline()) {
@@ -298,9 +311,9 @@ export function startPolling(
         ApiTodosService.getAll(),
       ]);
 
-      // Double-check user ID after async operation
-      if (currentSyncUserId !== userId) {
-        return; // User logged out during fetch, skip update
+      // Double-check after the async operation
+      if (isStale()) {
+        return; // User logged out or session replaced during fetch, skip update
       }
 
       // === Sikeres sync ===
@@ -337,9 +350,10 @@ export function startPolling(
 
   // Run immediate poll for instant feedback, then start interval
   pollForChanges().finally(() => {
-    // Only start interval if polling wasn't stopped during the first poll
-    if (currentSyncUserId === userId) {
-      pollingIntervalId = setInterval(pollForChanges, POLLING_INTERVAL_MS);
+    // Only start the interval if this session is still the active one
+    if (!isStale()) {
+      intervalId = setInterval(pollForChanges, POLLING_INTERVAL_MS);
+      pollingIntervalId = intervalId;
     }
   });
 
@@ -351,6 +365,9 @@ export function startPolling(
  * Stop polling for changes
  */
 export function stopPolling(): void {
+  // Invalidate any in-flight polling session
+  pollingGeneration++;
+
   // Reset sync status immediately
   updateSyncStatus(false);
 
