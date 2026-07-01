@@ -11,15 +11,13 @@
   import { notesStore } from '$lib/stores/notes';
   import { todosStore } from '$lib/stores/todos';
   import {
-    subscribeToChanges,
-    unsubscribeFromChanges,
     startPolling,
     stopPolling,
     isOnline,
     initializePreviousState,
     registerSyncStatusCallback,
     unregisterSyncStatusCallback,
-  } from '$lib/supabase';
+  } from '$lib/api';
 
   let { children } = $props();
 
@@ -35,9 +33,6 @@
 
   // LocalStorage key for tracking if user has made initial choice
   const WELCOME_COMPLETED_KEY = 'notizz_welcome_completed';
-
-  // Real-time subscription cleanup
-  let unsubscribeRealtime: (() => void) | null = null;
 
   // Polling cleanup
   let stopPollingFn: (() => void) | null = null;
@@ -91,7 +86,7 @@
 
   async function setupSync(userId: string) {
     try {
-      // Load data from Supabase (stores handle this directly now)
+      // Load data from the API (stores handle this directly)
       await Promise.all([notesStore.load(), todosStore.load()]);
 
       // Initialize previous state with loaded data BEFORE starting sync
@@ -100,18 +95,7 @@
       const currentTodos = todosStore.getTodos();
       initializePreviousState(currentNotes, currentTodos);
 
-      // Subscribe to real-time changes
-      unsubscribeRealtime = subscribeToChanges(
-        userId,
-        (notes) => {
-          notesStore.setNotes(notes);
-        },
-        (todos) => {
-          todosStore.setTodos(todos);
-        }
-      );
-
-      // Start polling as a fallback for realtime (every 30 seconds)
+      // Start polling (every 10 seconds) - the sole sync mechanism
       stopPollingFn = startPolling(
         userId,
         (notes) => {
@@ -136,13 +120,6 @@
   }
 
   function cleanupSync() {
-    // Unsubscribe from real-time changes
-    if (unsubscribeRealtime) {
-      unsubscribeRealtime();
-      unsubscribeRealtime = null;
-    }
-    unsubscribeFromChanges();
-
     // Stop polling
     if (stopPollingFn) {
       stopPollingFn();
@@ -168,8 +145,7 @@
     // 1. First cleanup sync to stop all polling and realtime subscriptions
     cleanupSync();
 
-    // 2. Sign out from Supabase - this will trigger onAuthStateChange
-    //    which updates authStore to user: null
+    // 2. Sign out via the API - revokes the token and clears the auth store
     await authStore.signOut();
 
     // 3. Small delay to ensure auth state is fully updated

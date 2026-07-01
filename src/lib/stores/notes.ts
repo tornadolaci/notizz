@@ -1,7 +1,7 @@
 import { writable, derived, get } from 'svelte/store';
 import type { INote } from '$lib/types';
 import { NotesService } from '$lib/services';
-import { SupabaseNotesService, isOnline, registerLocalModification } from '$lib/supabase';
+import { ApiNotesService, isOnline, registerLocalModification } from '$lib/api';
 import { getCurrentUserId } from './auth';
 
 interface NotesState {
@@ -50,8 +50,8 @@ export const notesStore = {
       let value: INote[];
 
       if (userId && isOnline()) {
-        // Authenticated + online: Load from Supabase
-        value = await SupabaseNotesService.getAll(userId);
+        // Authenticated + online: Load from the API
+        value = await ApiNotesService.getAll();
       } else if (userId && !isOnline()) {
         // Authenticated + offline: Empty state (no offline support for auth users)
         value = [];
@@ -121,12 +121,12 @@ export const notesStore = {
       };
 
       if (userId && isOnline()) {
-        // Register as local modification BEFORE Supabase call to prevent self-notification
-        // (realtime subscription might fire before we get the response)
+        // Register as local modification BEFORE the API call to prevent self-notification
+        // (polling might fire before we get the response)
         registerLocalModification('note', noteWithOrder.id!, noteWithOrder.updatedAt);
 
-        // Authenticated: Save to Supabase only
-        const savedNote = await SupabaseNotesService.create(noteWithOrder, userId);
+        // Authenticated: Save via the API
+        const savedNote = await ApiNotesService.create(noteWithOrder);
 
         // Update store with the saved note
         notesStateWritable.update(s => {
@@ -184,14 +184,14 @@ export const notesStore = {
         // Calculate updatedAt for registration
         const newUpdatedAt = isOnlyOrderChange ? undefined : new Date();
 
-        // Register as local modification BEFORE Supabase call to prevent self-notification
-        // (realtime subscription might fire before we get the response)
+        // Register as local modification BEFORE the API call to prevent self-notification
+        // (polling might fire before we get the response)
         if (!isOnlyOrderChange) {
           registerLocalModification('note', id, newUpdatedAt!);
         }
 
-        // Authenticated: Update in Supabase only
-        await SupabaseNotesService.update(id, updates, userId);
+        // Authenticated: Update via the API
+        await ApiNotesService.update(id, updates);
 
         // Optimistic update in store
         notesStateWritable.update(s => ({
@@ -238,8 +238,8 @@ export const notesStore = {
 
     try {
       if (userId && isOnline()) {
-        // Authenticated: Delete from Supabase only
-        await SupabaseNotesService.delete(id, userId);
+        // Authenticated: Delete via the API
+        await ApiNotesService.delete(id);
 
         // Optimistic update
         notesStateWritable.update(s => ({

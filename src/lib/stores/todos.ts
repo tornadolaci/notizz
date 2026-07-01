@@ -1,7 +1,7 @@
 import { writable, derived, get } from 'svelte/store';
 import type { ITodo } from '$lib/types';
 import { TodosService } from '$lib/services';
-import { SupabaseTodosService, isOnline, registerLocalModification } from '$lib/supabase';
+import { ApiTodosService, isOnline, registerLocalModification } from '$lib/api';
 import { getCurrentUserId } from './auth';
 
 interface TodosState {
@@ -56,8 +56,8 @@ export const todosStore = {
       let value: ITodo[];
 
       if (userId && isOnline()) {
-        // Authenticated + online: Load from Supabase
-        value = await SupabaseTodosService.getAll(userId);
+        // Authenticated + online: Load from the API
+        value = await ApiTodosService.getAll();
       } else if (userId && !isOnline()) {
         // Authenticated + offline: Empty state (no offline support for auth users)
         value = [];
@@ -127,12 +127,12 @@ export const todosStore = {
       };
 
       if (userId && isOnline()) {
-        // Register as local modification BEFORE Supabase call to prevent self-notification
-        // (realtime subscription might fire before we get the response)
+        // Register as local modification BEFORE the API call to prevent self-notification
+        // (polling might fire before we get the response)
         registerLocalModification('todo', todoWithOrder.id!, todoWithOrder.updatedAt);
 
-        // Authenticated: Save to Supabase only
-        const savedTodo = await SupabaseTodosService.create(todoWithOrder, userId);
+        // Authenticated: Save via the API
+        const savedTodo = await ApiTodosService.create(todoWithOrder);
 
         // Update store with the saved todo
         todosStateWritable.update(s => {
@@ -190,14 +190,14 @@ export const todosStore = {
         // Calculate updatedAt for registration
         const newUpdatedAt = isOnlyOrderChange ? undefined : new Date();
 
-        // Register as local modification BEFORE Supabase call to prevent self-notification
-        // (realtime subscription might fire before we get the response)
+        // Register as local modification BEFORE the API call to prevent self-notification
+        // (polling might fire before we get the response)
         if (!isOnlyOrderChange) {
           registerLocalModification('todo', id, newUpdatedAt!);
         }
 
-        // Authenticated: Update in Supabase only
-        await SupabaseTodosService.update(id, updates, userId);
+        // Authenticated: Update via the API
+        await ApiTodosService.update(id, updates);
 
         // Optimistic update in store
         todosStateWritable.update(s => ({
@@ -244,8 +244,8 @@ export const todosStore = {
 
     try {
       if (userId && isOnline()) {
-        // Authenticated: Delete from Supabase only
-        await SupabaseTodosService.delete(id, userId);
+        // Authenticated: Delete via the API
+        await ApiTodosService.delete(id);
 
         // Optimistic update
         todosStateWritable.update(s => ({
@@ -301,15 +301,17 @@ export const todosStore = {
       };
 
       if (userId && isOnline()) {
-        // Register as local modification BEFORE Supabase call to prevent self-notification
-        // (realtime subscription might fire before we get the response)
+        // Register as local modification BEFORE the API call to prevent self-notification
+        // (polling might fire before we get the response)
         registerLocalModification('todo', todoId, updates.updatedAt);
 
-        // Authenticated: Update in Supabase only
-        await SupabaseTodosService.update(todoId, {
+        // Authenticated: Update via the API
+        // updatedAt is sent too, so other devices' change detection picks up the toggle
+        await ApiTodosService.update(todoId, {
           items: updatedItems,
           completedCount,
-        }, userId);
+          updatedAt: updates.updatedAt,
+        });
 
         // Optimistic update in store
         todosStateWritable.update(s => ({

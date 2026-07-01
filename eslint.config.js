@@ -27,6 +27,8 @@ export default [
       ecmaVersion: 'latest',
       sourceType: 'module',
       globals: {
+        // Build-time constants (vite define)
+        __APP_VERSION__: 'readonly',
         // Node.js globals
         console: 'readonly',
         process: 'readonly',

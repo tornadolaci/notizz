@@ -1,16 +1,15 @@
 <script lang="ts">
   /**
    * Reset Password Page
-   * Handles password reset after clicking email link from Supabase
+   * Handles password reset after clicking the email link.
    *
-   * SECURITY: This page should ONLY be accessible via the recovery flow.
-   * We use a sessionStorage flag to verify the user came from a valid recovery link.
+   * The email contains #/reset-password?token=<one-time-token>; the token
+   * itself proves the recovery flow - it is validated server-side on submit.
    */
 
   import { onMount } from 'svelte';
   import { router } from 'tinro';
-  import { supabase } from '$lib/supabase/client';
-  import { updatePassword } from '$lib/supabase/auth.service';
+  import { confirmPasswordReset } from '$lib/api';
 
   // Form state
   let password = $state('');
@@ -22,60 +21,24 @@
   let showConfirmPassword = $state(false);
   let sessionReady = $state(false);
   let sessionError = $state('');
-  let isValidRecoveryFlow = $state(false);
 
-  onMount(async () => {
-    // SECURITY CHECK: Verify this is a legitimate recovery flow
-    // The flag is set by index.html when redirecting from /reset-password with a valid code
-    const recoveryFlag = sessionStorage.getItem('notizz_recovery_redirect');
-    const isFromRecovery = recoveryFlag === 'true';
+  // One-time token from the reset link
+  let resetToken = $state('');
 
-    console.log('[ResetPassword] Recovery flag:', recoveryFlag, 'isFromRecovery:', isFromRecovery);
+  onMount(() => {
+    // Parse the token from the hash query: #/reset-password?token=...
+    const hash = window.location.hash;
+    const queryIndex = hash.indexOf('?');
+    const params = new URLSearchParams(queryIndex >= 0 ? hash.slice(queryIndex + 1) : '');
+    const token = params.get('token') ?? '';
 
-    // Clear the flag immediately to prevent reuse
-    sessionStorage.removeItem('notizz_recovery_redirect');
-
-    if (!isFromRecovery) {
-      // User did not come from a valid recovery link
-      console.log('[ResetPassword] Invalid access - not from recovery flow');
+    if (!/^[0-9a-f]{64}$/i.test(token)) {
       sessionError = 'Ez az oldal csak jelszó-visszaállító linkkel érhető el. Kérj új linket az email címedre.';
       return;
     }
 
-    // Mark as valid recovery flow
-    isValidRecoveryFlow = true;
-
-    // Listen for auth state changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('[ResetPassword] Auth event:', event, session?.user?.email);
-
-      if (event === 'PASSWORD_RECOVERY') {
-        // Explicit recovery event from Supabase
-        sessionReady = true;
-      } else if (event === 'SIGNED_IN' && session && isValidRecoveryFlow) {
-        // User signed in via recovery code exchange
-        sessionReady = true;
-      }
-    });
-
-    // Check current session (for PKCE flow where code was already exchanged)
-    const { data: { session } } = await supabase.auth.getSession();
-    console.log('[ResetPassword] Current session:', session?.user?.email);
-
-    if (session && isValidRecoveryFlow) {
-      sessionReady = true;
-    }
-
-    // Set a timeout to show error if session doesn't load
-    setTimeout(() => {
-      if (!sessionReady && !success && isValidRecoveryFlow) {
-        sessionError = 'A jelszó-visszaállító link érvénytelen vagy lejárt. Kérj új linket.';
-      }
-    }, 5000);
-
-    return () => {
-      subscription.unsubscribe();
-    };
+    resetToken = token;
+    sessionReady = true;
   });
 
   function validateForm(): boolean {
@@ -103,7 +66,7 @@
     error = '';
 
     try {
-      const result = await updatePassword(password);
+      const result = await confirmPasswordReset(resetToken, password);
 
       if (result.success) {
         success = true;

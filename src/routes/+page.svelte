@@ -12,7 +12,7 @@
   import { notesStore } from '$lib/stores/notes';
   import { todosStore } from '$lib/stores/todos';
   import type { INote, ITodo } from '$lib/types';
-  import { registerToastCallback, unregisterToastCallback } from '$lib/supabase/sync.service';
+  import { registerToastCallback, unregisterToastCallback } from '$lib/api';
   import NotificationService from '$lib/services/notification.service';
 
   // Editor state

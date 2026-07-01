@@ -1,28 +1,28 @@
 /**
  * Authentication Store
- * Manages auth state using Svelte 5 runes pattern with writable store
+ * Manages auth state using Svelte 5 runes pattern with writable store.
+ * Backed by the PHP API (token-based auth, see $lib/api).
  */
 
 import { writable, derived, get } from 'svelte/store';
-import type { User, Session } from '@supabase/supabase-js';
 import {
   signUpWithEmail,
   signInWithEmail,
-  signInWithGoogle,
   signOut as authSignOut,
   getSession,
-  getUser,
   resetPassword,
-  onAuthStateChange,
+  registerUnauthorizedHandler,
   type AuthResult,
-} from '../supabase';
+  type IUser,
+  type ISession,
+} from '../api';
 
 /**
  * Auth state interface
  */
 interface AuthState {
-  user: User | null;
-  session: Session | null;
+  user: IUser | null;
+  session: ISession | null;
   loading: boolean;
   initialized: boolean;
 }
@@ -66,32 +66,31 @@ export const authStore = {
   subscribe: authStateWritable.subscribe,
 
   /**
-   * Initialize auth state - call on app startup
+   * Initialize auth state - call on app startup.
+   * Validates the stored token against the backend.
    */
   async initialize(): Promise<void> {
     try {
-      // Get existing session from storage
+      // When an authenticated request hits a 401 (token revoked elsewhere),
+      // drop the local session so the UI falls back to the login state
+      registerUnauthorizedHandler(() => {
+        authStateWritable.update((state) => ({
+          ...state,
+          user: null,
+          session: null,
+          loading: false,
+        }));
+      });
+
       const session = await getSession();
-      const user = session ? await getUser() : null;
 
       authStateWritable.update((state) => ({
         ...state,
-        user,
+        user: session?.user ?? null,
         session,
         loading: false,
         initialized: true,
       }));
-
-      // Listen to auth state changes
-      onAuthStateChange((event, session) => {
-        console.log('Auth event:', event);
-        authStateWritable.update((state) => ({
-          ...state,
-          user: session?.user ?? null,
-          session,
-          loading: false,
-        }));
-      });
     } catch (error) {
       console.error('Auth initialization error:', error);
       authStateWritable.update((state) => ({
@@ -110,22 +109,12 @@ export const authStore = {
 
     const result = await signUpWithEmail(email, password);
 
-    // Only set user/session if email confirmation is NOT required
-    // If needsEmailConfirmation is true, user must verify email first
-    if (result.needsEmailConfirmation) {
-      // Don't log in the user - they need to confirm their email first
-      authStateWritable.update((state) => ({
-        ...state,
-        loading: false,
-      }));
-    } else {
-      authStateWritable.update((state) => ({
-        ...state,
-        user: result.user ?? null,
-        session: result.session ?? null,
-        loading: false,
-      }));
-    }
+    // Registration always requires email confirmation - the user must verify
+    // their email before logging in, so no session is created here
+    authStateWritable.update((state) => ({
+      ...state,
+      loading: false,
+    }));
 
     return result;
   },
@@ -149,23 +138,6 @@ export const authStore = {
   },
 
   /**
-   * Sign in with Google
-   */
-  async signInWithGoogle(): Promise<AuthResult> {
-    authStateWritable.update((state) => ({ ...state, loading: true }));
-
-    const result = await signInWithGoogle();
-
-    // Note: Google OAuth will redirect, so loading state will persist
-    // until the redirect completes and the page reloads
-    if (!result.success) {
-      authStateWritable.update((state) => ({ ...state, loading: false }));
-    }
-
-    return result;
-  },
-
-  /**
    * Sign out
    */
   async signOut(): Promise<AuthResult> {
@@ -173,16 +145,12 @@ export const authStore = {
 
     const result = await authSignOut();
 
-    if (result.success) {
-      authStateWritable.update((state) => ({
-        ...state,
-        user: null,
-        session: null,
-        loading: false,
-      }));
-    } else {
-      authStateWritable.update((state) => ({ ...state, loading: false }));
-    }
+    authStateWritable.update((state) => ({
+      ...state,
+      user: null,
+      session: null,
+      loading: false,
+    }));
 
     return result;
   },
@@ -197,14 +165,14 @@ export const authStore = {
   /**
    * Get current user
    */
-  getUser(): User | null {
+  getUser(): IUser | null {
     return get(authStateWritable).user;
   },
 
   /**
    * Get current session
    */
-  getSession(): Session | null {
+  getSession(): ISession | null {
     return get(authStateWritable).session;
   },
 

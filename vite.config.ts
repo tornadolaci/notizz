@@ -103,6 +103,12 @@ export default defineConfig({
       $lib: '/src/lib'
     }
   },
+  server: {
+    proxy: {
+      // Local PHP backend: php -S localhost:8080 server/dev-router.php
+      '/api': 'http://localhost:8080'
+    }
+  },
   define: {
     __APP_VERSION__: JSON.stringify(pkg.version)
   },
