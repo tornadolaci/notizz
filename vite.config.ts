@@ -47,8 +47,9 @@ export default defineConfig({
         categories: ['productivity', 'utilities'],
         share_target: {
           action: '/share-target',
-          method: 'POST',
-          enctype: 'multipart/form-data',
+          // GET puts the shared fields in the query string, which the SPA can
+          // read directly - POST would need a service worker fetch handler
+          method: 'GET',
           params: {
             title: 'title',
             text: 'text',
