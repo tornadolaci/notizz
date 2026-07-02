@@ -405,17 +405,17 @@ Az origin megváltozik (`tornadolaci.github.io` → `nomadnet.hu`, scope: `/app/
 - [x] **Lokális kapu teljesítve:** production build (`vite preview`) a `/app/notizz/` alatt böngészőben ellenőrizve — SW a helyes scope-pal regisztrál, manifest OK, login + adatok + polling megy, share-target end-to-end működik
 - [x] **Feltöltés a tárhelyre** (2026-07-02): FTP secrets beállítva, FTPS deploy fut (timeout 120s-re emelve); MySQL DB + user létrehozva, séma lefuttatva, config.php a docroot-on kívül; PHP 8.5 (ea-php85) beállítva a MultiPHP Managerben (a 8.0 alapértelmezés fordítási hibát okozott). Éles ellenőrzés: health `db: ok`, PHP 8.5.6, auth+védett végpontok+src-tiltás+cache-fejlécek+HTTPS-redirect mind rendben
 
-### 5. fázis — Átállás
-- [ ] E2E tesztek frissítése és futtatása az új stack ellen
-- [ ] Teljes éles próba: regisztráció → email-megerősítés → belépés → CRUD → jelszó-reset (éles freemail SMTP-vel)
-- [ ] PWA telepítés-teszt Androidon és iOS-en az új domainről (+ share-target, offline app-shell, update flow)
-- [ ] GitHub Pages: átirányító oldal deploy („az app új címre költözött")
-- [ ] Supabase projekt leállítása
+### 5. fázis — Átállás (2026-07-02)
+- [x] E2E tesztek frissítése az új stackre: setup-projekt API-s bejelentkezéssel (storageState), API-alapú adat-reset, dedikált 5199-es port, elavult lokátorok javítva; a settings spec újraírva a valós UI-ra (a régi export/import tesztek nem létező funkciót céloztak); vendég-tesztek helyett auth-gate tesztek
+- [x] Teljes éles próba: regisztráció → email-megerősítés (SMTP működik!) → belépés → CRUD — élesben ellenőrizve; menet közben javítva: a tárhely Apache-a az Authorization fejlécet eldobja → X-Auth-Token fallback; PHP 8.0 → 8.5 váltás a MultiPHP Managerben
+- [ ] PWA telepítés-teszt Androidon és iOS-en az új domainről (+ share-target, offline app-shell, update flow) — felhasználói teszt hátravan
+- [x] GitHub Pages: átirányító oldal élesben (pages-redirect/ + workflow); önmegsemmisítő sw.js takarítja a régi telepített PWA-kat; mélylinkek is átirányítanak
+- [ ] Supabase projekt leállítása — felhasználói lépés a Supabase dashboardon (már semmi nem használja)
 
 ### 6. fázis — Utómunka
-- [ ] CLAUDE.md + README frissítés (új architektúra, dev környezet, deploy)
-- [ ] `.github/workflows/deploy.yml` régi Pages-workflow törlés
-- [ ] (Opcionális) `/api/changes` könnyű polling-végpont
+- [x] CLAUDE.md + README frissítés (új architektúra, dev környezet, deploy) — 2026-07-02
+- [x] Régi Pages-workflow lecserélve (FTPS deploy + külön redirect-workflow); akció-verziók Node 24-re emelve, warning-mentes futás
+- [ ] (Opcionális) `/api/changes` könnyű polling-végpont — később, ha a tárhely-terhelés indokolja
 
 ---
 

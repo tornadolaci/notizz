@@ -1,21 +1,11 @@
 import { test, expect } from '@playwright/test';
+import { resetData } from './helpers';
 
 test.describe('TODO Management', () => {
-  test.beforeEach(async ({ page }) => {
-    await page.goto('/');
-    await page.waitForLoadState('networkidle');
-
-    // Clear IndexedDB before each test
-    await page.evaluate(() => {
-      return new Promise<void>((resolve) => {
-        const request = indexedDB.deleteDatabase('notizz-db');
-        request.onsuccess = () => resolve();
-        request.onerror = () => resolve();
-      });
-    });
-
-    // Reload page to initialize fresh DB
-    await page.reload();
+  test.beforeEach(async ({ page, request }) => {
+    // Fresh state: wipe the test account's data through the API
+    await resetData(request);
+    await page.goto('./');
     await page.waitForLoadState('networkidle');
   });
 
@@ -27,7 +17,7 @@ test.describe('TODO Management', () => {
     await expect(page.getByRole('dialog')).toBeVisible();
 
     // Select "Teendő" option
-    await page.getByRole('button', { name: /teendő/i }).click();
+    await page.getByRole('button', { name: 'Teendő', exact: true }).click();
 
     // Wait for todo editor to be visible
     await expect(page.locator('#todo-title')).toBeVisible();
@@ -43,7 +33,7 @@ test.describe('TODO Management', () => {
     }
 
     // Select a color using aria-label
-    await page.getByRole('radio', { name: /égszínkék/i }).click();
+    await page.getByRole('radio', { name: /égkék/i }).click();
 
     // Save TODO (new todo uses "Létrehozás" button)
     await page.getByRole('button', { name: 'Létrehozás', exact: true }).click();
@@ -51,17 +41,19 @@ test.describe('TODO Management', () => {
     // Verify modal closed
     await expect(page.getByRole('dialog')).not.toBeVisible();
 
-    // Verify TODO appears in the list
-    await expect(page.getByText('Bevásárlólista')).toBeVisible();
-    await expect(page.getByText('Kenyér')).toBeVisible();
-    await expect(page.getByText('Tej')).toBeVisible();
-    await expect(page.getByText('Tojás')).toBeVisible();
+    // Verify TODO appears in the list (scoped to the card - the closed
+    // editor dialog may still hold the same item texts in the DOM)
+    const card = page.locator('.card').filter({ hasText: 'Bevásárlólista' });
+    await expect(card).toBeVisible();
+    await expect(card.getByText('Kenyér')).toBeVisible();
+    await expect(card.getByText('Tej')).toBeVisible();
+    await expect(card.getByText('Tojás')).toBeVisible();
   });
 
   test('should check/uncheck TODO items', async ({ page }) => {
     // Create a TODO list first
     await page.getByLabel('Új elem létrehozása').click();
-    await page.getByRole('button', { name: /teendő/i }).click();
+    await page.getByRole('button', { name: 'Teendő', exact: true }).click();
     await expect(page.locator('#todo-title')).toBeVisible();
     await page.locator('#todo-title').fill('Feladatok');
     await page.getByPlaceholder(/új teendő hozzáadása/i).fill('Első feladat');
@@ -70,29 +62,34 @@ test.describe('TODO Management', () => {
     await page.keyboard.press('Enter');
     await page.getByRole('button', { name: 'Létrehozás', exact: true }).click();
 
-    // Wait for TODO to appear
+    // Wait for the create dialog to close and the card to appear
+    await expect(page.getByRole('dialog')).not.toBeVisible();
     await expect(page.getByText('Feladatok')).toBeVisible();
 
-    // Find and check the first checkbox
-    const firstCheckbox = page.locator('[type="checkbox"]').first();
-    await firstCheckbox.check();
+    // Items are toggled in the editor - open the card
+    await page.getByText('Feladatok').click();
+    // Edit mode has no #todo-title input - wait for the item checkboxes
+    await expect(page.getByRole('checkbox').first()).toBeVisible();
 
-    // Verify checkbox is checked
-    await expect(firstCheckbox).toBeChecked();
+    // Check the first item (custom checkbox with role="checkbox")
+    const firstCheckbox = page.getByRole('checkbox').first();
+    await firstCheckbox.click();
+    await expect(firstCheckbox).toHaveAttribute('aria-checked', 'true');
 
     // Verify progress indicator updated (should show 1/2)
     await expect(page.getByText(/1.*\/.*2/)).toBeVisible();
 
-    // Check second checkbox
-    const secondCheckbox = page.locator('[type="checkbox"]').nth(1);
-    await secondCheckbox.check();
+    // Check second item
+    const secondCheckbox = page.getByRole('checkbox').nth(1);
+    await secondCheckbox.click();
 
     // Verify both are checked and progress shows 2/2
-    await expect(secondCheckbox).toBeChecked();
+    await expect(secondCheckbox).toHaveAttribute('aria-checked', 'true');
     await expect(page.getByText(/2.*\/.*2/)).toBeVisible();
 
-    // Uncheck first checkbox
-    await firstCheckbox.uncheck();
+    // Uncheck first item
+    await firstCheckbox.click();
+    await expect(firstCheckbox).toHaveAttribute('aria-checked', 'false');
 
     // Verify progress updated to 1/2
     await expect(page.getByText(/1.*\/.*2/)).toBeVisible();
@@ -101,7 +98,7 @@ test.describe('TODO Management', () => {
   test('should delete a TODO item in editor', async ({ page }) => {
     // Create a TODO with items
     await page.getByLabel('Új elem létrehozása').click();
-    await page.getByRole('button', { name: /teendő/i }).click();
+    await page.getByRole('button', { name: 'Teendő', exact: true }).click();
     await expect(page.locator('#todo-title')).toBeVisible();
     await page.locator('#todo-title').fill('TODO teszt');
     await page.getByPlaceholder(/új teendő hozzáadása/i).fill('Törlendő elem');
@@ -110,40 +107,50 @@ test.describe('TODO Management', () => {
     await page.keyboard.press('Enter');
     await page.getByRole('button', { name: 'Létrehozás', exact: true }).click();
 
-    // Wait for TODO to appear
+    // Wait for the create dialog to close and the card to appear
+    await expect(page.getByRole('dialog')).not.toBeVisible();
     await expect(page.getByText('TODO teszt')).toBeVisible();
 
     // Click on TODO to edit
     await page.getByText('TODO teszt').click();
 
-    // Wait for editor
-    await expect(page.locator('#todo-title')).toBeVisible();
+    // Wait for editor (edit mode has no #todo-title input)
+    await expect(page.getByRole('checkbox').first()).toBeVisible();
 
-    // Both items should be visible
-    await expect(page.getByText('Törlendő elem')).toBeVisible();
-    await expect(page.getByText('Maradó elem')).toBeVisible();
+    // Both items should be visible in the editor (scoped: the card behind
+    // the dialog holds the same texts)
+    const editor = page.getByRole('dialog');
+    await expect(editor.getByText('Törlendő elem')).toBeVisible();
+    await expect(editor.getByText('Maradó elem')).toBeVisible();
 
     // Find and click delete button for first item (in items-list)
     const deleteButtons = page.locator('.items-list button[aria-label*="törlés"]');
     await deleteButtons.first().click();
 
     // Verify item is removed
-    await expect(page.getByText('Törlendő elem')).not.toBeVisible();
-    await expect(page.getByText('Maradó elem')).toBeVisible();
+    await expect(editor.getByText('Törlendő elem')).not.toBeVisible();
+    await expect(editor.getByText('Maradó elem')).toBeVisible();
 
-    // Save changes
-    await page.getByRole('button', { name: /mentés/i }).click();
+    // Edit mode saves immediately - close the editor
+    await page.getByRole('button', { name: 'Bezárás' }).click();
+    await expect(page.getByRole('dialog')).not.toBeVisible();
 
-    // Click on TODO again to verify changes persisted
+    // The card reflects the change
+    const card = page.locator('.card').filter({ hasText: 'TODO teszt' });
+    await expect(card.getByText('Törlendő elem')).not.toBeVisible();
+    await expect(card.getByText('Maradó elem')).toBeVisible();
+
+    // Reopen the editor to verify changes persisted
     await page.getByText('TODO teszt').click();
-    await expect(page.getByText('Törlendő elem')).not.toBeVisible();
-    await expect(page.getByText('Maradó elem')).toBeVisible();
+    await expect(page.getByRole('checkbox').first()).toBeVisible();
+    await expect(page.getByRole('dialog').getByText('Törlendő elem')).not.toBeVisible();
+    await expect(page.getByRole('dialog').getByText('Maradó elem')).toBeVisible();
   });
 
   test('should delete entire TODO list', async ({ page }) => {
     // Create a TODO list
     await page.getByLabel('Új elem létrehozása').click();
-    await page.getByRole('button', { name: /teendő/i }).click();
+    await page.getByRole('button', { name: 'Teendő', exact: true }).click();
     await expect(page.locator('#todo-title')).toBeVisible();
     await page.locator('#todo-title').fill('Törlendő TODO');
     await page.getByPlaceholder(/új teendő hozzáadása/i).fill('Valami feladat');
@@ -169,7 +176,7 @@ test.describe('TODO Management', () => {
   test('should show progress indicator', async ({ page }) => {
     // Create a TODO with 3 items
     await page.getByLabel('Új elem létrehozása').click();
-    await page.getByRole('button', { name: /teendő/i }).click();
+    await page.getByRole('button', { name: 'Teendő', exact: true }).click();
     await expect(page.locator('#todo-title')).toBeVisible();
     await page.locator('#todo-title').fill('Haladás teszt');
 
@@ -181,18 +188,24 @@ test.describe('TODO Management', () => {
 
     await page.getByRole('button', { name: 'Létrehozás', exact: true }).click();
 
-    // Wait for TODO to appear
+    // Wait for the create dialog to close and the card to appear
+    await expect(page.getByRole('dialog')).not.toBeVisible();
     await expect(page.getByText('Haladás teszt')).toBeVisible();
 
     // Verify initial progress is 0/3
     await expect(page.getByText(/0.*\/.*3/)).toBeVisible();
 
-    // Check all checkboxes
-    const checkboxes = page.locator('[type="checkbox"]');
+    // Items are toggled in the editor - open the card
+    await page.getByText('Haladás teszt').click();
+    // Edit mode has no #todo-title input - wait for the item checkboxes
+    await expect(page.getByRole('checkbox').first()).toBeVisible();
+
+    const checkboxes = page.getByRole('checkbox');
     const count = await checkboxes.count();
+    expect(count).toBe(3);
 
     for (let i = 0; i < count; i++) {
-      await checkboxes.nth(i).check();
+      await checkboxes.nth(i).click();
       // Verify progress updates (1/3, 2/3, 3/3)
       await expect(page.getByText(new RegExp(`${i + 1}.*\\/.*${count}`))).toBeVisible();
     }
@@ -201,14 +214,14 @@ test.describe('TODO Management', () => {
   test('should select different colors for TODOs', async ({ page }) => {
     // Create a TODO with a specific color
     await page.getByLabel('Új elem létrehozása').click();
-    await page.getByRole('button', { name: /teendő/i }).click();
+    await page.getByRole('button', { name: 'Teendő', exact: true }).click();
     await expect(page.locator('#todo-title')).toBeVisible();
     await page.locator('#todo-title').fill('Színes TODO');
     await page.getByPlaceholder(/új teendő hozzáadása/i).fill('Színes feladat');
     await page.keyboard.press('Enter');
 
     // Select sky color using aria-label
-    await page.getByRole('radio', { name: /égszínkék/i }).click();
+    await page.getByRole('radio', { name: /égkék/i }).click();
 
     // Save TODO
     await page.getByRole('button', { name: 'Létrehozás', exact: true }).click();
@@ -220,7 +233,7 @@ test.describe('TODO Management', () => {
   test('should display both notes and todos in the list', async ({ page }) => {
     // Create a note
     await page.getByLabel('Új elem létrehozása').click();
-    await page.getByRole('button', { name: /jegyzet/i }).click();
+    await page.getByRole('button', { name: 'Jegyzet', exact: true }).click();
     await expect(page.locator('#note-title')).toBeVisible();
     await page.locator('#note-title').fill('Teszt jegyzet');
     await page.locator('#note-content').fill('Jegyzet tartalom');
@@ -231,7 +244,7 @@ test.describe('TODO Management', () => {
 
     // Create a TODO
     await page.getByLabel('Új elem létrehozása').click();
-    await page.getByRole('button', { name: /teendő/i }).click();
+    await page.getByRole('button', { name: 'Teendő', exact: true }).click();
     await expect(page.locator('#todo-title')).toBeVisible();
     await page.locator('#todo-title').fill('Teszt TODO');
     await page.getByPlaceholder(/új teendő hozzáadása/i).fill('TODO elem');
@@ -253,7 +266,7 @@ test.describe('TODO Management', () => {
 
     for (const todo of todos) {
       await page.getByLabel('Új elem létrehozása').click();
-      await page.getByRole('button', { name: /teendő/i }).click();
+      await page.getByRole('button', { name: 'Teendő', exact: true }).click();
       await expect(page.locator('#todo-title')).toBeVisible();
       await page.locator('#todo-title').fill(todo.title);
 
@@ -275,7 +288,7 @@ test.describe('TODO Management', () => {
   test('should persist checkbox state after page reload', async ({ page }) => {
     // Create a TODO
     await page.getByLabel('Új elem létrehozása').click();
-    await page.getByRole('button', { name: /teendő/i }).click();
+    await page.getByRole('button', { name: 'Teendő', exact: true }).click();
     await expect(page.locator('#todo-title')).toBeVisible();
     await page.locator('#todo-title').fill('Perzisztencia teszt');
     await page.getByPlaceholder(/új teendő hozzáadása/i).fill('Első elem');
@@ -284,23 +297,29 @@ test.describe('TODO Management', () => {
     await page.keyboard.press('Enter');
     await page.getByRole('button', { name: 'Létrehozás', exact: true }).click();
 
-    // Wait for TODO to appear
+    // Wait for the create dialog to close and the card to appear
+    await expect(page.getByRole('dialog')).not.toBeVisible();
     await expect(page.getByText('Perzisztencia teszt')).toBeVisible();
 
-    // Check first checkbox
-    const firstCheckbox = page.locator('[type="checkbox"]').first();
-    await firstCheckbox.check();
-    await expect(firstCheckbox).toBeChecked();
+    // Toggle the first item in the editor (saves through the API immediately)
+    await page.getByText('Perzisztencia teszt').click();
+    // Edit mode has no #todo-title input - wait for the item checkboxes
+    await expect(page.getByRole('checkbox').first()).toBeVisible();
+    const firstCheckbox = page.getByRole('checkbox').first();
+    await firstCheckbox.click();
+    await expect(firstCheckbox).toHaveAttribute('aria-checked', 'true');
 
     // Reload page
     await page.reload();
     await page.waitForLoadState('networkidle');
 
-    // Verify checkbox state persisted
-    const reloadedCheckbox = page.locator('[type="checkbox"]').first();
-    await expect(reloadedCheckbox).toBeChecked();
-
-    // Verify progress still shows 1/2
+    // Verify progress persisted (1/2 on the card)
     await expect(page.getByText(/1.*\/.*2/)).toBeVisible();
+
+    // Reopen the editor and verify the item is still checked
+    await page.getByText('Perzisztencia teszt').click();
+    // Edit mode has no #todo-title input - wait for the item checkboxes
+    await expect(page.getByRole('checkbox').first()).toBeVisible();
+    await expect(page.getByRole('checkbox').first()).toHaveAttribute('aria-checked', 'true');
   });
 });

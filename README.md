@@ -1,76 +1,75 @@
 # Notizz - Jegyzetek és TODO-k 📝✅
 
-Jegyzet és TODO lista kezelő. Böngészőből telepíthető Progressive Web App (PWA). 
+Jegyzet és TODO lista kezelő. Böngészőből telepíthető Progressive Web App (PWA).
 
-Teszteld! 👉 https://tornadolaci.github.io/notizz
+Használd! 👉 https://nomadnet.hu/app/notizz/
 
-## ✨  Főbb jellemzők
+## ✨ Főbb jellemzők
 
 - 📱 **PWA** - Böngészőből telepíthető mobilra és desktopra oprendszertől függetlenül
-- 🔒 **Offline-first** - Telepített üzemben gyorsítótárból betöltődik netkapcsolat nélkül is
-- ☁️ **Vendég mód** - Regisztráció nélkül is futtatható  (csak helyben tárol adatot, nincs adatküldés)
-- ☁️ **Cloud Sync** - Felhő alapú adatbázis szinkronizálás több eszköz között (regisztrációval)
-- 🔐 **Authentication** - Email/jelszó és Google OAuth támogatás
+- ☁️ **Cloud Sync** - Saját szerveres adatbázis, automatikus szinkronizálás több eszköz között
+- 🔐 **Authentication** - Email/jelszó alapú regisztráció email-megerősítéssel
+- 🔔 **Értesítések** - Natív értesítés + hangjelzés, ha más eszközről új tartalom érkezik
 - 🌗 **Dark mode** - Manuális témaváltás lehetősége
 - 📊 **Feladatkövetés** - TODO listák progress bar-ral
 - 🎨 **8 pasztell szín** - Vizuális kategorizálás
 - 🔄 **Manuális rendezés** - Fel/le nyíl gombok a kártyákon, a sorrend beállításához
+- 📤 **Share Target** - Más appokból megosztott tartalom jegyzetként mentődik (Android)
 - ♿ **Accessibility** - Teljes keyboard navigáció és screen reader támogatás
 
 ## 🌴 Relax User Experience
 
-- Nincsenek felugró ablakok
-- Nincs kötelező regisztráció
 - Nincs adatgyűjtés, profilozás
 - Nem jelennek meg reklámok
 - Ráböksz -› villámgyorsan betöltődik -› használod-örülsz
 
 ## 🚀 Technológiai Stack
 
-### Core
+### Frontend
 - **Svelte 5.18+** - Runes-based reaktivitás ($state, $derived, $effect)
 - **TypeScript 5.7+** - Strict mode type safety
 - **Vite 6.0+** - Ultragyors build tool és dev server
-- **Dexie.js 4.0+** - IndexedDB wrapper perzisztens adattároláshoz
+- **vite-plugin-pwa + Workbox** - PWA generálás, service worker, cache stratégiák
 
-### Cloud & Auth
-- **Supabase 2.47+** - Backend as a Service (PostgreSQL + Auth + Realtime)
-- **Realtime subscriptions** - Automatikus frissítések több eszközön való futtatáskor. Max 10 másodperc polling.
-
-### PWA & Offline
-- **vite-plugin-pwa 0.21+** - PWA generálás és service worker
-- **Workbox 7.3+** - Cache stratégiák és offline support
+### Backend
+- **PHP 8.3+** - Függőség nélküli REST API (server/)
+- **MySQL 8** - Adattárolás DATETIME(3) pontossággal
+- **Token auth** - Opaque Bearer token, SHA-256-tal hash-elve tárolva
+- **Polling sync** - 10 másodpercenkénti szinkronizálás változás-detektálással
 
 ## 📦 Fejlesztés
+
+Előfeltétel: Node 20+, PHP 8.3+, futó MySQL szerver.
 
 ```bash
 # Függőségek telepítése
 npm install
 
-# Development szerver indítása
+# Lokális backend konfig (első alkalommal)
+cp server/config.example.php server/config.php   # db: notizz_dev, smtp driver: 'log'
+
+# PHP API indítása
+php -S localhost:8080 server/dev-router.php
+
+# Development szerver indítása (proxyzza az /app/notizz/api kéréseket a PHP-hez)
 npm run dev
 
-# Production build
+# Production build + type check
 npm run build
 
-# Preview a buildelt alkalmazást
-npm run preview
+# Backend smoke teszt (friss notizz_dev adatbázist hoz létre)
+bash server/tests/smoke.sh
 
-# Type checking
-npm run type-check
-
-# Linting
+# Unit tesztek / lint / formázás
+npm run test:unit
 npm run lint
-
-# Formázás
 npm run format
 
-# Unit tesztek
-npm run test:unit
-
-# E2E tesztek
+# E2E tesztek (elindítja a PHP + vite szervereket; MySQL szükséges)
 npm run test:e2e
 ```
+
+Részletes backend-dokumentáció: [server/README.md](./server/README.md)
 
 ## 🎨 Design System
 
@@ -82,7 +81,6 @@ Az alkalmazás iOS Human Interface Guidelines elveit követi:
 - Teljes accessibility támogatás
 
 ### Reszponzivitás
-Az alkalmazás teljesen reszponzív és minden képernyőméreten tökéletesen működik:
 
 | Viewport szélesség | Layout | Megjegyzés |
 |---|---|---|
@@ -91,38 +89,29 @@ Az alkalmazás teljesen reszponzív és minden képernyőméreten tökéletesen 
 | **640px - 1024px** | 2 oszlop | Tablet layout |
 | **≥ 1024px** | 3 oszlop | Desktop layout, max 1000px széles |
 
-**Tesztelve:** iPhone 13 mini (375px), iPad (768px), Desktop (1280px+)
-
 ## 🎯 Használat
 
 ### Authentication
-- **Guest Mode** - Használat bejelentkezés nélkül (adattárolás csak helyben a készüléken)
-- **Email/Password** - Regisztráció és bejelentkezés email címmel
-- **Google OAuth** - Gyors bejelentkezés Google fiókkal
-- **Auto-sync** - Bejelentkezés után automatikus szinkronizálás
+- **Email/jelszó** - Regisztráció email-megerősítéssel, utána bejelentkezés
+- **Jelszó-visszaállítás** - Email-ben küldött egyszeri linkkel
+- **Auto-sync** - Bejelentkezés után automatikus szinkronizálás minden eszközön
 
 ### Jegyzetek létrehozása
 1. Kattints a jobb alsó sarokban lévő **+** gombra
 2. Válaszd a "Jegyzet" opciót
 3. Add meg a címet, tartalmat, választhatsz színt hozzá
-4. Kattints a "Mentés" gombra
+4. Kattints a "Létrehozás" gombra
 
 ### TODO listák kezelése
 1. Kattints a **+** gombra
-2. Válaszd a "TODO lista" opciót
-3. Add meg a lista címét
-4. Add hozzá az egyes teendőket ("Hozzáad" gomb)
-5. Válassz színt, majd "Létrehozás" gomb
+2. Válaszd a "Teendő" opciót
+3. Add meg a lista címét, add hozzá az egyes teendőket
+4. Válassz színt, majd "Létrehozás" gomb
+5. A kipipálás a kártyára kattintva, a szerkesztőben történik
 
 ### Rendezés
 - Minden kártya alján **fel/le nyíl gombok** találhatóak
 - A sorrend automatikusan mentésre kerül az adatbázisba
-
-### Beállítások
-- **Téma**: Világos / Sötét
-- **Export**: Letölt egy JSON fájlt az összes adatoddal
-- **Import**: Visszatölti a JSON fájlt
-- **Kijelentkezés**: Bezárja a sessiont (adatok megmaradnak)
 
 ## 🏗️ Projekt struktúra
 
@@ -130,68 +119,47 @@ Az alkalmazás teljesen reszponzív és minden képernyőméreten tökéletesen 
 notizz/
 ├── src/
 │   ├── lib/
+│   │   ├── api/               # Backend API kliens (auth, data, sync)
 │   │   ├── components/        # Svelte komponensek
-│   │   │   ├── auth/          # Auth UI komponensek
+│   │   │   ├── auth/          # AuthGate, AuthModal
 │   │   │   ├── common/        # Általános UI komponensek
 │   │   │   ├── notes/         # Jegyzet komponensek
 │   │   │   ├── todos/         # TODO komponensek
 │   │   │   ├── layout/        # Layout komponensek
 │   │   │   └── shared/        # Megosztott komponensek
-│   │   ├── stores/            # Svelte 5 stores
-│   │   ├── supabase/          # Supabase integráció
-│   │   ├── db/                # Dexie.js IndexedDB
+│   │   ├── stores/            # Svelte stores (auth, notes, todos, settings, theme)
 │   │   ├── utils/             # Utility függvények
 │   │   ├── types/             # TypeScript típusok
 │   │   ├── schemas/           # Zod validációs sémák
-│   │   ├── services/          # Business logic
+│   │   ├── services/          # Notification, localStorage
 │   │   └── constants/         # Konstansok
-│   ├── routes/                # SvelteKit-szerű routing
+│   ├── routes/                # Oldalak (fő, settings, share-target, reset-password)
 │   ├── app.css                # Globális stílusok
 │   └── main.ts                # Entry point
+├── server/
+│   ├── api/                   # PHP REST API (front controller + controllerek)
+│   ├── migrations/            # MySQL séma
+│   └── tests/                 # Backend smoke teszt
 ├── tests/
 │   ├── unit/                  # Vitest unit tesztek
 │   └── e2e/                   # Playwright E2E tesztek
-├── public/                    # Statikus fájlok
-│   ├── icons/                 # PWA ikonok
-│   ├── robots.txt             # SEO
-│   └── sitemap.xml            # SEO
+├── public/                    # Statikus fájlok (.htaccess, ikonok)
 └── dist/                      # Build output
 ```
 
 ## 🔒 Biztonság
 
-- **Input sanitization** - XSS védelem minden user input-nál
-- **Row Level Security** - Supabase RLS policies felhasználónként
-- **Session management** - Biztonságos token tárolás localStorage-ban
-- **CSP headers** - Content Security Policy konfiguráció
-- **Rate limiting** - Abuse protection
+- **Input validáció** - Kliens- és szerveroldalon egyaránt
+- **Prepared statements** - SQL injection védelem minden lekérdezésnél
+- **User-izoláció** - Minden adatművelet a tokenből azonosított felhasználóra szűr
+- **Rate limiting** - Login/regisztráció/reset végpontokon (5 kísérlet / 15 perc)
+- **Titkok a docroot-on kívül** - DB/SMTP jelszavak soha nem kerülnek a repóba
 
-## 📊 Performance metrikák
+## 🚢 Deploy
 
-### Bundle size (gzipped)
-- **Total**: ~680 KB (precache: 18 entries)
-- CSS: 7.69 KB
-- JS: ~127 KB (chunked: svelte, dexie, date-fns, supabase, app)
-- Service Worker: Auto-generated with Workbox
-
-### Lighthouse Score célok
-- ⚡ Performance: 95+
-- ♿ Accessibility: 95+
-- 🎯 Best Practices: 95+
-- 🔍 SEO: 100
-
-### First Load
-- **FCP** (First Contentful Paint): <1.5s
-- **LCP** (Largest Contentful Paint): <2.5s
-- **TTI** (Time to Interactive): <3.0s
-
-## 🤝 Hozzájárulás
-
-1. Fork-old a projektet
-2. Hozz létre egy feature branch-et (`git checkout -b feature/AmazingFeature`)
-3. Commit-old a változtatásokat (`git commit -m 'feat: Add some AmazingFeature'`)
-4. Push-old a branch-re (`git push origin feature/AmazingFeature`)
-5. Nyiss egy Pull Request-et
+A GitHub Actions „Deploy to nomadnet.hu" workflow (kézi indítás) buildeli a
+frontendet és FTPS-en feltölti a `dist/` + `server/api/` tartalmat a tárhelyre.
+Részletek: [server/README.md](./server/README.md)
 
 ## 📝 Konvenciók
 
@@ -204,8 +172,8 @@ notizz/
 
 - [Design System](./design-system.md) - Teljes design specifikáció
 - [CLAUDE.md](./CLAUDE.md) - Claude Code útmutató és fejlesztői dokumentáció
-- [Project Structure](./project-structure.md) - Részletes projekt struktúra
-- [Tasks](./tasks.md) - Implementációs fázisok és állapot
+- [server/README.md](./server/README.md) - Backend és deploy dokumentáció
+- [php-mysql-migration-plan.md](./php-mysql-migration-plan.md) - A Supabase → PHP+MySQL migráció terve és naplója
 
 ## 🐛 Hibák és javaslatok
 
@@ -213,7 +181,7 @@ Ha hibát találsz vagy javaslatod van, nyiss egy issue-t a GitHub-on.
 
 ## 👨‍💻 Szerző
 
-@tornadolaci : Notizz - Jegyzet és TODO kezelő
+Készítette: [nomadnet.hu](https://nomadnet.hu)
 
 ## 📄 Licenc
 

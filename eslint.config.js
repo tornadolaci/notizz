@@ -16,6 +16,7 @@ export default [
       'playwright-report/',
       'dev-dist/',
       '.claude/',
+      'pages-redirect/',
       'tests/**/*.ts',
       'vite.config.ts',
       'vitest.config.ts',
