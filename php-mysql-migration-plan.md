@@ -403,7 +403,7 @@ Az origin megváltozik (`tornadolaci.github.io` → `nomadnet.hu`, scope: `/app/
 - [x] index.html: og/twitter URL-ek és ikon-útvonalak az új címre
 - [x] Deploy workflow: GitHub Pages helyett FTPS deploy (`deploy.yml`, kézi indítás; secrets: DEPLOY_FTP_HOST/USER/PASSWORD/TARGET_DIR) + kézi deploy checklist a server/README-ben
 - [x] **Lokális kapu teljesítve:** production build (`vite preview`) a `/app/notizz/` alatt böngészőben ellenőrizve — SW a helyes scope-pal regisztrál, manifest OK, login + adatok + polling megy, share-target end-to-end működik
-- [ ] **Feltöltés a tárhelyre** (5. fázis része): FTP secrets beállítása VAGY kézi upload; utána `api/health` + Lighthouse PWA audit + telepíthetőség élesben
+- [x] **Feltöltés a tárhelyre** (2026-07-02): FTP secrets beállítva, FTPS deploy fut (timeout 120s-re emelve); MySQL DB + user létrehozva, séma lefuttatva, config.php a docroot-on kívül; PHP 8.5 (ea-php85) beállítva a MultiPHP Managerben (a 8.0 alapértelmezés fordítási hibát okozott). Éles ellenőrzés: health `db: ok`, PHP 8.5.6, auth+védett végpontok+src-tiltás+cache-fejlécek+HTTPS-redirect mind rendben
 
 ### 5. fázis — Átállás
 - [ ] E2E tesztek frissítése és futtatása az új stack ellen
