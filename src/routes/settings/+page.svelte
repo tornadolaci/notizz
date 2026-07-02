@@ -122,8 +122,8 @@
         {/if}
       </div>
       <div class="creator-link">
-        <a href="https://www.panora.hu" target="_blank" rel="noopener noreferrer">
-          👉 created by panora.hu szoftverbázis
+        <a href="https://nomadnet.hu" target="_blank" rel="noopener noreferrer">
+          Készítette: nomadnet.hu
         </a>
       </div>
     </section>

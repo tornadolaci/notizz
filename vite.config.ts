@@ -1,10 +1,11 @@
 import { defineConfig } from 'vite';
 import { svelte } from '@sveltejs/vite-plugin-svelte';
 import { VitePWA } from 'vite-plugin-pwa';
-import { readFileSync } from 'fs';
 
-// Read version from package.json
-const pkg = JSON.parse(readFileSync('./package.json', 'utf-8'));
+// App "version" shown on the Settings screen: the build date as YY.MM.DD
+const now = new Date();
+const pad = (n: number): string => String(n).padStart(2, '0');
+const appVersion = `${String(now.getFullYear()).slice(2)}.${pad(now.getMonth() + 1)}.${pad(now.getDate())}`;
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -126,7 +127,7 @@ export default defineConfig({
     }
   },
   define: {
-    __APP_VERSION__: JSON.stringify(pkg.version)
+    __APP_VERSION__: JSON.stringify(appVersion)
   },
   build: {
     target: 'esnext',
