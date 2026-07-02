@@ -52,3 +52,5 @@ jobs:
           protocol: ftps
           local-dir: deploy/
           server-dir: ${{ secrets.DEPLOY_FTP_TARGET_DIR }}
+          # The hosting FTP server can respond slowly - the default 30s is flaky
+          timeout: 120000
