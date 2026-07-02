@@ -41,39 +41,6 @@
   </head>
   <body>
     <div id="app"></div>
-    <!-- GitHub Pages SPA redirect handler -->
-    <script>
-      (function(l) {
-        var path = l.pathname;
-        var hash = l.hash;
-        var search = l.search;
-
-        console.log('[SPA Redirect] Initial URL:', l.href);
-
-        // Decode GitHub Pages 404 redirect (/?/path format)
-        if (search[1] === '/' ) {
-          var decoded = search.slice(1).split('&').map(function(s) {
-            return s.replace(/~and~/g, '&')
-          }).join('?');
-          // Reconstruct the original URL
-          path = l.pathname.slice(0, -1) + decoded.split('?')[0];
-          var newSearch = decoded.includes('?') ? '?' + decoded.split('?')[1] : '';
-          console.log('[SPA Redirect] Decoded - path:', path, 'search:', newSearch);
-
-          // For reset-password with code, keep the reset-password path in hash
-          // so App.svelte can detect this is a password reset flow
-          if (path.endsWith('/reset-password') || path.endsWith('/reset-password/')) {
-            var basePath = path.replace(/reset-password\/?$/, '');
-            // Redirect to base path with the code - Supabase will process it
-            // IMPORTANT: Add #/reset-password to hash so App.svelte knows this is password reset
-            console.log('[SPA Redirect] Reset password detected, redirecting with hash routing');
-            l.replace(basePath + newSearch + '#/reset-password');
-          } else {
-            window.history.replaceState(null, null, path + newSearch + hash);
-          }
-        }
-      }(window.location))
-    </script>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

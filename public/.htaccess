@@ -31,7 +31,7 @@ AddType application/manifest+json .webmanifest
 
   # Entry points and the service worker: always revalidate, otherwise the
   # PWA update flow (UpdatePrompt) breaks
-  <FilesMatch "^(index\.html|404\.html|sw\.js|registerSW\.js|manifest\.webmanifest)$">
+  <FilesMatch "^(index\.html|sw\.js|registerSW\.js|manifest\.webmanifest)$">
     Header set Cache-Control "no-cache"
   </FilesMatch>
 </IfModule>

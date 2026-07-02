@@ -52,6 +52,8 @@ export default defineConfig({
           // GET puts the shared fields in the query string, which the SPA can
           // read directly - POST would need a service worker fetch handler
           method: 'GET',
+          // Explicit default - silences a Chrome DevTools manifest warning
+          enctype: 'application/x-www-form-urlencoded',
           params: {
             title: 'title',
             text: 'text',
