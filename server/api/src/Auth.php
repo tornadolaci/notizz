@@ -145,12 +145,33 @@ final class Auth
 
     private function bearerToken(): ?string
     {
+        // Shared-hosting Apache setups strip the Authorization header from
+        // the CGI environment in various ways - check every known location
         $header = $_SERVER['HTTP_AUTHORIZATION']
             ?? $_SERVER['REDIRECT_HTTP_AUTHORIZATION']
+            ?? $_SERVER['REDIRECT_REDIRECT_HTTP_AUTHORIZATION']
             ?? '';
-        if (preg_match('/^Bearer\s+([0-9a-f]{64})$/i', trim($header), $m) !== 1) {
-            return null;
+
+        if ($header === '' && function_exists('getallheaders')) {
+            foreach (getallheaders() as $name => $value) {
+                if (strcasecmp((string) $name, 'Authorization') === 0) {
+                    $header = (string) $value;
+                    break;
+                }
+            }
         }
-        return strtolower($m[1]);
+
+        if (preg_match('/^Bearer\s+([0-9a-f]{64})$/i', trim($header), $m) === 1) {
+            return strtolower($m[1]);
+        }
+
+        // Last resort: the client also sends the token in X-Auth-Token,
+        // which Apache never strips
+        $alt = trim($_SERVER['HTTP_X_AUTH_TOKEN'] ?? '');
+        if (preg_match('/^[0-9a-f]{64}$/', strtolower($alt)) === 1) {
+            return strtolower($alt);
+        }
+
+        return null;
     }
 }

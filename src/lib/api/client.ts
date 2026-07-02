@@ -76,6 +76,9 @@ export async function apiFetch<T>(path: string, options: ApiFetchOptions = {}): 
     const token = getToken();
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
+      // Some shared-hosting Apache setups strip the Authorization header
+      // before it reaches PHP - X-Auth-Token is the reliable fallback
+      headers['X-Auth-Token'] = token;
     }
   }
 
