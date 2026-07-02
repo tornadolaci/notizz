@@ -68,11 +68,23 @@ Adatok (Bearer token, a user_id a tokenből jön): `GET|POST notes`,
 - Hibaválaszok stabil kódokkal (`invalid_credentials`, `email_not_confirmed`,
   `email_taken`, `rate_limited`, ...) — a magyar üzeneteket a kliens rendeli hozzá.
 
-## Éles telepítés (4. fázis)
+## Éles telepítés
 
-1. MySQL adatbázis létrehozás + `migrations/001_init.sql` futtatás
-2. `api/` könyvtár feltöltése: `/public_html/app/notizz/api/`
-3. `config.example.php` alapján `config.php` létrehozása a
-   `/notizz_config/` könyvtárban (docroot-on kívül), éles adatokkal
-   (DB + SMTP: mail.nomadnet.hu:465 SSL)
-4. Ellenőrzés: `https://nomadnet.hu/app/notizz/api/health` → `{"status":"ok"}`
+Automatikus út: a `.github/workflows/deploy.yml` (kézi indítás) buildeli a
+frontendet és FTPS-en feltölti a `dist/` + `server/api/` tartalmat a
+`/public_html/app/notizz/` könyvtárba. Ehhez a repo secrets-ben kell:
+`DEPLOY_FTP_HOST`, `DEPLOY_FTP_USER`, `DEPLOY_FTP_PASSWORD`,
+`DEPLOY_FTP_TARGET_DIR`.
+
+Egyszeri kézi lépések a szerveren (a workflow ezeket NEM végzi el):
+
+1. MySQL adatbázis + DB-user létrehozás a tárhely panelen,
+   `migrations/001_init.sql` futtatása (phpMyAdmin vagy CLI)
+2. `config.example.php` alapján `config.php` létrehozása a
+   `/notizz_config/` könyvtárban (a `public_html` MELLETT, docroot-on kívül),
+   éles adatokkal (DB + SMTP: mail.nomadnet.hu:465 SSL)
+3. Ellenőrzés: `https://nomadnet.hu/app/notizz/api/health` → `{"status":"ok"}`
+
+Kézi deploy (workflow nélkül): `npm run build`, majd a `dist/` teljes tartalma
+(benne a `.htaccess`!) + a `server/api/` könyvtár feltöltése SFTP/FTP-vel a
+`/public_html/app/notizz/` alá.

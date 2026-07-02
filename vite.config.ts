@@ -8,7 +8,8 @@ const pkg = JSON.parse(readFileSync('./package.json', 'utf-8'));
 
 // https://vite.dev/config/
 export default defineConfig({
-  base: process.env.GITHUB_ACTIONS ? '/notizz/' : '/',
+  // The app lives at https://nomadnet.hu/app/notizz (subdirectory hosting)
+  base: '/app/notizz/',
   plugins: [
     svelte(),
     VitePWA({
@@ -23,8 +24,8 @@ export default defineConfig({
         display: 'standalone',
         orientation: 'portrait',
         lang: 'hu',
-        start_url: process.env.GITHUB_ACTIONS ? '/notizz/' : '/',
-        scope: process.env.GITHUB_ACTIONS ? '/notizz/' : '/',
+        start_url: '/app/notizz/',
+        scope: '/app/notizz/',
         icons: [
           {
             src: 'icons/192x192.png',
@@ -46,7 +47,8 @@ export default defineConfig({
         ],
         categories: ['productivity', 'utilities'],
         share_target: {
-          action: '/share-target',
+          // Must live inside the PWA scope
+          action: '/app/notizz/share-target',
           // GET puts the shared fields in the query string, which the SPA can
           // read directly - POST would need a service worker fetch handler
           method: 'GET',
@@ -60,6 +62,11 @@ export default defineConfig({
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
         runtimeCaching: [
+          {
+            // API responses must NEVER be cached - user data is always live
+            urlPattern: /\/api\//,
+            handler: 'NetworkOnly'
+          },
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
             handler: 'CacheFirst',
@@ -107,7 +114,13 @@ export default defineConfig({
   server: {
     proxy: {
       // Local PHP backend: php -S localhost:8080 server/dev-router.php
-      '/api': 'http://localhost:8080'
+      // (the front controller matches the path after "api/", so no rewrite needed)
+      '/app/notizz/api': 'http://localhost:8080'
+    }
+  },
+  preview: {
+    proxy: {
+      '/app/notizz/api': 'http://localhost:8080'
     }
   },
   define: {

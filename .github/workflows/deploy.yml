@@ -1,21 +1,25 @@
-name: Deploy to GitHub Pages
+name: Deploy to nomadnet.hu
+
+# Manual trigger only until the FTP secrets are configured in the repo
+# settings. Once they exist, a push trigger on main can be added:
+#   push:
+#     branches: [main]
+#
+# Required repository secrets:
+#   DEPLOY_FTP_HOST       e.g. ftp.nomadnet.hu
+#   DEPLOY_FTP_USER       hosting FTP user
+#   DEPLOY_FTP_PASSWORD   hosting FTP password
+#   DEPLOY_FTP_TARGET_DIR e.g. /public_html/app/notizz/
+#
+# NOT deployed by this workflow (one-time manual steps on the server):
+#   - /notizz_config/config.php (DB + SMTP credentials, outside the docroot)
+#   - MySQL schema (server/migrations/*.sql via phpMyAdmin or CLI)
 
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
-permissions:
-  contents: read
-  pages: write
-  id-token: write
-
-concurrency:
-  group: pages
-  cancel-in-progress: false
-
 jobs:
-  build:
+  build-and-deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -28,29 +32,23 @@ jobs:
           cache: npm
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
       - name: Build
         run: npm run build
-        env:
-          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
 
-      - name: Setup Pages
-        uses: actions/configure-pages@v4
+      - name: Assemble deploy tree (frontend + PHP API)
+        run: |
+          mkdir -p deploy
+          cp -r dist/. deploy/
+          cp -r server/api deploy/api
 
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
+      - name: Upload via FTPS
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
-          path: dist
-
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+          server: ${{ secrets.DEPLOY_FTP_HOST }}
+          username: ${{ secrets.DEPLOY_FTP_USER }}
+          password: ${{ secrets.DEPLOY_FTP_PASSWORD }}
+          protocol: ftps
+          local-dir: deploy/
+          server-dir: ${{ secrets.DEPLOY_FTP_TARGET_DIR }}

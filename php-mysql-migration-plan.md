@@ -396,12 +396,14 @@ Az origin megváltozik (`tornadolaci.github.io` → `nomadnet.hu`, scope: `/app/
 - [x] **Bónusz bugfix:** polling-szivárgás javítva — kijelentkezés után egy in-flight első poll a régi kódban örökre élő intervalt hagyott hátra (generáció-számláló a sync service-ben + idempotens auth-effect a layoutban); böngészőben igazolva, hogy logout után nulla kérés megy a szerverre
 - [x] **Kapu teljesítve:** grep-tiszta (supabase/dexie/guest nulla találat az src-ben), type-check + lint (0 error) + 11/11 unit teszt + build zöld; precache 541 KiB → 382 KiB (−159 KiB); böngészős E2E: gate → login → adatok → logout → gate
 
-### 4. fázis — Hosting
-- [ ] vite.config: base `/`, workbox API-kizárás
-- [ ] `.htaccess` (rewrite, cache, HTTPS, MIME)
-- [ ] Deploy workflow (SFTP) vagy kézi deploy checklist
-- [ ] Staging feltöltés a rackforest tárhelyre, éles DB-vel
-- **Kapu:** Lighthouse PWA audit zöld az új domainen, telepíthetőség + share-target + offline app-shell OK
+### 4. fázis — Hosting ✅ KÉSZ (2026-07-02, feltöltés hátravan)
+- [x] vite.config: `base: '/app/notizz/'`, manifest (start_url/scope/share_target.action), workbox NetworkOnly az `/api/`-ra, dev+preview proxy
+- [x] main.ts share-target átírás `BASE_URL`-alapú (böngészőben tesztelve: a base-path-os megosztás menti a jegyzetet)
+- [x] `.htaccess` a `public/`-ban (a builddel települ): HTTPS, API-rewrite, SPA-fallback, cache-szabályok (belépési pontok no-cache!), -Indexes
+- [x] index.html: og/twitter URL-ek és ikon-útvonalak az új címre
+- [x] Deploy workflow: GitHub Pages helyett FTPS deploy (`deploy.yml`, kézi indítás; secrets: DEPLOY_FTP_HOST/USER/PASSWORD/TARGET_DIR) + kézi deploy checklist a server/README-ben
+- [x] **Lokális kapu teljesítve:** production build (`vite preview`) a `/app/notizz/` alatt böngészőben ellenőrizve — SW a helyes scope-pal regisztrál, manifest OK, login + adatok + polling megy, share-target end-to-end működik
+- [ ] **Feltöltés a tárhelyre** (5. fázis része): FTP secrets beállítása VAGY kézi upload; utána `api/health` + Lighthouse PWA audit + telepíthetőség élesben
 
 ### 5. fázis — Átállás
 - [ ] E2E tesztek frissítése és futtatása az új stack ellen
