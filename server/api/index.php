@@ -46,6 +46,23 @@ if ($configPath === null) {
 }
 $config = require $configPath;
 
+// Extract the path after the "api/" segment early — the health endpoint
+// must respond (with a db status) even when the database is unreachable
+$uri = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?? '/';
+$pos = strpos($uri, '/api/');
+$path = $pos !== false ? trim(substr($uri, $pos + 5), '/') : '';
+$method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
+
+if ($path === 'health' && $method === 'GET') {
+    try {
+        Database::get($config);
+        json_response(['status' => 'ok', 'db' => 'ok']);
+    } catch (Throwable $e) {
+        error_log('[notizz-api] health db check failed: ' . $e->getMessage());
+        json_response(['status' => 'degraded', 'db' => 'error'], 500);
+    }
+}
+
 $pdo = Database::get($config);
 $auth = new Auth($pdo);
 $mailer = new Mailer($config['smtp']);
@@ -59,18 +76,8 @@ $authController = new AuthController($pdo, $auth, $mailer, $rateLimit, $config);
 $notesController = new NotesController($pdo, $auth);
 $todosController = new TodosController($pdo, $auth);
 
-// Extract the path after the "api/" segment — works both at /api/... (dev)
-// and /app/notizz/api/... (production subdirectory)
-$uri = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?? '/';
-$pos = strpos($uri, '/api/');
-$path = $pos !== false ? trim(substr($uri, $pos + 5), '/') : '';
-$method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
-
 // --- Auth routes ---
 match (true) {
-    $path === 'health' && $method === 'GET'
-        => json_response(['status' => 'ok']),
-
     $path === 'auth/register' && $method === 'POST'
         => $authController->register(),
     $path === 'auth/login' && $method === 'POST'
