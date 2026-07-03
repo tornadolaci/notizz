@@ -88,7 +88,7 @@
     align-items: center;
     justify-content: center;
     border-radius: 50%;
-    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+    background: linear-gradient(135deg, rgba(93, 169, 255, 0.12), rgba(47, 128, 237, 0.12));
     color: var(--color-info);
     margin-bottom: var(--space-5);
     animation: iconPulse 2s ease-in-out infinite;
@@ -114,7 +114,7 @@
   }
 
   .gradient-text {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: var(--brand-gradient-text);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -132,18 +132,18 @@
     padding: var(--padding-button);
     border: none;
     border-radius: 12px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: var(--brand-gradient);
     color: white;
     font-size: var(--text-base);
     font-weight: var(--font-semibold);
     cursor: pointer;
     transition: all 200ms ease;
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    box-shadow: 0 4px 12px var(--brand-shadow);
   }
 
   .empty-state-action:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    box-shadow: 0 6px 20px var(--brand-shadow);
   }
 
   .empty-state-action:active {

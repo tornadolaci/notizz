@@ -43,6 +43,15 @@
   --color-error: #FF3B30;
   --color-info: #007AFF;
 
+  /* Brand accent - elegant blue (replaces the old purple gradient) */
+  --brand-500: #2F80ED;   /* primary blue */
+  --brand-400: #5DA9FF;   /* lighter blue */
+  --brand-600: #1E63C4;   /* deeper blue (hover/press) */
+  --brand-gradient: linear-gradient(135deg, var(--brand-400) 0%, var(--brand-500) 100%);
+  --brand-gradient-text: linear-gradient(90deg, var(--brand-400), var(--brand-500));
+  --brand-shadow: rgba(47, 128, 237, 0.35);
+  --brand-shadow-soft: rgba(47, 128, 237, 0.20);
+
   /* Typography */
   --font-system: -apple-system, BlinkMacSystemFont, 'SF Pro Display',
                  'Segoe UI', system-ui, 'Helvetica Neue', Arial, sans-serif;

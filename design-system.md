@@ -87,6 +87,22 @@
 }
 ```
 
+### Brand Accent (elegáns kék)
+A régi lila gradiens (`#667eea → #764ba2`) helyett egységes kék brand-akcens.
+Minden gomb, cím-gradiens, FAB és avatar ezekből a tokenekből épül fel.
+A **kártyák** (pasztell színek + gradiens/aura) NEM használják ezt — érintetlenek.
+```css
+:root {
+  --brand-500: #2F80ED;   /* elsődleges kék */
+  --brand-400: #5DA9FF;   /* világosabb kék */
+  --brand-600: #1E63C4;   /* mélyebb kék (hover/press) */
+  --brand-gradient: linear-gradient(135deg, var(--brand-400) 0%, var(--brand-500) 100%);
+  --brand-gradient-text: linear-gradient(90deg, var(--brand-400), var(--brand-500));
+  --brand-shadow: rgba(47, 128, 237, 0.35);
+  --brand-shadow-soft: rgba(47, 128, 237, 0.20);
+}
+```
+
 ---
 
 ## 📐 Typography
@@ -360,11 +376,11 @@
   border-radius: 50%;
   
   /* Megjelenés */
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--brand-gradient);
   color: white;
   box-shadow: 
-    0 4px 12px rgba(102, 126, 234, 0.4),
-    0 8px 24px rgba(102, 126, 234, 0.2);
+    0 4px 12px var(--brand-shadow),
+    0 8px 24px var(--brand-shadow-soft);
   
   /* Animáció */
   transition: all 300ms cubic-bezier(0.68, -0.55, 0.265, 1.55);
@@ -470,13 +486,13 @@
 }
 
 .button--primary {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--brand-gradient);
   color: white;
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 4px 12px var(--brand-shadow);
   
   &:hover {
     transform: translateY(-1px);
-    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    box-shadow: 0 6px 20px var(--brand-shadow);
   }
 }
 
@@ -651,7 +667,7 @@
 
 .progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, #667eea, #764ba2);
+  background: linear-gradient(90deg, var(--brand-400), var(--brand-500));
   border-radius: 3px;
   transition: width 300ms ease;
 }

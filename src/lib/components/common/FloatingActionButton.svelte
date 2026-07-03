@@ -32,9 +32,9 @@
     cursor: pointer;
 
     /* Appearance - Soft Premium Light */
-    background: linear-gradient(135deg, #7F7FD5 0%, #86A8E7 50%, #91EAE4 100%);
+    background: linear-gradient(135deg, var(--brand-500) 0%, var(--brand-400) 50%, #91EAE4 100%);
     color: white;
-    box-shadow: 0 12px 30px rgba(127, 127, 213, 0.4);
+    box-shadow: 0 12px 30px var(--brand-shadow);
 
     /* Animation */
     transition: all 300ms cubic-bezier(0.68, -0.55, 0.265, 1.55);
@@ -45,7 +45,7 @@
 
   .fab:hover {
     transform: rotate(90deg) scale(1.1);
-    box-shadow: 0 16px 40px rgba(127, 127, 213, 0.5);
+    box-shadow: 0 16px 40px var(--brand-shadow);
   }
 
   .fab:active {
@@ -95,7 +95,7 @@
 
   /* Dark mode - AMOLED Premium Glow */
   :global([data-theme="dark"]) .fab {
-    background: linear-gradient(135deg, #78C8FF 0%, #B4AAFF 100%);
+    background: linear-gradient(135deg, #78C8FF 0%, var(--brand-500) 100%);
     box-shadow:
       0 10px 28px rgba(0, 0, 0, 0.60),
       0 0 0 1px rgba(255, 255, 255, 0.08),

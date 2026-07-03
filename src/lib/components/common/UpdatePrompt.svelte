@@ -121,19 +121,19 @@
   }
 
   .button--primary {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: var(--brand-gradient);
     color: white;
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    box-shadow: 0 4px 12px var(--brand-shadow);
   }
 
   .button--primary:hover {
     transform: translateY(-1px);
-    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    box-shadow: 0 6px 20px var(--brand-shadow);
   }
 
   .button--primary:active {
     transform: translateY(1px) scale(0.97);
-    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+    box-shadow: 0 2px 8px var(--brand-shadow);
     filter: brightness(0.9);
   }
 

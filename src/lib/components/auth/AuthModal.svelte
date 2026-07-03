@@ -416,7 +416,7 @@
 		font-weight: var(--font-semibold);
 		color: var(--text-primary);
 		margin: 0;
-		background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+		background: var(--brand-gradient-text);
 		-webkit-background-clip: text;
 		-webkit-text-fill-color: transparent;
 		background-clip: text;
@@ -591,15 +591,15 @@
 		font-family: var(--font-system);
 		cursor: pointer;
 		transition: all 200ms ease;
-		background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+		background: var(--brand-gradient);
 		color: white;
-		box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+		box-shadow: 0 4px 12px var(--brand-shadow);
 		margin-top: var(--space-2);
 	}
 
 	.submit-button:hover:not(:disabled) {
 		transform: translateY(-1px);
-		box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+		box-shadow: 0 6px 20px var(--brand-shadow);
 	}
 
 	.submit-button:active:not(:disabled) {
