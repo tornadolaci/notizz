@@ -109,7 +109,8 @@ token in the hash query). The auth $effect is idempotent (tracks syncUserId).
 
 ## Design System
 
-**Critical**: All UI must follow [design-system.md](design-system.md).
+**Critical**: All UI must follow the design tokens in [design-token.md](design-token.md)
+(the single source of truth is [src/app.css](src/app.css)).
 
 - iOS-inspired: glassmorphism, pastel colors, smooth animations
 - Mobile-first responsive grid (1 -> 2 -> 3 columns; breakpoints 375/640/1024px)
@@ -140,7 +141,7 @@ token in the hash query). The auth $effect is idempotent (tracks syncUserId).
 
 ## Critical Rules
 
-1. **Never modify design tokens** - use only colors/spacing from design-system.md
+1. **Never modify design tokens** - use only colors/spacing from src/app.css (documented in design-token.md)
 2. **Validate input** - client-side plus PHP-side validation for every endpoint
 3. **Responsive breakpoints** - test at 375px, 768px, 1024px+
 4. **Dark mode support** - all new components must work in both themes
@@ -152,7 +153,7 @@ token in the hash query). The auth $effect is idempotent (tracks syncUserId).
 
 ## Key Files Reference
 
-- [design-system.md](design-system.md) - UI/UX specification (must read for UI work)
+- [design-token.md](design-token.md) - design token reference (mirrors src/app.css; read for UI work)
 - [server/README.md](server/README.md) - backend architecture, API, deploy
 - [php-mysql-migration-plan.md](php-mysql-migration-plan.md) - migration plan + log
 - [vite.config.ts](vite.config.ts) - base path, PWA manifest, workbox, proxies
@@ -164,7 +165,7 @@ token in the hash query). The auth $effect is idempotent (tracks syncUserId).
 
 ### Creating a new component
 1. Place under components/ (auth/, common/, layout/, notes/, todos/, shared/)
-2. Follow design-system.md (CSS variables only)
+2. Follow the design tokens in design-token.md / src/app.css (CSS variables only)
 3. TypeScript props interface; ARIA labels; keyboard handlers
 4. Test in light + dark themes and at all breakpoints
 

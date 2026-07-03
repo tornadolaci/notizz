@@ -170,7 +170,7 @@ Részletek: [server/README.md](./server/README.md)
 
 ## 📚 További dokumentáció
 
-- [Design System](./design-system.md) - Teljes design specifikáció
+- [Design Tokens](./design-token.md) - Design token referencia (forrás: `src/app.css`)
 - [CLAUDE.md](./CLAUDE.md) - Claude Code útmutató és fejlesztői dokumentáció
 - [server/README.md](./server/README.md) - Backend és deploy dokumentáció
 - [php-mysql-migration-plan.md](./php-mysql-migration-plan.md) - A Supabase → PHP+MySQL migráció terve és naplója
