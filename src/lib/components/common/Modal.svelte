@@ -11,12 +11,14 @@
 		isOpen: boolean;
 		onClose: () => void;
 		title?: string;
+		subtitle?: string;
 		maxWidth?: string;
-		closeButtonColor?: 'blue' | 'red';
+		/** Solid dark tint (hex) derived from the edited card's color; drives the panel background */
+		bgColor?: string | null;
 		children: Snippet;
 	}
 
-	let { isOpen = $bindable(false), onClose, title, maxWidth = '600px', closeButtonColor = 'blue', children }: Props = $props();
+	let { isOpen = $bindable(false), onClose, title, subtitle, maxWidth = '600px', bgColor = null, children }: Props = $props();
 
 	let dialogElement: HTMLDialogElement;
 	let previousFocus: HTMLElement | null = null;
@@ -89,13 +91,22 @@
 	aria-modal="true"
 	aria-labelledby={title ? 'modal-title' : undefined}
 >
-	<div class="modal-content" style="max-width: {maxWidth}">
+	<div
+		class="modal-content"
+		class:modal-content--tinted={bgColor}
+		style="max-width: {maxWidth}{bgColor ? `; --modal-bg: ${bgColor}` : ''}"
+	>
 		<div class="modal-header">
 			{#if title}
-				<h2 id="modal-title" class="modal-title">{title}</h2>
+				<div class="modal-heading">
+					<h2 id="modal-title" class="modal-title">{title}</h2>
+					{#if subtitle}
+						<p class="modal-subtitle">{subtitle}</p>
+					{/if}
+				</div>
 			{/if}
 			<button
-				class="modal-close modal-close--{closeButtonColor}"
+				class="modal-close"
 				onclick={onClose}
 				aria-label="Bezárás"
 				type="button"
@@ -157,6 +168,72 @@
 		position: relative; /* Position context for close button */
 	}
 
+	/* Tinted panel - shade derived from the edited card's color.
+	   LIGHT theme: light-to-mid tint (fehérrel hígítva), dark text.
+	   DARK theme (below): keeps the deep --modal-bg shade with light text. */
+	.modal-content--tinted {
+		background: linear-gradient(160deg,
+			color-mix(in srgb, var(--modal-bg) 45%, #FFFFFF) 0%,
+			color-mix(in srgb, var(--modal-bg) 62%, #FFFFFF) 55%);
+		backdrop-filter: none;
+		-webkit-backdrop-filter: none;
+		border: 1px solid rgba(255, 255, 255, 0.10);
+	}
+
+	.modal-content--tinted .modal-title {
+		color: var(--text-primary);
+	}
+
+	.modal-content--tinted .modal-subtitle {
+		color: var(--text-secondary);
+	}
+
+	.modal-content--tinted .modal-close {
+		background: rgba(255, 255, 255, 0.55);
+		color: #4B4E5E;
+		border: 1px solid rgba(0, 0, 0, 0.06);
+	}
+
+	.modal-content--tinted .modal-close:hover {
+		background: rgba(255, 59, 48, 0.14);
+		border-color: transparent;
+		color: var(--color-error);
+	}
+
+	/* DARK theme: ignore the card-color tint entirely and restore the ORIGINAL
+	   (pre-redesign) AMOLED panel + red-ringed close button. The tint only
+	   applies in light mode. */
+	:global([data-theme="dark"]) .modal-content--tinted {
+		background: rgba(20, 24, 38, 0.92);
+		border: 1px solid rgba(255, 255, 255, 0.10);
+		backdrop-filter: blur(20px);
+		-webkit-backdrop-filter: blur(20px);
+	}
+
+	:global([data-theme="dark"]) .modal-content--tinted .modal-title {
+		color: #FFFFFF;
+	}
+
+	:global([data-theme="dark"]) .modal-content--tinted .modal-subtitle {
+		color: rgba(255, 255, 255, 0.65);
+	}
+
+	/* Original dark close button: dark square, red outline + red glow, white X. */
+	:global([data-theme="dark"]) .modal-content--tinted .modal-close {
+		background: #151A2A;
+		color: #F2F3F7;
+		border: none;
+		border-radius: 16px;
+		outline: 2px solid #FF3B30;
+		box-shadow: 0 0 12px rgba(255, 59, 48, 0.4);
+	}
+
+	:global([data-theme="dark"]) .modal-content--tinted .modal-close:hover {
+		background: #1B2134;
+		border-color: transparent;
+		color: #FFFFFF;
+	}
+
 	@keyframes modalSlideIn {
 		from {
 			opacity: 0;
@@ -177,21 +254,33 @@
 		padding-right: 52px; /* Space for close button (44px width + 8px margin) */
 	}
 
+	.modal-heading {
+		flex: 1;
+		min-width: 0;
+	}
+
 	.modal-title {
 		font-size: var(--text-xl);
 		font-weight: var(--font-semibold);
 		color: var(--text-primary);
 		margin: 0;
-		flex: 1;
+		overflow-wrap: break-word;
+	}
+
+	.modal-subtitle {
+		font-size: var(--text-sm);
+		font-weight: var(--font-medium);
+		color: var(--text-tertiary);
+		margin: var(--space-1) 0 0;
 	}
 
 	.modal-close {
-		background: #FFFFFF;
+		background: var(--surface-2);
 		cursor: pointer;
 		padding: var(--space-1);
-		color: #5A5E70;
+		color: var(--text-secondary);
 		transition: all 200ms ease;
-		border-radius: 16px;
+		border-radius: 50%;
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -200,7 +289,6 @@
 		right: 12px; /* Fixed position from right of modal-content */
 		width: 44px;
 		height: 44px;
-		outline: 2px solid #FF3B30; /* Always red */
 		border: none;
 		z-index: 10; /* Above scrolling content */
 	}
@@ -210,15 +298,10 @@
 		height: 20px;
 	}
 
-	/* Remove blue/red variants - always use red */
-	.modal-close--blue,
-	.modal-close--red {
-		outline-color: #FF3B30; /* Always red */
-	}
-
+	/* Soft neutral at rest, red intent only on hover */
 	.modal-close:hover {
-		background: var(--bg-tertiary);
-		color: var(--text-primary);
+		background: rgba(255, 59, 48, 0.12);
+		color: var(--color-error);
 	}
 
 	.modal-close:active {
@@ -226,12 +309,107 @@
 	}
 
 	.modal-close:focus-visible {
-		outline: 2px solid #FF3B30; /* Always red, even on focus */
+		outline: 2px solid var(--color-info);
 		outline-offset: 2px;
 	}
 
 	.modal-body {
 		color: var(--text-primary);
+	}
+
+	/* LIGHT theme tinted panel is a light-to-mid shade -> body labels stay dark. */
+	.modal-content--tinted .modal-body {
+		--text-primary: #1B1C22;
+		--text-secondary: #4B4E5E;
+		--text-tertiary: #8C8FA1;
+		/* Keep single-line inputs light with dark text, regardless of theme */
+		--surface-2: #FFFFFF;
+		--border-light: rgba(0, 0, 0, 0.08);
+		color: var(--text-primary);
+	}
+
+	/* DARK theme tinted panel is a deep shade -> body labels go light. */
+	:global([data-theme="dark"]) .modal-content--tinted .modal-body {
+		--text-primary: #F4F5F8;
+		--text-secondary: rgba(255, 255, 255, 0.80);
+		--text-tertiary: rgba(255, 255, 255, 0.55);
+	}
+
+	/* Pastel content boxes are ALWAYS light, so text inside them stays dark
+	   in both themes (overrides the dark-theme label remap above). */
+	.modal-content--tinted .modal-body :global(.textarea-wrapper),
+	.modal-content--tinted .modal-body :global(.items-list) {
+		--text-primary: #1B1C22;
+		--text-secondary: #4B4E5E;
+		--text-tertiary: #8C8FA1;
+		color: #1B1C22;
+	}
+
+	/* Single-line inputs: solid white with dark text on the tinted panel even
+	   in dark theme (editors flip .input to an AMOLED surface otherwise).
+	   NOTE: .textarea is intentionally excluded so the note keeps its pastel
+	   gradient background from .textarea-wrapper. */
+	.modal-content--tinted .modal-body :global(.input) {
+		background: #FFFFFF;
+		color: #1B1C22;
+		border-color: rgba(0, 0, 0, 0.08);
+	}
+
+	.modal-content--tinted .modal-body :global(.input::placeholder) {
+		color: #A3A6B6;
+	}
+
+	/* Pastel content boxes (note textarea wrapper, todo items list) keep their
+	   light gradient on the tinted panel in BOTH themes, so they read as light
+	   cards floating on the mid-tone panel (editors darken them in dark mode). */
+	.modal-content--tinted .modal-body :global(.textarea-wrapper),
+	.modal-content--tinted .modal-body :global(.items-list) {
+		background: linear-gradient(145deg, var(--textarea-bg, var(--items-list-bg, #F7F8FC)) 0%, #FFFFFF 120%) !important;
+		border: 1px solid rgba(0, 0, 0, 0.06);
+	}
+
+	.modal-content--tinted .modal-body :global(.textarea-wrapper)::before,
+	.modal-content--tinted .modal-body :global(.items-list)::before {
+		opacity: 0.55;
+		background: radial-gradient(
+			circle at 15% 10%,
+			var(--textarea-bg, var(--items-list-bg, rgba(247, 248, 252, 0.5))) 0%,
+			#FFFFFF 70%
+		);
+	}
+
+	/* DARK theme: undo all the light-content overrides above so the editors'
+	   own original AMOLED styling (dark boxes, aura, white text) takes over.
+	   The light-mode look is unchanged. */
+	:global([data-theme="dark"]) .modal-content--tinted .modal-body {
+		--surface-2: var(--amoled-surface-2);
+		--border-light: var(--amoled-border);
+	}
+
+	:global([data-theme="dark"]) .modal-content--tinted .modal-body :global(.textarea-wrapper),
+	:global([data-theme="dark"]) .modal-content--tinted .modal-body :global(.items-list) {
+		--text-primary: var(--amoled-text-primary);
+		--text-secondary: var(--amoled-text-secondary);
+		--text-tertiary: var(--amoled-text-tertiary);
+		color: var(--amoled-text-primary);
+		background: var(--amoled-surface-1) !important;
+		border: 1px solid var(--amoled-border);
+	}
+
+	:global([data-theme="dark"]) .modal-content--tinted .modal-body :global(.textarea-wrapper)::before,
+	:global([data-theme="dark"]) .modal-content--tinted .modal-body :global(.items-list)::before {
+		opacity: 1;
+		background: radial-gradient(
+			circle at 15% 10%,
+			var(--card-tint, rgba(255, 255, 255, 0.10)) 0%,
+			transparent 55%
+		);
+	}
+
+	:global([data-theme="dark"]) .modal-content--tinted .modal-body :global(.input) {
+		background: var(--amoled-surface-2);
+		color: var(--amoled-text-primary);
+		border-color: var(--amoled-border);
 	}
 
 	/* Smooth scrolling */
@@ -246,7 +424,7 @@
 		-webkit-backdrop-filter: blur(6px);
 	}
 
-	:global([data-theme="dark"]) .modal-content {
+	:global([data-theme="dark"]) .modal-content:not(.modal-content--tinted) {
 		background: rgba(20, 24, 38, 0.92);
 		border: 1px solid rgba(255, 255, 255, 0.10);
 		color: var(--amoled-text-primary);
@@ -254,17 +432,17 @@
 		-webkit-backdrop-filter: blur(20px);
 	}
 
-	/* Dark mode - close button with dark surface + red glow (always) */
-	:global([data-theme="dark"]) .modal-close {
-		background: #151A2A; /* Dark surface */
-		color: #F2F3F7; /* Light text/icon color */
-		outline-color: #FF3B30; /* Always red outline in dark mode */
-		box-shadow: 0 0 12px rgba(255, 59, 48, 0.4); /* Red glow effect */
+	/* Dark mode - soft neutral close button (red intent only on hover) */
+	:global([data-theme="dark"]) .modal-content:not(.modal-content--tinted) .modal-close {
+		background: var(--amoled-surface-2);
+		color: var(--amoled-text-secondary);
+		border: 1px solid var(--amoled-border);
 	}
 
-	:global([data-theme="dark"]) .modal-close:hover {
-		background: #1B2134; /* Lighter dark surface on hover */
-		color: #FFFFFF;
+	:global([data-theme="dark"]) .modal-content:not(.modal-content--tinted) .modal-close:hover {
+		background: rgba(255, 59, 48, 0.18);
+		border-color: rgba(255, 59, 48, 0.4);
+		color: var(--color-error);
 	}
 
 	/* Responsive */

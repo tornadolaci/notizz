@@ -92,10 +92,6 @@
 	function handleColorSelect(color: PastelColorKey) {
 		selectedColor = color;
 	}
-
-	function handleCancel() {
-		onClose();
-	}
 </script>
 
 <Modal
@@ -103,7 +99,7 @@
 	{onClose}
 	title={note ? 'Jegyzet szerkesztése' : 'Új jegyzet'}
 	maxWidth="700px"
-	closeButtonColor="red"
+	bgColor={note ? getDarkTint(note.color) : getDarkTint(PASTEL_COLORS[selectedColor])}
 >
 	<form class="note-editor" onsubmit={handleSubmit}>
 		<div class="form-group">
@@ -191,11 +187,11 @@
 	.input {
 		width: 100%;
 		padding: var(--padding-input);
-		border: none;
+		border: 1px solid var(--border-light);
 		border-radius: 16px;
 		font-size: var(--text-base);
 		font-family: var(--font-system);
-		background: #F7F8FC;
+		background: var(--surface-2);
 		color: var(--text-primary);
 		transition: all 200ms ease;
 		box-sizing: border-box;
@@ -206,13 +202,13 @@
 		outline: none;
 		border-color: var(--color-info);
 		box-shadow:
-			0 0 0 3px rgba(0, 122, 255, 0.1),
-			0 2px 8px rgba(0, 122, 255, 0.1);
+			0 0 0 3px rgba(0, 122, 255, 0.12),
+			0 2px 8px rgba(0, 122, 255, 0.08);
 	}
 
 	.input::placeholder,
 	.textarea::placeholder {
-		color: #A3A6B6;
+		color: var(--text-tertiary);
 	}
 
 	.textarea {
@@ -227,8 +223,8 @@
 
 	.textarea-wrapper {
 		position: relative;
-		background: linear-gradient(145deg, var(--textarea-bg, #F7F8FC) 0%, #FFFFFF 85%);
-		border: none;
+		background: linear-gradient(145deg, var(--textarea-bg, #F7F8FC) 0%, #FFFFFF 120%);
+		border: 1px solid var(--border-light);
 		border-radius: 20px;
 		box-shadow:
 			0 4px 12px rgba(0, 0, 0, 0.04),
@@ -242,11 +238,11 @@
 		position: absolute;
 		inset: 0;
 		pointer-events: none;
-		opacity: 0.3;
+		opacity: 0.55;
 		background: radial-gradient(
 			circle at 15% 10%,
 			var(--textarea-bg, rgba(247, 248, 252, 0.5)) 0%,
-			#FFFFFF 60%
+			#FFFFFF 70%
 		);
 		z-index: 0;
 		border-radius: 20px;
@@ -287,9 +283,9 @@
 
 	/* Dark mode - darker background and borders for inputs */
 	:global([data-theme="dark"]) .input {
-		background: #151A2A; /* --surface-2 from design tokens */
-		color: #F2F3F7; /* --text-primary from design tokens */
-		border: 1px solid rgba(255, 255, 255, 0.3);
+		background: var(--amoled-surface-2);
+		color: var(--amoled-text-primary);
+		border: 1px solid var(--amoled-border);
 	}
 
 	.form-actions {

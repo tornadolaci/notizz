@@ -119,6 +119,17 @@ token in the hash query). The auth $effect is idempotent (tracks syncUserId).
 - 8 pastel colors (INote/ITodo.color stores the HEX value, e.g. '#FFFACD';
   keys/names in [src/lib/constants/colors.ts](src/lib/constants/colors.ts))
 - Cards: 20px radius; grid handles sizing - never set explicit widths on grid children
+- Editor modals ([Modal.svelte](src/lib/components/common/Modal.svelte),
+  NoteEditor/TodoEditor): header shows the real title + optional subtitle
+  (e.g. todo `x/y teendő`). Editors pass `bgColor={getDarkTint(color)}` so the
+  panel is tinted from the edited card's color. LIGHT mode: that dark tint is
+  mixed with white into a light-to-mid panel with DARK text; white inputs and
+  the light pastel content box (note textarea / todo list) float on it. DARK
+  mode: the tint is IGNORED - the panel keeps the original AMOLED look
+  (`rgba(20,24,38,.92)`, red-ringed close button, dark content boxes with the
+  card-tint aura, white text). All tint/theme branching lives in Modal.svelte's
+  `.modal-content--tinted` rules; the pastel boxes always read as light in
+  light mode and dark in dark mode.
 - Accessibility: WCAG AAA contrast, ARIA labels, keyboard nav, 44x44px touch targets
 - Scrollbars are globally hidden (native app feel); scrolling itself must keep working
 - Mobile scroll rules: never `overscroll-behavior-y: none`; html/body use

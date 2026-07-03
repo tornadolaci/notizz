@@ -213,9 +213,10 @@
 <Modal
 	bind:isOpen
 	{onClose}
-	title={todo ? '' : 'Új teendő'}
+	title={todo ? todo.title : 'Új teendő'}
+	subtitle={todo ? `${items.filter((i) => i.completed).length}/${items.length} teendő` : undefined}
 	maxWidth="700px"
-	closeButtonColor="red"
+	bgColor={todo ? getDarkTint(todo.color) : getDarkTint(PASTEL_COLORS[selectedColor])}
 >
 	<form class="todo-editor" onsubmit={handleSubmit}>
 		{#if !todo}
@@ -240,7 +241,7 @@
 		<div class="form-group" role="group" aria-labelledby="todo-items-label">
 			<div id="todo-items-label" class="form-label">
 				{#if todo}
-					Feladatok: {todo.title}
+					Feladatok
 				{:else}
 					Teendők <span class="required">*</span>
 				{/if}
@@ -337,47 +338,35 @@
 		color: var(--color-error);
 	}
 
-	.sr-only {
-		position: absolute;
-		width: 1px;
-		height: 1px;
-		padding: 0;
-		margin: -1px;
-		overflow: hidden;
-		clip: rect(0, 0, 0, 0);
-		white-space: nowrap;
-		border-width: 0;
-	}
-
 	.input {
 		width: 100%;
 		padding: var(--padding-input);
-		border: none;
+		border: 1px solid var(--border-light);
 		border-radius: 16px;
 		font-size: var(--text-base);
 		font-family: var(--font-system);
-		background: #F7F8FC;
+		background: var(--surface-2);
 		color: var(--text-primary);
 		transition: all 200ms ease;
 	}
 
 	/* Dark mode - darker background and borders for inputs */
 	:global([data-theme="dark"]) .input {
-		background: #151A2A; /* --surface-2 from design tokens */
-		color: #F2F3F7; /* --text-primary from design tokens */
-		border: 1px solid rgba(255, 255, 255, 0.3);
+		background: var(--amoled-surface-2);
+		color: var(--amoled-text-primary);
+		border: 1px solid var(--amoled-border);
 	}
 
 	.input:focus {
 		outline: none;
 		border-color: var(--color-info);
 		box-shadow:
-			0 0 0 3px rgba(0, 122, 255, 0.1),
-			0 2px 8px rgba(0, 122, 255, 0.1);
+			0 0 0 3px rgba(0, 122, 255, 0.12),
+			0 2px 8px rgba(0, 122, 255, 0.08);
 	}
 
 	.input::placeholder {
-		color: #A3A6B6;
+		color: var(--text-tertiary);
 	}
 
 	.todo-items {
@@ -391,8 +380,8 @@
 		flex-direction: column;
 		gap: var(--space-1);
 		padding: var(--space-3);
-		background: linear-gradient(145deg, var(--items-list-bg, #F7F8FC) 0%, #FFFFFF 85%);
-		border: none;
+		background: linear-gradient(145deg, var(--items-list-bg, #F7F8FC) 0%, #FFFFFF 120%);
+		border: 1px solid var(--border-light);
 		border-radius: 20px;
 		box-shadow:
 			0 4px 12px rgba(0, 0, 0, 0.04),
@@ -410,11 +399,11 @@
 		position: absolute;
 		inset: 0;
 		pointer-events: none;
-		opacity: 0.3;
+		opacity: 0.55;
 		background: radial-gradient(
 			circle at 15% 10%,
 			var(--items-list-bg, rgba(247, 248, 252, 0.5)) 0%,
-			#FFFFFF 60%
+			#FFFFFF 70%
 		);
 		z-index: 0;
 		border-radius: 20px;
